@@ -1,0 +1,42 @@
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import express from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import morgan from "morgan";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { env } from "./config/env.js";
+import { errorHandler, notFound } from "./middlewares/error.js";
+import { adminRouter } from "./routes/admin.routes.js";
+import { authRouter } from "./routes/auth.routes.js";
+import { chatRouter } from "./routes/chat.routes.js";
+import { discoveryRouter } from "./routes/discovery.routes.js";
+import { matchRouter } from "./routes/match.routes.js";
+import { placesRouter } from "./routes/places.routes.js";
+import { safetyRouter } from "./routes/safety.routes.js";
+import { userRouter } from "./routes/user.routes.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export const app = express();
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
+app.use(express.json({ limit: "2mb" }));
+app.use(cookieParser());
+app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 500 }));
+app.use("/uploads", express.static(path.resolve(__dirname, "../../uploads")));
+
+app.get("/health", (_req, res) => res.json({ ok: true, name: "UNI-MATE API" }));
+app.use("/api/auth", authRouter);
+app.use("/api/users", userRouter);
+app.use("/api/discovery", discoveryRouter);
+app.use("/api/matches", matchRouter);
+app.use("/api/chat", chatRouter);
+app.use("/api/places", placesRouter);
+app.use("/api/safety", safetyRouter);
+app.use("/api/admin", adminRouter);
+app.use(notFound);
+app.use(errorHandler);

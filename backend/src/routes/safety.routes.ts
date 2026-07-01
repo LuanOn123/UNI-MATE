@@ -1,0 +1,10 @@
+import { Router } from "express";
+import { blockUser, reportUser } from "../controllers/safety.controller.js";
+import { requireAuth } from "../middlewares/auth.js";
+import { validate } from "../middlewares/validate.js";
+import { reportSchema, targetUserSchema } from "../validations/common.validation.js";
+
+export const safetyRouter = Router();
+safetyRouter.use(requireAuth);
+safetyRouter.post("/report", validate(reportSchema), reportUser);
+safetyRouter.post("/block", validate(targetUserSchema), blockUser);
