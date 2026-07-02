@@ -123,6 +123,8 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         const token = useAuthStore.getState().accessToken;
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+        localStorage.removeItem("uni-mate-auth");
+        void import("../lib/socket").then(({ resetSocket }) => resetSocket()).catch(() => undefined);
         if (token) void import("../features/auth/authApi").then(({ logout }) => logout()).catch(() => undefined);
       }
     }),

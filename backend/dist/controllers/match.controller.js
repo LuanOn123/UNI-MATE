@@ -2,6 +2,8 @@ import { CafeProposal } from "../models/CafeProposal.js";
 import { ChatRoom } from "../models/ChatRoom.js";
 import { Match } from "../models/Match.js";
 import { PlaceCache } from "../models/PlaceCache.js";
+import { User } from "../models/User.js";
+import { createAndEmitNotification, emitMatchUpdated } from "../services/notification.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { suggestCafePlaces } from "../services/places.service.js";
 async function expireMatchIfNeeded(match) {
@@ -11,6 +13,12 @@ async function expireMatchIfNeeded(match) {
         await match.save();
     }
     return match;
+}
+function matchUserIds(match) {
+    return (match.users ?? []).map(String);
+}
+function otherUserId(match, currentUserId) {
+    return matchUserIds(match).find((userId) => userId !== currentUserId);
 }
 export const listMatches = asyncHandler(async (req, res) => {
     const matches = await Match.find({ users: req.user.id }).populate("users selectedPlace chatRoom").sort({ updatedAt: -1 });
@@ -53,6 +61,18 @@ export const selectPlace = asyncHandler(async (req, res) => {
     match.status = "cafe_proposed";
     await match.save();
     await match.populate("selectedPlace chatRoom");
+    const io = req.app.get("io");
+    const recipientId = otherUserId(match, req.user.id);
+    if (recipientId) {
+        const actor = await User.findById(req.user.id).select("displayName");
+        await createAndEmitNotification(io, {
+            userId: recipientId,
+            type: "cafe_proposal",
+            title: "Có quán đang chờ bạn chốt",
+            body: `${actor?.displayName ?? "Người kia"} đề xuất ${place.name}.`
+        });
+    }
+    emitMatchUpdated(io, matchUserIds(match), { matchId: String(match._id), status: match.status, selectedPlace: match.selectedPlace });
     res.json({ match });
 });
 export const confirmPlace = asyncHandler(async (req, res) => {
@@ -75,5 +95,63 @@ export const confirmPlace = asyncHandler(async (req, res) => {
     }
     await match.save();
     await match.populate("selectedPlace chatRoom");
+    const io = req.app.get("io");
+    emitMatchUpdated(io, matchUserIds(match), { matchId: String(match._id), status: match.status, chatRoom: match.chatRoom });
+    res.json({ match });
+});
+export const rejectPlace = asyncHandler(async (req, res) => {
+    const match = await Match.findOne({ _id: req.params.matchId, users: req.user.id });
+    if (!match?.selectedPlace)
+        return res.status(404).json({ message: "No selected cafe" });
+    await expireMatchIfNeeded(match);
+    if (match.status === "expired")
+        return res.status(410).json({ message: "Match expired" });
+    if (match.status === "chat_opened")
+        return res.status(400).json({ message: "Chat already opened" });
+    if (String(match.selectedBy) === req.user.id)
+        return res.status(400).json({ message: "You cannot reject your own proposal" });
+    const proposerId = String(match.selectedBy);
+    await CafeProposal.findOneAndUpdate({ match: match._id, status: "active" }, { status: "rejected" });
+    match.selectedPlace = undefined;
+    match.selectedBy = undefined;
+    match.confirmedBy = [];
+    match.status = "matched";
+    await match.save();
+    await match.populate("selectedPlace chatRoom");
+    const io = req.app.get("io");
+    const actor = await User.findById(req.user.id).select("displayName");
+    await createAndEmitNotification(io, {
+        userId: proposerId,
+        type: "cafe_rejected",
+        title: "Quán đã bị từ chối",
+        body: `${actor?.displayName ?? "Người kia"} muốn bạn chọn quán khác.`
+    });
+    emitMatchUpdated(io, matchUserIds(match), { matchId: String(match._id), status: match.status });
+    res.json({ match });
+});
+export const cancelMatch = asyncHandler(async (req, res) => {
+    const match = await Match.findOne({ _id: req.params.matchId, users: req.user.id });
+    if (!match)
+        return res.status(404).json({ message: "Match not found" });
+    if (["cancelled", "blocked"].includes(match.status))
+        return res.json({ match });
+    match.status = "cancelled";
+    await CafeProposal.updateMany({ match: match._id, status: "active" }, { status: "rejected" });
+    if (match.chatRoom)
+        await ChatRoom.findByIdAndUpdate(match.chatRoom, { status: "archived" });
+    await match.save();
+    await match.populate("selectedPlace chatRoom");
+    const io = req.app.get("io");
+    const recipientId = otherUserId(match, req.user.id);
+    if (recipientId) {
+        const actor = await User.findById(req.user.id).select("displayName");
+        await createAndEmitNotification(io, {
+            userId: recipientId,
+            type: "match_cancelled",
+            title: "Match đã bị hủy",
+            body: `${actor?.displayName ?? "Người kia"} đã từ chối tiếp tục match.`
+        });
+    }
+    emitMatchUpdated(io, matchUserIds(match), { matchId: String(match._id), status: match.status });
     res.json({ match });
 });

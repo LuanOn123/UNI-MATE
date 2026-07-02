@@ -1,7 +1,9 @@
 import type { Request, Response } from "express";
+import type { Server } from "socket.io";
 import { ChatRoom } from "../models/ChatRoom.js";
 import { Match } from "../models/Match.js";
 import { Message } from "../models/Message.js";
+import { createAndEmitNotification } from "../services/notification.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const listRooms = asyncHandler(async (req: Request, res: Response) => {
@@ -35,5 +37,21 @@ export const sendMessage = asyncHandler(async (req: Request, res: Response) => {
   await room.save();
   await message.populate("sender", "displayName avatarUrl");
   const plain = message.toObject() as any;
-  res.status(201).json({ message: { ...plain, senderId: req.user!.id, mine: true } });
+  const outgoing = { ...plain, senderId: req.user!.id };
+  const io = req.app.get("io") as Server | undefined;
+  io?.to(String(room._id)).emit("new_message", outgoing);
+  await Promise.all(
+    room.users
+      .map(String)
+      .filter((userId) => userId !== req.user!.id)
+      .map((userId) =>
+        createAndEmitNotification(io, {
+          userId,
+          type: "message",
+          title: "Tin nhắn mới",
+          body: req.body.text.slice(0, 120)
+        })
+      )
+  );
+  res.status(201).json({ message: { ...outgoing, mine: true } });
 });

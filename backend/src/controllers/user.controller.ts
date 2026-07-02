@@ -30,7 +30,7 @@ export const completeOnboarding = asyncHandler(async (req: Request, res: Respons
         interests: req.body.interests,
         preferences: req.body.preferences
       },
-      location: { type: "Point", coordinates: [req.body.location.lng, req.body.location.lat], addressLabel: req.body.location.addressLabel }
+      location: { type: "Point", coordinates: [req.body.location.lng, req.body.location.lat], addressLabel: req.body.location.addressLabel, source: req.body.location.source ?? "manual" }
     },
     { new: true }
   );
@@ -40,7 +40,7 @@ export const completeOnboarding = asyncHandler(async (req: Request, res: Respons
 export const updateLocation = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findByIdAndUpdate(
     req.user!.id,
-    { location: { type: "Point", coordinates: [req.body.lng, req.body.lat], addressLabel: req.body.addressLabel } },
+    { location: { type: "Point", coordinates: [req.body.lng, req.body.lat], addressLabel: req.body.addressLabel, source: req.body.source ?? "manual" } },
     { new: true }
   );
   res.json({ user });

@@ -67,7 +67,7 @@ export function ChatRoomPage() {
 
     const socket = getSocket();
     socket.emit("join_room", { roomId });
-    socket.on("new_message", (message: UiMessage) => {
+    const onNewMessage = (message: UiMessage) => {
       setMessages((list) => {
         const effectiveCurrentId = apiCurrentId || idOf(currentUser);
         const mine = message.senderId ? String(message.senderId) === effectiveCurrentId : isMine(message, effectiveCurrentId);
@@ -77,20 +77,23 @@ export function ChatRoomPage() {
       const effectiveCurrentId = apiCurrentId || idOf(currentUser);
       const mine = message.senderId ? String(message.senderId) === effectiveCurrentId : isMine(message, effectiveCurrentId);
       if (!mine) socket.emit("mark_read", { roomId });
-    });
-    socket.on("message_read", (event) => {
+    };
+    const onRead = (event: { userId: string }) => {
       setMessages((list) => list.map((message) => {
         const readBy = new Set((message.readBy ?? []).map(String));
         readBy.add(event.userId);
         return { ...message, readBy: [...readBy] };
       }));
-    });
-    socket.on("user_typing", (event) => setTyping(event.typing));
+    };
+    const onTyping = (event: { typing: boolean }) => setTyping(event.typing);
+    socket.on("new_message", onNewMessage);
+    socket.on("message_read", onRead);
+    socket.on("user_typing", onTyping);
     return () => {
       mounted = false;
-      socket.off("new_message");
-      socket.off("message_read");
-      socket.off("user_typing");
+      socket.off("new_message", onNewMessage);
+      socket.off("message_read", onRead);
+      socket.off("user_typing", onTyping);
     };
   }, [roomId, apiCurrentId, currentUser]);
 
@@ -98,10 +101,7 @@ export function ChatRoomPage() {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, typing]);
 
-  const lastMineId = useMemo(() => {
-    const mine = [...messages].reverse().find((message) => isMine(message, currentId));
-    return mine?._id;
-  }, [messages, currentId]);
+  const lastMineId = useMemo(() => [...messages].reverse().find((message) => isMine(message, currentId))?._id, [messages, currentId]);
 
   const send = async () => {
     if (!text.trim() || blocked) return;

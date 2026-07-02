@@ -1,10 +1,11 @@
-import { CheckCircle, Clock, Coffee, ExternalLink, MapPin, Star } from "lucide-react";
+import { Ban, CheckCircle, Clock, Coffee, ExternalLink, MapPin, RotateCcw, Star, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { StateBlock } from "../../components/common/StateBlock";
 import { Button } from "../../components/ui/Button";
 import { api } from "../../lib/api";
+import { getSocket } from "../../lib/socket";
 import { useAuthStore } from "../../stores/authStore";
 import type { Match, Place } from "../../types";
 
@@ -23,17 +24,44 @@ export function PlaceSuggestionsPage() {
   const navigate = useNavigate();
   const currentId = idOf(useAuthStore((s) => s.user));
 
-  useEffect(() => {
+  const load = async () => {
+    if (!matchId) return;
     setLoading(true);
-    Promise.all([
-      api.get(`/matches/${matchId}`).then((r) => setMatch(r.data.match)),
-      api.get(`/matches/${matchId}/place-suggestions`).then((r) => setPlaces(r.data.places)).catch((e) => setError(e.response?.data?.message ?? "Không tải được gợi ý quán"))
-    ]).finally(() => setLoading(false));
+    setError("");
+    try {
+      const [{ data: matchData }, { data: placesData }] = await Promise.all([
+        api.get(`/matches/${matchId}`),
+        api.get(`/matches/${matchId}/place-suggestions`)
+      ]);
+      setMatch(matchData.match);
+      setPlaces(placesData.places ?? []);
+    } catch (e: any) {
+      setError(e.response?.data?.message ?? "Không tải được gợi ý quán");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void load();
+  }, [matchId]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    const onMatchUpdated = (payload: any) => {
+      if (payload?.matchId === matchId) void load();
+    };
+    socket.on("match:updated", onMatchUpdated);
+    return () => {
+      socket.off("match:updated", onMatchUpdated);
+    };
   }, [matchId]);
 
   const selectedByMe = useMemo(() => idOf(match?.selectedBy) === currentId, [match?.selectedBy, currentId]);
-  const canConfirm = Boolean(match?.selectedPlace && !selectedByMe && !["expired", "chat_opened", "blocked"].includes(match.status));
-  const canPropose = Boolean(match && !["expired", "chat_opened", "blocked"].includes(match.status));
+  const active = Boolean(match && !["expired", "chat_opened", "blocked", "cancelled"].includes(match.status));
+  const canConfirm = Boolean(match?.selectedPlace && !selectedByMe && active);
+  const canRejectPlace = canConfirm;
+  const canPropose = active;
   const chatRoomId = typeof match?.chatRoom === "string" ? match.chatRoom : match?.chatRoom?._id;
 
   const select = async (placeId: string) => {
@@ -56,6 +84,27 @@ export function PlaceSuggestionsPage() {
     }
   };
 
+  const rejectPlace = async () => {
+    setError("");
+    try {
+      const { data } = await api.post(`/matches/${matchId}/reject-place`);
+      setMatch(data.match);
+    } catch (e: any) {
+      setError(e.response?.data?.message ?? "Chưa thể từ chối quán");
+    }
+  };
+
+  const cancelMatch = async () => {
+    setError("");
+    try {
+      const { data } = await api.post(`/matches/${matchId}/cancel`);
+      setMatch(data.match);
+      navigate("/app/matches");
+    } catch (e: any) {
+      setError(e.response?.data?.message ?? "Chưa thể hủy match");
+    }
+  };
+
   if (loading) return <div className="p-6"><StateBlock title="Đang tải quán gợi ý" /></div>;
   if (!match) return <div className="p-6"><StateBlock title="Không tìm thấy match" /></div>;
 
@@ -67,7 +116,10 @@ export function PlaceSuggestionsPage() {
           <h1 className="text-3xl font-black">Chọn quán cafe</h1>
           <p className="mt-2 max-w-2xl text-coffee/70">Chat chỉ mở khi một bên đề xuất và bên còn lại đồng ý cùng một quán.</p>
         </div>
-        <Link to="/app/matches"><Button variant="ghost">Về Matches</Button></Link>
+        <div className="flex gap-2">
+          <Link to="/app/matches"><Button variant="ghost">Về Matches</Button></Link>
+          {active ? <Button variant="danger" icon={<Ban />} onClick={cancelMatch}>Hủy match</Button> : null}
+        </div>
       </div>
 
       {error ? <p className="mb-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p> : null}
@@ -75,15 +127,25 @@ export function PlaceSuggestionsPage() {
       <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_340px]">
         <section className="rounded-lg bg-white p-5 shadow-soft">
           <div className="flex items-start gap-4">
-            <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-lg ${match.status === "chat_opened" ? "bg-mint" : match.status === "expired" ? "bg-slate-100" : "bg-latte"}`}>
-              {match.status === "chat_opened" ? <CheckCircle className="text-cocoa" /> : <Coffee className="text-cocoa" />}
+            <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-lg ${match.status === "chat_opened" ? "bg-mint" : match.status === "cancelled" ? "bg-rose-50" : match.status === "expired" ? "bg-slate-100" : "bg-latte"}`}>
+              {match.status === "chat_opened" ? <CheckCircle className="text-cocoa" /> : match.status === "cancelled" ? <XCircle className="text-rose-600" /> : <Coffee className="text-cocoa" />}
             </div>
             <div className="flex-1">
               <h2 className="font-black">
-                {match.status === "chat_opened" ? "Chat đã mở" : match.status === "expired" ? "Match đã hết hạn" : match.selectedPlace ? "Quán đang được đề xuất" : "Chưa có quán được đề xuất"}
+                {match.status === "chat_opened" ? "Chat đã mở" : match.status === "cancelled" ? "Match đã hủy" : match.status === "expired" ? "Match đã hết hạn" : match.selectedPlace ? "Quán đang chờ chốt" : "Chưa có quán được đề xuất"}
               </h2>
               <p className="mt-1 text-sm text-coffee/70">
-                {match.status === "chat_opened" ? "Hai bạn đã thống nhất quán. Vào chat để chốt thời gian." : match.status === "expired" ? "Match hết hạn sau 72 giờ nếu chưa xác nhận quán." : match.selectedPlace ? selectedByMe ? "Bạn đã đề xuất quán này. Đang chờ người kia đồng ý." : "Người kia đã đề xuất quán này. Bạn có thể đồng ý hoặc chọn quán khác." : "Chọn một trong các quán bên dưới để gửi đề xuất."}
+                {match.status === "chat_opened"
+                  ? "Hai bạn đã thống nhất quán. Vào chat để chốt thời gian."
+                  : match.status === "cancelled"
+                    ? "Match này đã dừng, hai bên sẽ không mở chat từ đây."
+                    : match.status === "expired"
+                      ? "Match hết hạn sau 72 giờ nếu chưa xác nhận quán."
+                      : match.selectedPlace
+                        ? selectedByMe
+                          ? "Bạn đã đề xuất quán này. Đang chờ người kia đồng ý hoặc yêu cầu chọn lại."
+                          : "Người kia đã đề xuất quán này. Bạn có thể đồng ý, từ chối để họ chọn lại, hoặc hủy match."
+                        : "Chọn một trong các quán bên dưới để gửi đề xuất."}
               </p>
             </div>
           </div>
@@ -93,6 +155,7 @@ export function PlaceSuggestionsPage() {
               <p className="mt-2 flex gap-2 text-sm text-coffee/70"><MapPin className="h-4 w-4 shrink-0" />{match.selectedPlace.address}</p>
               <div className="mt-3 flex flex-wrap gap-3">
                 {canConfirm ? <Button onClick={confirm} icon={<CheckCircle />}>Đồng ý mở chat</Button> : null}
+                {canRejectPlace ? <Button variant="ghost" onClick={rejectPlace} icon={<RotateCcw />}>Từ chối quán</Button> : null}
                 {match.status === "chat_opened" && chatRoomId ? <Button onClick={() => navigate(`/app/chat/${chatRoomId}`)}>Vào chat</Button> : null}
               </div>
             </div>
@@ -103,8 +166,8 @@ export function PlaceSuggestionsPage() {
           <h2 className="font-black">Quy tắc mở chat</h2>
           <div className="mt-4 space-y-3 text-sm font-medium text-coffee/72">
             <p className="flex gap-2"><Clock className="h-4 w-4 shrink-0 text-caramel" /> Match hết hạn sau 72 giờ nếu chưa chốt quán.</p>
-            <p className="flex gap-2"><Coffee className="h-4 w-4 shrink-0 text-caramel" /> Chỉ một proposal active mới nhất được giữ.</p>
-            <p className="flex gap-2"><CheckCircle className="h-4 w-4 shrink-0 text-caramel" /> Người đề xuất không tự xác nhận một mình.</p>
+            <p className="flex gap-2"><Coffee className="h-4 w-4 shrink-0 text-caramel" /> Chỉ proposal active mới nhất được giữ.</p>
+            <p className="flex gap-2"><RotateCcw className="h-4 w-4 shrink-0 text-caramel" /> Nếu quán không hợp, người nhận có thể yêu cầu chọn lại.</p>
           </div>
         </aside>
       </div>

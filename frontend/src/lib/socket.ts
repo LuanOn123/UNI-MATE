@@ -15,3 +15,11 @@ export function getSocket() {
   if (!socket.connected) socket.connect();
   return socket;
 }
+
+export function resetSocket() {
+  if (socket) {
+    socket.removeAllListeners();
+    socket.disconnect();
+    socket = null;
+  }
+}

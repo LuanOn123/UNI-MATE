@@ -1,13 +1,15 @@
-import { Clock, Coffee, Lock, MessageCircle, ShieldAlert } from "lucide-react";
+import { Clock, Coffee, Heart, Lock, MessageCircle, ShieldAlert, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CoffeeMeter } from "../../components/common/CoffeeMeter";
 import { StateBlock } from "../../components/common/StateBlock";
 import { Button } from "../../components/ui/Button";
 import { api } from "../../lib/api";
 import { useAuthStore } from "../../stores/authStore";
 import type { Match, User } from "../../types";
+
+const fallbackPhoto = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=500&auto=format&fit=crop";
 
 const statusCopy: Record<Match["status"], { label: string; tone: string; icon: any; helper: string }> = {
   matched: { label: "Cần chọn quán", tone: "bg-latte text-cocoa", icon: Coffee, helper: "Đề xuất một quán để người kia xác nhận." },
@@ -29,12 +31,27 @@ function otherUser(match: Match, currentId?: string) {
 
 export function MatchesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [incomingLikes, setIncomingLikes] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "need_cafe" | "chat">("all");
+  const [message, setMessage] = useState("");
   const currentId = getId(useAuthStore((s) => s.user));
+  const navigate = useNavigate();
+
+  const load = async () => {
+    const [matchRes, likesRes] = await Promise.all([
+      api.get("/matches"),
+      api.get("/discovery/incoming-likes").catch(() => ({ data: { users: [] } }))
+    ]);
+    setMatches(matchRes.data.matches);
+    setIncomingLikes(likesRes.data.users);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    api.get("/matches").then((r) => setMatches(r.data.matches)).finally(() => setLoading(false));
+    load();
+    const timer = window.setInterval(load, 5000);
+    return () => window.clearInterval(timer);
   }, []);
 
   const visible = useMemo(() => {
@@ -43,8 +60,24 @@ export function MatchesPage() {
     return matches;
   }, [filter, matches]);
 
+  const respondLike = async (user: User, action: "like" | "pass") => {
+    const targetUserId = getId(user);
+    if (!targetUserId) return;
+    try {
+      const { data } = await api.post(`/discovery/${action}`, { targetUserId });
+      setIncomingLikes((list) => list.filter((item) => getId(item) !== targetUserId));
+      if (data.matched) {
+        setMessage("Đã match. Hãy chọn quán cafe để mở chat.");
+        await load();
+        navigate(`/app/matches/${data.match._id}/places`);
+      }
+    } catch (e: any) {
+      setMessage(e.response?.data?.message ?? "Không xử lý được lượt like.");
+    }
+  };
+
   if (loading) return <div className="p-6"><StateBlock title="Đang tải match" /></div>;
-  if (!matches.length) return <div className="p-6"><StateBlock title="Chưa có match" text="Like người hợp gu ở Discovery để bắt đầu cafe-gated chat." /></div>;
+  if (!matches.length && !incomingLikes.length) return <div className="p-6"><StateBlock title="Chưa có match" text="Bật GPS thật và like người hợp gu ở Discovery để bắt đầu cafe-gated chat." /></div>;
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-8">
@@ -52,6 +85,7 @@ export function MatchesPage() {
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-caramel">Cafe gate</p>
           <h1 className="text-3xl font-black">Matches</h1>
+          <p className="mt-2 text-sm font-semibold text-coffee/60">Trang này tự cập nhật mỗi 5 giây để thấy lượt like/match mới.</p>
         </div>
         <div className="flex rounded-lg bg-white p-1 shadow-sm">
           {[
@@ -66,6 +100,32 @@ export function MatchesPage() {
         </div>
       </div>
 
+      {message ? <p className="mb-4 rounded-lg bg-mint p-3 text-sm font-bold text-cocoa">{message}</p> : null}
+
+      {incomingLikes.length ? (
+        <section className="mb-6 rounded-lg bg-white p-5 shadow-soft">
+          <h2 className="mb-3 flex items-center gap-2 text-xl font-black"><Heart className="h-5 w-5 text-caramel" /> Người muốn match với bạn</h2>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {incomingLikes.map((user) => (
+              <div key={getId(user)} className="rounded-lg border border-coffee/10 p-4">
+                <div className="flex gap-3">
+                  <div className="h-16 w-16 shrink-0 rounded-lg bg-cover bg-center" style={{ backgroundImage: `url(${user.avatarUrl || fallbackPhoto})` }} />
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-black">{user.displayName || "UNI-MATE user"}, {user.age ?? "18+"}</h3>
+                    <p className="truncate text-sm text-coffee/60">{user.school || "Sinh viên"} {user.major ? `· ${user.major}` : ""}</p>
+                    <CoffeeMeter value={user.matchMeta?.score ?? 0} size="sm" />
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <Button variant="ghost" icon={<X />} onClick={() => respondLike(user, "pass")}>Nope</Button>
+                  <Button icon={<Heart />} onClick={() => respondLike(user, "like")}>Like lại</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visible.map((match, i) => {
           const room = typeof match.chatRoom !== "string" ? match.chatRoom : undefined;
@@ -77,7 +137,7 @@ export function MatchesPage() {
           return (
             <motion.div key={match._id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.035 }} className="overflow-hidden rounded-lg bg-white shadow-soft">
               <div className="flex gap-4 p-4">
-                <div className="h-20 w-20 shrink-0 rounded-lg bg-cover bg-center" style={{ backgroundImage: `url(${person?.avatarUrl || "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=500&auto=format&fit=crop"})` }} />
+                <div className="h-20 w-20 shrink-0 rounded-lg bg-cover bg-center" style={{ backgroundImage: `url(${person?.avatarUrl || fallbackPhoto})` }} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -110,7 +170,7 @@ export function MatchesPage() {
           );
         })}
       </div>
-      {!visible.length ? <div className="mt-8"><StateBlock title="Không có match trong bộ lọc này" /></div> : null}
+      {!visible.length && matches.length ? <div className="mt-8"><StateBlock title="Không có match trong bộ lọc này" /></div> : null}
     </div>
   );
 }

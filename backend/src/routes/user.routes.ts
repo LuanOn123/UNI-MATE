@@ -7,10 +7,12 @@ import { requireAuth } from "../middlewares/auth.js";
 import { validate } from "../middlewares/validate.js";
 import { locationSchema, onboardingSchema } from "../validations/user.validation.js";
 
+const uploadDir = path.resolve(process.cwd(), "uploads");
+
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    fs.mkdirSync("uploads", { recursive: true });
-    cb(null, "uploads");
+    fs.mkdirSync(uploadDir, { recursive: true });
+    cb(null, uploadDir);
   },
   filename: (_req, file, cb) => cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`)
 });

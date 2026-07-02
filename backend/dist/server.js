@@ -8,6 +8,7 @@ async function bootstrap() {
     await connectDB();
     const server = http.createServer(app);
     const io = new Server(server, { cors: { origin: env.CLIENT_URL, credentials: true } });
+    app.set("io", io);
     registerSockets(io);
     server.listen(env.PORT, () => console.log(`UNI-MATE API listening on :${env.PORT}`));
 }

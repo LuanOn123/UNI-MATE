@@ -28,10 +28,10 @@ export const onboardingSchema = z.object({
       maxDistanceKm: z.number().min(1).max(20),
       priorities: z.array(z.string()).default([])
     }),
-    location: z.object({ lat: z.number(), lng: z.number(), addressLabel: z.string().optional() })
+    location: z.object({ lat: z.number(), lng: z.number(), addressLabel: z.string().optional(), source: z.enum(["gps", "manual"]).default("manual") })
   })
 });
 
 export const locationSchema = z.object({
-  body: z.object({ lat: z.number(), lng: z.number(), addressLabel: z.string().optional() })
+  body: z.object({ lat: z.number(), lng: z.number(), addressLabel: z.string().optional(), source: z.enum(["gps", "manual"]).default("manual") })
 });

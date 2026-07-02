@@ -1,4 +1,4 @@
-import { Camera, Save, Trash2, Upload } from "lucide-react";
+﻿import { Camera, Save, Trash2, Upload } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -8,9 +8,16 @@ import { Input } from "../../components/ui/Input";
 import { api } from "../../lib/api";
 import { useAuthStore } from "../../stores/authStore";
 import type { User } from "../../types";
+import { cities, districtsFor, findLocation, manualLocationPayload } from "../../utils/locationOptions";
 import { cafeStyles, goals, interests, preferredTimes, priorities } from "../../utils/options";
 
 type PhotoDraft = { id: string; url?: string; file?: File; preview: string };
+
+function displayUrl(url?: string) {
+  if (!url) return "";
+  if (url.startsWith("blob:") || url.startsWith("data:")) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}v=${Date.now()}`;
+}
 
 function toDateInput(value?: string | Date) {
   if (!value) return "";
@@ -57,13 +64,14 @@ function buildForm(user?: User | null) {
     location: {
       lat: coords[1] ?? 10.7769,
       lng: coords[0] ?? 106.7009,
-      addressLabel: user?.location?.addressLabel ?? "TP.HCM"
+      addressLabel: user?.location?.addressLabel ?? "TP.HCM",
+      source: user?.location?.source ?? "manual"
     }
   };
 }
 
 function photoDrafts(user?: User | null): PhotoDraft[] {
-  return (user?.profilePhotos ?? []).map((url, index) => ({ id: `${index}-${url}`, url, preview: url }));
+  return (user?.profilePhotos ?? []).map((url, index) => ({ id: `${index}-${url}`, url, preview: displayUrl(url) }));
 }
 
 async function uploadPhoto(file: File, field: "avatar" | "photo") {
@@ -91,12 +99,19 @@ export function SettingsPage() {
       const fresh = { ...res.data.user, id: res.data.user._id } as User;
       updateUser(fresh);
       setForm(buildForm(fresh));
-      setAvatarPreview(fresh.avatarUrl ?? "");
+      setAvatarPreview(displayUrl(fresh.avatarUrl));
       setPhotos(photoDrafts(fresh));
     }).catch(() => undefined);
   }, [updateUser]);
 
   const previewPhotos = useMemo(() => [avatarPreview, ...photos.map((photo) => photo.preview)].filter(Boolean), [avatarPreview, photos]);
+  const selectedLocation = findLocation(form.location.addressLabel);
+  const districtChoices = districtsFor(selectedLocation.city);
+
+  const chooseManualLocation = (label: string) => {
+    const choice = findLocation(label);
+    setForm({ ...form, location: manualLocationPayload(choice) });
+  };
 
   const save = async () => {
     setError("");
@@ -110,12 +125,14 @@ export function SettingsPage() {
       const avatarUrl = avatarFile ? await uploadPhoto(avatarFile, "avatar") : form.avatarUrl;
       const profilePhotos = await Promise.all(photos.map((photo) => photo.file ? uploadPhoto(photo.file, "photo") : Promise.resolve(photo.url ?? "")));
       const payload = { ...form, avatarUrl, profilePhotos: profilePhotos.filter(Boolean) };
-      const { data } = await api.post("/users/onboarding", payload);
-      updateUser({ ...data.user, id: data.user._id });
-      setForm(buildForm(data.user));
+      await api.post("/users/onboarding", payload);
+      const { data } = await api.get("/users/profile");
+      const fresh = { ...data.user, id: data.user._id } as User;
+      updateUser(fresh);
+      setForm(buildForm(fresh));
       setAvatarFile(null);
-      setAvatarPreview(data.user.avatarUrl ?? "");
-      setPhotos(photoDrafts(data.user));
+      setAvatarPreview(displayUrl(fresh.avatarUrl));
+      setPhotos(photoDrafts(fresh));
       setSaved("Đã cập nhật hồ sơ.");
     } catch (e: any) {
       setError(e.response?.data?.message ?? "Không lưu được hồ sơ");
@@ -143,6 +160,13 @@ export function SettingsPage() {
   const addPhoto = (file?: File) => {
     if (!file) return;
     setPhotos((list) => [...list, { id: `${Date.now()}-${file.name}`, file, preview: URL.createObjectURL(file) }]);
+  };
+
+  const useGps = () => {
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => setForm({ ...form, location: { lat: pos.coords.latitude, lng: pos.coords.longitude, addressLabel: "GPS hiện tại", source: "gps" } }),
+      () => setError("Không lấy được GPS. Vui lòng cấp quyền vị trí cho trình duyệt.")
+    );
   };
 
   return (
@@ -225,7 +249,7 @@ export function SettingsPage() {
               {photos.map((photo) => (
                 <div key={photo.id} className="flex items-center gap-3 rounded-lg bg-cream p-2">
                   <div className="h-16 w-12 rounded-md bg-cover bg-center" style={{ backgroundImage: `url(${photo.preview})` }} />
-                  <p className="min-w-0 flex-1 truncate text-sm font-semibold">{photo.file?.name ?? photo.url}</p>
+                  <p className="min-w-0 flex-1 truncate text-sm font-semibold">Ảnh phụ {photos.findIndex((item) => item.id === photo.id) + 1}</p>
                   <Button variant="ghost" icon={<Trash2 />} onClick={() => setPhotos((list) => list.filter((item) => item.id !== photo.id))} />
                 </div>
               ))}
@@ -256,10 +280,23 @@ export function SettingsPage() {
 
           <Panel title="Khu vực">
             <div className="grid gap-3">
-              <Input value={form.location.addressLabel} onChange={(e) => setForm({ ...form, location: { ...form.location, addressLabel: e.target.value } })} />
-              <div className="grid grid-cols-2 gap-2">
-                <Input type="number" value={form.location.lat} onChange={(e) => setForm({ ...form, location: { ...form.location, lat: Number(e.target.value) } })} />
-                <Input type="number" value={form.location.lng} onChange={(e) => setForm({ ...form, location: { ...form.location, lng: Number(e.target.value) } })} />
+              <p className={`rounded-lg p-3 text-sm font-bold ${form.location.source === "gps" ? "bg-mint text-cocoa" : "bg-latte text-cocoa"}`}>
+                {form.location.source === "gps" ? "Đang dùng GPS thật, Discovery sẽ ưu tiên vị trí hiện tại." : `Đang dùng khu vực: ${form.location.addressLabel}.`}
+              </p>
+              <Button variant="ghost" onClick={useGps}>Dùng GPS thật</Button>
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="grid gap-2 text-sm font-bold text-coffee">
+                  Thành phố
+                  <select className="rounded-lg border border-coffee/15 bg-white p-3 outline-none focus:ring-4 focus:ring-caramel/30" value={selectedLocation.city} onChange={(e) => chooseManualLocation(districtsFor(e.target.value)[0].label)}>
+                    {cities.map((city) => <option key={city} value={city}>{city}</option>)}
+                  </select>
+                </label>
+                <label className="grid gap-2 text-sm font-bold text-coffee">
+                  Quận / khu vực
+                  <select className="rounded-lg border border-coffee/15 bg-white p-3 outline-none focus:ring-4 focus:ring-caramel/30" value={selectedLocation.label} onChange={(e) => chooseManualLocation(e.target.value)}>
+                    {districtChoices.map((choice) => <option key={choice.label} value={choice.label}>{choice.district}</option>)}
+                  </select>
+                </label>
               </div>
             </div>
           </Panel>

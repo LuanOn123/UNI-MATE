@@ -1,6 +1,7 @@
 import { ChatRoom } from "../models/ChatRoom.js";
 import { Match } from "../models/Match.js";
 import { Message } from "../models/Message.js";
+import { createAndEmitNotification } from "../services/notification.service.js";
 import { User } from "../models/User.js";
 import { verifyAccessToken } from "../utils/tokens.js";
 export function registerSockets(io) {
@@ -23,6 +24,7 @@ export function registerSockets(io) {
         }
     });
     io.on("connection", (socket) => {
+        socket.join(`user:${socket.data.userId}`);
         socket.on("join_room", async ({ roomId }) => {
             const room = await ChatRoom.findOne({ _id: roomId, users: socket.data.userId, status: "active" });
             if (room)
@@ -42,6 +44,13 @@ export function registerSockets(io) {
             const payload = await message.populate("sender", "displayName avatarUrl");
             const plain = payload.toObject();
             io.to(roomId).emit("new_message", { ...plain, senderId: socket.data.userId });
+            const recipients = room.users.map(String).filter((userId) => userId !== socket.data.userId);
+            await Promise.all(recipients.map((userId) => createAndEmitNotification(io, {
+                userId,
+                type: "message",
+                title: "Tin nhắn mới",
+                body: text.trim().slice(0, 120)
+            })));
         });
         socket.on("typing_start", ({ roomId }) => socket.to(roomId).emit("user_typing", { userId: socket.data.userId, typing: true }));
         socket.on("typing_stop", ({ roomId }) => socket.to(roomId).emit("user_typing", { userId: socket.data.userId, typing: false }));

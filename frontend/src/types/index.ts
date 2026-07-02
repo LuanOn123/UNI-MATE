@@ -18,7 +18,7 @@ export type User = {
   onboardingCompleted: boolean;
   twoFactorEnabled?: boolean;
   onboarding?: Record<string, any>;
-  location?: { coordinates: [number, number]; addressLabel?: string };
+  location?: { coordinates: [number, number]; addressLabel?: string; source?: "gps" | "manual" };
   matchMeta?: { score: number; reasons: string[]; commonTags: string[]; commonCafeStyles: string[] };
 };
 
@@ -67,7 +67,23 @@ export type Message = {
   _id: string;
   room: string;
   sender: User | string;
+  senderId?: string;
+  mine?: boolean;
   text: string;
   readBy: string[];
+  createdAt: string;
+};
+
+export type NotificationItem = {
+  _id: string;
+  type: "message" | "incoming_like" | "cafe_proposal" | "cafe_rejected" | "match_cancelled" | string;
+  title: string;
+  body?: string;
+  data?: {
+    actorId?: string;
+    actor?: Partial<User>;
+    [key: string]: unknown;
+  };
+  readAt?: string;
   createdAt: string;
 };

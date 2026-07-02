@@ -1,4 +1,4 @@
-import { Camera, CheckCircle, ChevronRight, Coffee, LocateFixed, MapPin } from "lucide-react";
+﻿import { Camera, CheckCircle, ChevronRight, Coffee, LocateFixed, MapPin } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import { Chip } from "../../components/ui/Chip";
 import { Input } from "../../components/ui/Input";
 import { api } from "../../lib/api";
 import { useAuthStore } from "../../stores/authStore";
+import { cities, districtsFor, findLocation, manualLocationPayload } from "../../utils/locationOptions";
 import { cafeStyles, goals, interests, preferredTimes, priorities } from "../../utils/options";
 
 const steps = [
@@ -38,7 +39,7 @@ const initial = {
   personality: { introvertExtrovert: 3, talkListen: 3, newPeopleComfort: 3, studyChillBalance: 3, plannedSpontaneous: 3 },
   interests: [] as string[],
   preferences: { preferredGender: "all", ageRange: { min: 18, max: 28 }, maxDistanceKm: 10, priorities: ["nearby", "same_interest"] as string[] },
-  location: { lat: 10.7769, lng: 106.7009, addressLabel: "TP.HCM" }
+  location: { lat: 10.7769, lng: 106.7009, addressLabel: "TP.HCM", source: "manual" }
 };
 
 function toggle(list: string[], value: string) {
@@ -65,6 +66,13 @@ export function OnboardingPage() {
   const index = Math.max(0, steps.indexOf(location.pathname === "/onboarding" ? "/onboarding/basic-info" : location.pathname));
   const progress = ((index + 1) / steps.length) * 100;
   const age = useMemo(() => calculateAge(data.birthDate), [data.birthDate]);
+  const selectedLocation = findLocation(data.location.addressLabel);
+  const districtChoices = districtsFor(selectedLocation.city);
+
+  const chooseManualLocation = (label: string) => {
+    const choice = findLocation(label);
+    setData({ ...data, location: manualLocationPayload(choice) });
+  };
 
   const next = () => {
     setError("");
@@ -239,14 +247,26 @@ export function OnboardingPage() {
               {index === 6 && (
                 <section className="space-y-4">
                   <h2 className="text-2xl font-black">Khu vực cafe</h2>
-                  <p className="text-coffee/70">Bật GPS để gợi ý gần hơn. Nếu không muốn chia sẻ vị trí, bạn có thể dùng khu vực thủ công.</p>
-                  <Button icon={<LocateFixed />} onClick={() => navigator.geolocation?.getCurrentPosition((pos) => setData({ ...data, location: { lat: pos.coords.latitude, lng: pos.coords.longitude, addressLabel: "GPS hiện tại" } }), () => setError("Không lấy được GPS, đang dùng vị trí thủ công."))}>
-                    Lấy GPS
+                  <p className="text-coffee/70">Bạn có thể dùng GPS thật hoặc chọn khu vực thủ công. Cả hai cách đều dùng được cho Discovery và Match.</p>
+                  <Button icon={<LocateFixed />} onClick={() => navigator.geolocation?.getCurrentPosition((pos) => setData({ ...data, location: { lat: pos.coords.latitude, lng: pos.coords.longitude, addressLabel: "GPS hiện tại", source: "gps" } }), () => setError("Không lấy được GPS, bạn có thể chọn khu vực thủ công bên dưới."))}>
+                    Dùng GPS thật
                   </Button>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <Input value={data.location.addressLabel} onChange={(e) => setData({ ...data, location: { ...data.location, addressLabel: e.target.value } })} />
-                    <Input type="number" value={data.location.lat} onChange={(e) => setData({ ...data, location: { ...data.location, lat: Number(e.target.value) } })} />
-                    <Input type="number" value={data.location.lng} onChange={(e) => setData({ ...data, location: { ...data.location, lng: Number(e.target.value) } })} />
+                  <p className={`rounded-lg p-3 text-sm font-semibold ${data.location.source === "gps" ? "bg-mint text-cocoa" : "bg-latte text-cocoa"}`}>
+                    {data.location.source === "gps" ? "Đang dùng GPS thật." : `Đang dùng khu vực: ${data.location.addressLabel}.`}
+                  </p>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="grid gap-2 text-sm font-bold text-coffee">
+                      Thành phố
+                      <select className="rounded-lg border border-coffee/15 bg-white p-3 outline-none focus:ring-4 focus:ring-caramel/30" value={selectedLocation.city} onChange={(e) => chooseManualLocation(districtsFor(e.target.value)[0].label)}>
+                        {cities.map((city) => <option key={city} value={city}>{city}</option>)}
+                      </select>
+                    </label>
+                    <label className="grid gap-2 text-sm font-bold text-coffee">
+                      Quận / khu vực
+                      <select className="rounded-lg border border-coffee/15 bg-white p-3 outline-none focus:ring-4 focus:ring-caramel/30" value={selectedLocation.label} onChange={(e) => chooseManualLocation(e.target.value)}>
+                        {districtChoices.map((choice) => <option key={choice.label} value={choice.label}>{choice.district}</option>)}
+                      </select>
+                    </label>
                   </div>
                 </section>
               )}

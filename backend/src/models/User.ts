@@ -4,7 +4,8 @@ const locationSchema = new Schema(
   {
     type: { type: String, enum: ["Point"], default: "Point" },
     coordinates: { type: [Number], default: [0, 0] },
-    addressLabel: String
+    addressLabel: String,
+    source: { type: String, enum: ["gps", "manual"], default: "manual" }
   },
   { _id: false }
 );

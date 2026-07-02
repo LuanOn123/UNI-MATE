@@ -1,5 +1,3 @@
-import { Coffee } from "lucide-react";
-
 type Props = {
   value?: number;
   size?: "sm" | "md" | "lg";
@@ -9,9 +7,9 @@ type Props = {
 export function CoffeeMeter({ value = 0, size = "md", label }: Props) {
   const score = Math.max(0, Math.min(100, Math.round(value)));
   const sizes = {
-    sm: { cup: "h-10 w-9", text: "text-[10px]", icon: "h-3.5 w-3.5" },
-    md: { cup: "h-14 w-12", text: "text-xs", icon: "h-4 w-4" },
-    lg: { cup: "h-20 w-16", text: "text-sm", icon: "h-5 w-5" }
+    sm: { cup: "h-10 w-9", score: "text-[10px]" },
+    md: { cup: "h-14 w-12", score: "text-xs" },
+    lg: { cup: "h-20 w-16", score: "text-sm" }
   }[size];
 
   return (
@@ -25,14 +23,11 @@ export function CoffeeMeter({ value = 0, size = "md", label }: Props) {
           />
           <div className="absolute inset-x-2 top-1 h-1 rounded-full bg-coffee/18" />
           <div className="absolute inset-0 grid place-items-center">
-            <Coffee className={`${sizes.icon} ${score > 48 ? "text-white" : "text-coffee"}`} />
+            <span className={`font-black ${sizes.score} ${score > 48 ? "text-white" : "text-coffee"}`}>{score}</span>
           </div>
         </div>
       </div>
-      <div className="leading-tight">
-        <p className={`font-black text-cocoa ${sizes.text}`}>{score}%</p>
-        {label ? <p className="text-[10px] font-bold uppercase tracking-wide text-coffee/55">{label}</p> : null}
-      </div>
+      {label ? <p className="text-[10px] font-bold uppercase tracking-wide text-coffee/55">{label}</p> : null}
     </div>
   );
 }
