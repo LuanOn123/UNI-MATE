@@ -1,4 +1,4 @@
-import { ExternalLink, MapPin, Star, Wifi } from "lucide-react";
+import { ExternalLink, MapPin, Star, Wifi, Ticket } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -10,9 +10,11 @@ import type { Place } from "../../types";
 export function PlaceDetailPage() {
   const { placeId } = useParams();
   const [place, setPlace] = useState<Place | null>(null);
+  const [vouchers, setVouchers] = useState<any[]>([]);
 
   useEffect(() => {
     api.get(`/places/${placeId}`).then((r) => setPlace(r.data.place));
+    api.get(`/places/${placeId}/vouchers`).then((r) => setVouchers(r.data.vouchers)).catch(() => {});
   }, [placeId]);
 
   if (!place) return <div className="p-6"><StateBlock title="Đang tải quán" text="Thông tin quán cafe sẽ hiển thị trong giây lát." /></div>;
@@ -51,6 +53,30 @@ export function PlaceDetailPage() {
             </div>
           ) : null}
           {place.tags?.length ? <div className="mt-5 flex flex-wrap gap-2">{place.tags.map((tag) => <span key={tag} className="rounded-full bg-latte px-3 py-1 text-sm font-bold text-cocoa">{tag}</span>)}</div> : null}
+          
+          {vouchers.length > 0 && (
+            <div className="mt-6 rounded-xl border border-caramel/20 bg-latte/30 p-5">
+              <h2 className="mb-3 flex items-center gap-2 font-black text-caramel">
+                <Ticket className="h-5 w-5" /> Ưu đãi từ quán
+              </h2>
+              <div className="space-y-3">
+                {vouchers.map(v => (
+                  <div key={v._id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-coffee/10 bg-white p-3 shadow-sm">
+                    <div>
+                      <p className="font-bold text-cocoa">{v.title}</p>
+                      {v.description && <p className="mt-0.5 text-xs text-coffee/60">{v.description}</p>}
+                      <p className="mt-1 text-xs font-semibold text-coffee/40">HSD: {new Date(v.expiresAt).toLocaleDateString("vi-VN")}</p>
+                    </div>
+                    <div className="rounded border-2 border-dashed border-caramel/40 bg-cream px-3 py-1.5 text-center">
+                      <p className="text-[10px] font-bold text-coffee/50">MÃ GIẢM {v.discountPercent}%</p>
+                      <p className="font-black tracking-wider text-caramel">{v.code}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {place.mapsUrl ? <a href={place.mapsUrl} target="_blank" rel="noreferrer"><Button className="mt-6" icon={<ExternalLink />}>Mở bản đồ</Button></a> : null}
         </div>
       </motion.article>
