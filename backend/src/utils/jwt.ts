@@ -5,13 +5,13 @@ export type JwtUser = {
   id?: string;
   _id?: unknown;
   email: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "partner";
 };
 
 export type JwtPayload = {
   userId: string;
   email: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "partner";
 };
 
 function toPayload(user: JwtUser): JwtPayload {

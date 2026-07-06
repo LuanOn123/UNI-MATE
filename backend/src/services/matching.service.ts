@@ -1,4 +1,4 @@
-﻿import mongoose from "mongoose";
+import mongoose from "mongoose";
 import { Match } from "../models/Match.js";
 import { Notification } from "../models/Notification.js";
 import { Swipe } from "../models/Swipe.js";
@@ -27,25 +27,84 @@ function hasUsableLocation(user: any) {
   return hasCoords && (user.location?.source === "gps" || user.location?.source === "manual" || Boolean(user.location?.addressLabel));
 }
 
+/** Haversine distance in km between two [lng, lat] coordinate pairs */
+function haversineKm(coordsA: [number, number], coordsB: [number, number]): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const [lngA, latA] = coordsA;
+  const [lngB, latB] = coordsB;
+  const dLat = toRad(latB - latA);
+  const dLng = toRad(lngB - lngA);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(latA)) * Math.cos(toRad(latB)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Score a candidate against the current user.
+ *
+ * Scoring weights (total ~100):
+ *   - Distance proximity:      0–25  (closer = more points, weighted highest)
+ *   - Cafe style overlap:      0–20
+ *   - Interest/vibe overlap:   0–15
+ *   - Goal overlap:            0–10
+ *   - Major match/preference:  0–10
+ *   - Vibe space match:         0–5
+ *   - Age proximity:            0–10
+ *   - Active recency bonus:       5
+ */
 export function scoreUsers(me: any, candidate: any) {
   const interests = overlap(me.onboarding?.interests, candidate.onboarding?.interests);
   const styles = overlap(me.onboarding?.cafeStyles, candidate.onboarding?.cafeStyles);
   const goals = overlap(me.onboarding?.goals, candidate.onboarding?.goals);
   const times = overlap(me.onboarding?.preferredTimes, candidate.onboarding?.preferredTimes);
   let score = 0;
-  score += Math.min(25, styles.length * 9);
-  score += hasUsableLocation(me) && hasUsableLocation(candidate) ? 20 : 8;
-  score += Math.max(0, 15 - Math.abs((me.age ?? 25) - (candidate.age ?? 25)) * 2);
+
+  // --- Distance score (0-25): Closer = higher score ---
+  if (hasUsableLocation(me) && hasUsableLocation(candidate)) {
+    const dist = haversineKm(me.location.coordinates, candidate.location.coordinates);
+    // 0km → 25pts, 5km → 18pts, 10km → 12pts, 20km → 0pts
+    score += Math.max(0, Math.round(25 * (1 - dist / 20)));
+  } else {
+    score += 5; // fallback if no location
+  }
+
+  // --- Cafe style overlap (0-20) ---
+  score += Math.min(20, styles.length * 7);
+
+  // --- Interest/vibe tag overlap (0-15) ---
+  score += Math.min(15, interests.length * 5);
+
+  // --- Goal overlap (0-10) ---
   score += Math.min(10, goals.length * 5);
-  if (me.major && candidate.major && me.major === candidate.major) score += 10;
-  score += Math.min(10, interests.length * 4);
-  score += Math.min(5, times.length * 3);
+
+  // --- Major match & preference (0-10) ---
+  const myMajorPref = me.onboarding?.majorPreference;
+  const sameMajor = me.major && candidate.major && me.major === candidate.major;
+  const diffMajor = me.major && candidate.major && me.major !== candidate.major;
+  if (myMajorPref === "same" && sameMajor) score += 10;
+  else if (myMajorPref === "different" && diffMajor) score += 10;
+  else if (myMajorPref === "any" && (sameMajor || diffMajor)) score += 5;
+  else if (!myMajorPref && sameMajor) score += 8; // legacy fallback
+
+  // --- Vibe space match (0-5) ---
+  if (me.onboarding?.vibePreference && me.onboarding.vibePreference === candidate.onboarding?.vibePreference) {
+    score += 5;
+  }
+
+  // --- Age proximity (0-10) ---
+  score += Math.max(0, 10 - Math.abs((me.age ?? 25) - (candidate.age ?? 25)) * 2);
+
+  // --- Active recency bonus (0-5) ---
   if (candidate.lastSeenAt && Date.now() - new Date(candidate.lastSeenAt).getTime() < 7 * 24 * 3600 * 1000) score += 5;
+
+  // --- Time overlap small bonus ---
+  score += Math.min(5, times.length * 2);
+
   const reasons = [
     interests.length ? `Chung sở thích: ${interests.slice(0, 2).join(", ")}` : "",
     styles.length ? `Cùng gu cafe: ${styles.slice(0, 2).join(", ")}` : "",
     goals.length ? `Cùng mục tiêu: ${goals.slice(0, 2).join(", ")}` : "",
-    me.major && me.major === candidate.major ? "Cùng ngành hoặc lĩnh vực liên quan" : ""
+    sameMajor ? "Cùng ngành hoặc lĩnh vực liên quan" : "",
+    me.onboarding?.vibePreference && me.onboarding.vibePreference === candidate.onboarding?.vibePreference ? "Cùng vibe không gian" : ""
   ].filter(Boolean);
   return { score: Math.min(100, Math.round(score)), reasons, commonTags: interests, commonCafeStyles: styles };
 }
@@ -68,6 +127,13 @@ export async function getDiscoveryFeed(userId: string) {
     "location.coordinates.1": { $ne: 0 }
   };
   if (prefs?.ageRange) query.age = { $gte: prefs.ageRange.min, $lte: prefs.ageRange.max };
+
+  // --- Hard Filter: Purpose must overlap (at least one in common) ---
+  const myPurpose = me.onboarding?.purpose;
+  if (myPurpose && Array.isArray(myPurpose) && myPurpose.length > 0) {
+    query["onboarding.purpose"] = { $in: myPurpose };
+  }
+
   let users: any[] = [];
   if (hasUsableLocation(me)) {
     const coordinates = me.location?.coordinates;

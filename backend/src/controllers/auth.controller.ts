@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { env } from "../config/env.js";
 import { User } from "../models/User.js";
-import { loginWithPassword, logout, refreshToken, registerWithPassword, sendEmailOtp, verifyEmailOtp } from "../services/auth.service.js";
+import { loginWithPassword, logout, refreshToken, registerPartnerWithPassword, registerWithPassword, sendEmailOtp, verifyEmailOtp } from "../services/auth.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 function publicUser(user: any) {
@@ -32,6 +32,12 @@ function setRefreshCookie(res: Response, token: string) {
 
 export const registerController = asyncHandler(async (req: Request, res: Response) => {
   const { user, accessToken, refreshToken } = await registerWithPassword(req.body.email, req.body.password);
+  setRefreshCookie(res, refreshToken);
+  res.status(201).json({ success: true, data: { user, accessToken, refreshToken } });
+});
+
+export const registerPartnerController = asyncHandler(async (req: Request, res: Response) => {
+  const { user, accessToken, refreshToken } = await registerPartnerWithPassword(req.body.email, req.body.password, req.body.partnerName);
   setRefreshCookie(res, refreshToken);
   res.status(201).json({ success: true, data: { user, accessToken, refreshToken } });
 });

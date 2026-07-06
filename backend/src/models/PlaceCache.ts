@@ -10,7 +10,7 @@ const placeCacheSchema = new Schema(
     rating: Number,
     userRatingsTotal: Number,
     priceLevel: { type: String, enum: ["$", "$$", "$$$", "$$$$"], default: "$$" },
-    status: { type: String, enum: ["active", "hidden"], default: "active", index: true },
+    status: { type: String, enum: ["active", "hidden", "pending"], default: "active", index: true },
     tags: [{ type: String }],
     amenities: [{ type: String }],
     openingHours: String,
@@ -22,7 +22,12 @@ const placeCacheSchema = new Schema(
     location: {
       type: { type: String, enum: ["Point"], default: "Point" },
       coordinates: { type: [Number], required: true }
-    }
+    },
+    // --- Partner cafe fields ---
+    isPartnerPlace: { type: Boolean, default: false },
+    partnerId: { type: Schema.Types.ObjectId, ref: "User", sparse: true },
+    partnerName: String,
+    cafeVibe: { type: String, enum: ["quiet_study", "acoustic_view", "boardgame_lively"] }
   },
   { timestamps: true }
 );
