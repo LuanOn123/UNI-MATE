@@ -12,7 +12,8 @@ import { AuthShell } from "./AuthShell";
 
 const schema = z.object({
   email: z.string().email("Email không hợp lệ"),
-  password: z.string().min(8, "Mật khẩu tối thiểu 8 ký tự")
+  password: z.string().min(8, "Mật khẩu tối thiểu 8 ký tự"),
+  confirmPassword: z.string().optional()
 });
 type FormData = z.infer<typeof schema>;
 
@@ -21,7 +22,15 @@ export function AuthPage() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { user, accessToken, isLoading, login, register: registerUser } = useAuthStore();
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) });
+
+  const formSchema = mode === "register"
+    ? schema.refine((data) => data.password === data.confirmPassword, {
+        message: "Mật khẩu xác nhận không khớp",
+        path: ["confirmPassword"]
+      })
+    : schema;
+
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(formSchema) });
 
   if (user && accessToken) {
     return <Navigate to={user.role === "admin" ? "/admin/dashboard" : user.onboardingCompleted ? "/app/discovery" : "/onboarding"} replace />;
@@ -74,6 +83,12 @@ export function AuthPage() {
           {errors.email ? <p className="text-sm text-rose-600">{errors.email.message}</p> : null}
           <Input type="password" placeholder="Mật khẩu" autoComplete={mode === "login" ? "current-password" : "new-password"} {...register("password")} />
           {errors.password ? <p className="text-sm text-rose-600">{errors.password.message}</p> : null}
+          {mode === "register" && (
+            <>
+              <Input type="password" placeholder="Xác nhận mật khẩu" autoComplete="new-password" {...register("confirmPassword")} />
+              {errors.confirmPassword ? <p className="text-sm text-rose-600">{errors.confirmPassword.message}</p> : null}
+            </>
+          )}
           {error ? <p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p> : null}
           <Button className="w-full" disabled={isLoading}>
             {isLoading ? "Đang xử lý..." : mode === "login" ? "Đăng nhập" : "Tạo hồ sơ"}

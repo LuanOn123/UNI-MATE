@@ -5,7 +5,7 @@ import { verifyAccessToken } from "../utils/tokens.js";
 declare global {
   namespace Express {
     interface Request {
-      user?: { id: string; email: string; role: "user" | "admin" };
+      user?: { id: string; email: string; role: "user" | "admin" | "partner" };
     }
   }
 }
@@ -21,7 +21,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     if (user.status === "banned" || user.status === "suspended") {
       return res.status(403).json({ success: false, message: "Tài khoản của bạn đang bị khóa" });
     }
-    req.user = { id: String(user._id), email: user.email, role: user.role as "user" | "admin" };
+    req.user = { id: String(user._id), email: user.email, role: user.role as "user" | "admin" | "partner" };
     next();
   } catch {
     res.status(401).json({ success: false, message: "Invalid or expired token" });

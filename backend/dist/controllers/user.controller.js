@@ -17,12 +17,16 @@ export const completeOnboarding = asyncHandler(async (req, res) => {
         avatarUrl: req.body.avatarUrl,
         profilePhotos: (req.body.profilePhotos ?? []).filter(Boolean),
         onboardingCompleted: true,
+        disclaimerAccepted: req.body.disclaimerAccepted ?? false,
         onboarding: {
             goals: req.body.goals,
             preferredTimes: req.body.preferredTimes,
             cafeStyles: req.body.cafeStyles,
             budgetRange: req.body.budgetRange,
             frequency: req.body.frequency,
+            purpose: req.body.purpose,
+            majorPreference: req.body.majorPreference,
+            vibePreference: req.body.vibePreference,
             personality: req.body.personality,
             interests: req.body.interests,
             preferences: req.body.preferences
