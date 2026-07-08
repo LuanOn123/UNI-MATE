@@ -12,6 +12,12 @@ function userId(user?: User | null) {
   return user?._id ?? user?.id ?? "";
 }
 
+function formatRoadDistance(meters?: number | null) {
+  if (meters === null || meters === undefined) return "N/A";
+  if (meters >= 1000) return `${(meters / 1000).toFixed(1)}km`;
+  return `${Math.round(meters)}m`;
+}
+
 export function DiscoveryPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,8 +118,12 @@ export function DiscoveryPage() {
                       <h2 className="text-4xl font-black">{user.displayName || "UNI-MATE user"}, {user.age ?? "18+"}</h2>
                       <p className="mt-1 font-semibold text-white/82">{user.school || "Sinh viên"} {user.major ? `· ${user.major}` : ""}</p>
                     </div>
-                    <div className="rounded-lg bg-white/92 px-3 py-2 text-cocoa">
-                      <CoffeeMeter value={meta?.score ?? 70} size="sm" label="match" />
+                    <div className="flex shrink-0 items-center gap-2 rounded-lg bg-white/92 px-3 py-2 text-cocoa">
+                      <CoffeeMeter value={meta?.score ?? 70} size="sm" />
+                      <div className="leading-tight">
+                        <p className="text-sm font-black">{meta?.score ?? 70}</p>
+                        <p className="text-[10px] font-bold uppercase text-coffee/55">Match</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -123,6 +133,13 @@ export function DiscoveryPage() {
                 <div className="flex flex-wrap gap-2">
                   {tags.length ? tags.map((tag) => <span key={tag} className="rounded-full bg-cream px-3 py-1 text-sm font-bold text-coffee">{tag}</span>) : <span className="rounded-full bg-cream px-3 py-1 text-sm font-bold text-coffee">Gu cafe gần bạn</span>}
                 </div>
+                {meta?.durationMinutes !== null && meta?.durationMinutes !== undefined ? (
+                  <div className="mt-3 grid gap-2 rounded-lg bg-latte/60 p-3 text-sm font-bold text-cocoa sm:grid-cols-3">
+                    <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-caramel" /> {meta.durationMinutes} phút</span>
+                    <span>Đường đi: {formatRoadDistance(meta.distanceMeters)}</span>
+                    <span>Điểm KC: {meta.distanceScore ?? 0}</span>
+                  </div>
+                ) : null}
                 <ul className="mt-4 space-y-2 text-sm font-medium text-coffee/78">
                   {(meta?.reasons ?? ["Có gu cafe và khu vực phù hợp với bạn"]).slice(0, expanded ? 6 : 3).map((reason) => (
                     <li key={reason} className="flex gap-2"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-caramel" />{reason}</li>
@@ -205,8 +222,18 @@ export function DiscoveryPage() {
                 </div>
                 <button type="button" onClick={() => setDetailOpen(false)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-cream text-coffee"><X /></button>
               </div>
-              <div className="mt-5 rounded-lg bg-cream p-4">
-                <CoffeeMeter value={meta?.score ?? 70} size="lg" label="độ hợp gu" />
+              <div className="mt-5 flex items-center gap-4 rounded-lg bg-cream p-4">
+                <div className="shrink-0">
+                  <CoffeeMeter value={meta?.score ?? 70} size="lg" />
+                </div>
+                <div className="min-w-0 text-sm font-semibold text-coffee/70">
+                  <p className="text-base font-black text-cocoa">Điểm match tổng: {meta?.score ?? 70}</p>
+                  {meta?.durationMinutes !== null && meta?.durationMinutes !== undefined ? (
+                    <p className="mt-1">Ước tính: {meta.durationMinutes} phút · {formatRoadDistance(meta.distanceMeters)} · điểm khoảng cách {meta.distanceScore ?? 0}</p>
+                  ) : (
+                    <p className="mt-1">Đang cập nhật điểm khoảng cách.</p>
+                  )}
+                </div>
               </div>
               <div className="mt-5 grid gap-3 text-sm font-medium text-coffee/75">
                 <p><b>Cung:</b> {user.zodiac || "Đang cập nhật"}</p>
@@ -232,3 +259,4 @@ export function DiscoveryPage() {
     </div>
   );
 }
+

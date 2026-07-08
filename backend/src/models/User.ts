@@ -57,7 +57,7 @@ const userSchema = new Schema(
     profilePhotos: [{ type: String }],
     onboardingCompleted: { type: Boolean, default: false },
     disclaimerAccepted: { type: Boolean, default: false },
-    location: { type: locationSchema, index: "2dsphere" },
+    location: { type: locationSchema },
     onboarding: { type: onboardingSchema, default: {} },
     blockedUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     refreshTokenHash: String,
@@ -69,6 +69,7 @@ const userSchema = new Schema(
 );
 
 userSchema.index({ role: 1, status: 1, isActive: 1 });
+userSchema.index({ location: "2dsphere" });
 
 export type UserDoc = InferSchemaType<typeof userSchema> & { _id: mongoose.Types.ObjectId };
 export const User = mongoose.model("User", userSchema);
