@@ -19,7 +19,18 @@ export type User = {
   twoFactorEnabled?: boolean;
   onboarding?: Record<string, any>;
   location?: { coordinates: [number, number]; addressLabel?: string; source?: "gps" | "manual" };
-  matchMeta?: { score: number; reasons: string[]; commonTags: string[]; commonCafeStyles: string[] };
+  matchMeta?: {
+    score: number;
+    reasons: string[];
+    commonTags: string[];
+    commonCafeStyles: string[];
+    distanceScore?: number;
+    distanceMeters?: number | null;
+    durationSeconds?: number | null;
+    durationMinutes?: number | null;
+    rdr?: number | null;
+    barrierSensitive?: boolean;
+  };
 };
 
 export type Place = {
