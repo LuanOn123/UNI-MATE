@@ -9,5 +9,6 @@ backend/.env
 dist/
 backend/dist/
 frontend/dist/
+backend/uploads/
 
 .DS_Store

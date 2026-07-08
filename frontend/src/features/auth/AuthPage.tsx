@@ -12,7 +12,11 @@ import { AuthShell } from "./AuthShell";
 
 const schema = z.object({
   email: z.string().email("Email không hợp lệ"),
-  password: z.string().min(8, "Mật khẩu tối thiểu 8 ký tự"),
+  password: z.string()
+    .min(8, "Mật khẩu tối thiểu 8 ký tự")
+    .regex(/[a-z]/, "Mật khẩu cần có ít nhất 1 chữ thường")
+    .regex(/[A-Z]/, "Mật khẩu cần có ít nhất 1 chữ hoa")
+    .regex(/[0-9]/, "Mật khẩu cần có ít nhất 1 số"),
   confirmPassword: z.string().optional()
 });
 type FormData = z.infer<typeof schema>;
@@ -82,6 +86,11 @@ export function AuthPage() {
           <Input placeholder="you@school.edu.vn" autoComplete="email" {...register("email")} />
           {errors.email ? <p className="text-sm text-rose-600">{errors.email.message}</p> : null}
           <Input type="password" placeholder="Mật khẩu" autoComplete={mode === "login" ? "current-password" : "new-password"} {...register("password")} />
+          {mode === "register" ? (
+            <p className="rounded-lg bg-cream/70 px-3 py-2 text-xs font-semibold leading-relaxed text-coffee/65">
+              Mật khẩu cần tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số. Ví dụ: <span className="font-black text-cocoa">Test12345</span>
+            </p>
+          ) : null}
           {errors.password ? <p className="text-sm text-rose-600">{errors.password.message}</p> : null}
           {mode === "register" && (
             <>
