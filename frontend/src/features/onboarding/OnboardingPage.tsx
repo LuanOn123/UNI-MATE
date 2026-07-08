@@ -1,6 +1,7 @@
 import { Camera, CheckCircle, ChevronRight, Coffee, LocateFixed, MapPin, ShieldCheck } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import Lottie from "lottie-react";
+import { useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Chip } from "../../components/ui/Chip";
@@ -9,6 +10,31 @@ import { api } from "../../lib/api";
 import { useAuthStore } from "../../stores/authStore";
 import { cities, districtsFor, findLocation, manualLocationPayload } from "../../utils/locationOptions";
 import { cafeStyles, goals, interestGroups, majorCategories, majorPreferenceOptions, preferredTimes, priorities, purposeOptions, vibeSpaceOptions } from "../../utils/options";
+import boardgameAnimation from "../../assets/lordicons/boardgame.json";
+import cameraAnimation from "../../assets/lordicons/wired-flat-61-camera-hover-flash.json";
+import coffeeAnimation from "../../assets/lordicons/coffe.json";
+import datingAnimation from "../../assets/lordicons/dating.json";
+import differentMajorAnimation from "../../assets/lordicons/khac nganh.json";
+import mapAnimation from "../../assets/lordicons/map.json";
+import messageAnimation from "../../assets/lordicons/message.json";
+import musicAnimation from "../../assets/lordicons/music.json";
+import personAnimation from "../../assets/lordicons/person.json";
+import studyAnimation from "../../assets/lordicons/study.json";
+import subjectAnimation from "../../assets/lordicons/subject.json";
+
+const bookIcon = studyAnimation;
+const cameraIcon = cameraAnimation;
+const chatIcon = messageAnimation;
+const coffeeIcon = coffeeAnimation;
+const controllerIcon = boardgameAnimation;
+const diceIcon = boardgameAnimation;
+const diplomaIcon = subjectAnimation;
+const heartIcon = datingAnimation;
+const mapIcon = mapAnimation;
+const musicIcon = musicAnimation;
+const paletteIcon = differentMajorAnimation;
+const ticketIcon = messageAnimation;
+const userIcon = personAnimation;
 
 const steps = [
   "/onboarding/disclaimer",
@@ -25,6 +51,41 @@ const steps = [
 ];
 
 const labels = ["Điều khoản", "Cơ bản", "Mục đích", "Mục tiêu", "Cafe", "Tính cách", "Sở thích", "Vibe", "Gu tìm", "Khu vực", "Xong"];
+
+const purposeMeta: Record<string, { icon: object; title: string; desc: string; tone: string }> = {
+  study_buddy: { icon: bookIcon, title: "Study Buddy", desc: "Cùng nhau học bài, làm deadline, ôn thi.", tone: "from-amber-50 to-emerald-50" },
+  cafe_chat: { icon: coffeeIcon, title: "Cafe Chat", desc: "Gặp một người hợp vibe để trò chuyện nhẹ nhàng.", tone: "from-orange-50 to-rose-50" },
+  boardgame_sport: { icon: diceIcon, title: "Boardgame Mate", desc: "Vui hơn, nhiều năng lượng hơn, dễ phá băng.", tone: "from-yellow-50 to-sky-50" },
+  dating: { icon: heartIcon, title: "Dating Mate", desc: "Tìm một kết nối có thể tiến xa hơn.", tone: "from-rose-50 to-pink-50" }
+};
+
+const genderPreferenceCards = [
+  { value: "all", title: "Tất cả", desc: "Mở rộng cơ hội gặp người hợp gu.", icon: userIcon },
+  { value: "same", title: "Cùng giới", desc: "Ưu tiên người có giới tính giống bạn.", icon: chatIcon },
+  { value: "opposite", title: "Khác giới", desc: "Ưu tiên người khác giới tính.", icon: heartIcon }
+];
+
+const majorPreferenceCards = [
+  { value: "same", title: "Cùng ngành", desc: "Dễ trao đổi bài vở và kinh nghiệm học tập.", icon: diplomaIcon },
+  { value: "different", title: "Khác ngành", desc: "Mở rộng góc nhìn, nói chuyện có nhiều màu sắc.", icon: paletteIcon },
+  { value: "any", title: "Hợp gu là duyệt", desc: "Không quá nặng ngành học, ưu tiên vibe.", icon: ticketIcon }
+];
+
+const priorityMeta: Record<string, { label: string; icon: object }> = {
+  nearby: { label: "Gần mình", icon: mapIcon },
+  same_interest: { label: "Chung sở thích", icon: musicIcon },
+  same_school: { label: "Cùng trường", icon: diplomaIcon },
+  same_major: { label: "Cùng ngành", icon: bookIcon },
+  same_cafe_style: { label: "Cùng gu cafe", icon: coffeeIcon },
+  same_goal: { label: "Cùng mục tiêu", icon: chatIcon },
+  complement_personality: { label: "Bù trừ tính cách", icon: heartIcon }
+};
+
+const vibeMeta: Record<string, { icon: object; title: string; desc: string }> = {
+  quiet_study: { icon: bookIcon, title: "Yên tĩnh học bài", desc: "Hợp laptop, sách vở, tập trung." },
+  acoustic_view: { icon: musicIcon, title: "Acoustic / view đẹp", desc: "Hợp nói chuyện, chụp ảnh, chill." },
+  boardgame_lively: { icon: controllerIcon, title: "Náo nhiệt boardgame", desc: "Hợp phá băng và vui vẻ." }
+};
 
 const initial = {
   disclaimerAccepted: false,
@@ -63,6 +124,71 @@ function calculateAge(date: string) {
   return age;
 }
 
+type MateChoiceProps = {
+  title: string;
+  desc?: string;
+  icon: object;
+  selected?: boolean;
+  onClick: () => void;
+  compact?: boolean;
+};
+
+function AnimatedMateIcon({ icon, className, loop = false }: { icon: object; className: string; loop?: boolean }) {
+  const lottieRef = useRef<any>(null);
+
+  return (
+    <Lottie
+      lottieRef={lottieRef}
+      animationData={icon}
+      loop={loop}
+      autoplay
+      className={className}
+      onComplete={() => {
+        if (loop) return;
+        const totalFrames = lottieRef.current?.getDuration?.(true);
+        if (totalFrames) lottieRef.current?.goToAndStop?.(totalFrames - 1, true);
+      }}
+    />
+  );
+}
+
+function MateChoiceCard({ title, desc, icon, selected, onClick, compact }: MateChoiceProps) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={{ y: -2, scale: 1.01 }}
+      whileTap={{ scale: 0.96, rotate: selected ? 0 : -1.5 }}
+      className={`group relative overflow-hidden rounded-lg border px-3.5 py-3 text-left transition ${
+        selected ? "border-caramel bg-latte/80 shadow-[0_12px_26px_rgba(217,119,6,0.14)]" : "border-coffee/10 bg-white hover:border-caramel/40 hover:bg-cream/45"
+      }`}
+    >
+      <span className={`absolute right-3 top-3 h-2 w-2 rounded-full transition ${selected ? "bg-caramel" : "bg-coffee/10"}`} />
+      <span className="pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full bg-caramel/8 opacity-0 transition group-hover:opacity-100" />
+      <span className="flex items-start gap-3">
+        <motion.span
+          animate={selected ? { rotate: [0, -5, 4, 0], scale: [1, 1.08, 1] } : { rotate: 0, scale: 1 }}
+          transition={{ duration: 0.55 }}
+          className={`grid shrink-0 place-items-center ${compact ? "h-9 w-9" : "h-11 w-11"}`}
+        >
+          <AnimatedMateIcon icon={icon} loop={selected} className={compact ? "h-8 w-8" : "h-10 w-10"} />
+        </motion.span>
+        <span className="min-w-0">
+          <span className="block pr-4 text-sm font-black leading-snug text-cocoa">{title}</span>
+          {desc ? <span className="mt-1 block text-xs font-semibold leading-snug text-coffee/62">{desc}</span> : null}
+        </span>
+      </span>
+      {selected ? (
+        <span className="pointer-events-none absolute inset-0">
+          <span className="sparkle-pop absolute right-8 top-8 h-2 w-2 rounded-full bg-caramel" />
+          <span className="sparkle-pop absolute right-16 top-5 h-1.5 w-1.5 rounded-full bg-rose-300 [animation-delay:120ms]" />
+          <span className="sparkle-pop absolute bottom-7 right-10 h-1.5 w-1.5 rounded-full bg-mint [animation-delay:220ms]" />
+        </span>
+      ) : null}
+    </motion.button>
+  );
+}
+
 export function OnboardingPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -97,6 +223,8 @@ export function OnboardingPage() {
     if (index === 6 && data.interests.length < 3) return setError("Chọn ít nhất 3 sở thích.");
     // Step 7: Vibe
     if (index === 7 && !data.vibePreference) return setError("Chọn vibe không gian bạn mong muốn.");
+    // Step 8: Mate preference
+    if (index === 8 && data.preferences.ageRange.min > data.preferences.ageRange.max) return setError("Khoảng tuổi mong muốn chưa hợp lệ.");
     navigate(steps[Math.min(index + 1, steps.length - 1)]);
   };
 
@@ -381,8 +509,175 @@ export function OnboardingPage() {
                 </section>
               )}
 
-              {/* Step 8: Preferences */}
+              {/* Step 8: Mate Preference */}
               {index === 8 && (
+                <section className="space-y-6">
+                  <div className="relative overflow-hidden rounded-lg border border-caramel/20 bg-gradient-to-br from-latte via-white to-mint/40 p-5">
+                    <motion.div
+                      animate={{ y: [0, -7, 0], rotate: [0, 3, 0] }}
+                      transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute right-4 top-4 h-14 w-14 opacity-25"
+                    >
+                      <AnimatedMateIcon icon={cameraIcon} loop className="h-full w-full" />
+                    </motion.div>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-caramel">Mate Builder</p>
+                    <h2 className="mt-1 text-2xl font-black text-cocoa">Bạn muốn tìm mate như thế nào?</h2>
+                    <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-coffee/65">
+                      Đây là bộ tiêu chí của người bạn muốn gặp, khác với thông tin hồ sơ cá nhân của bạn.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="mb-3 font-black text-cocoa">Mục đích tìm mate</h3>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {purposeOptions.map((opt) => {
+                        const meta = purposeMeta[opt.value] ?? { icon: coffeeIcon, title: opt.label, desc: "", tone: "from-cream to-white" };
+                        return (
+                          <MateChoiceCard
+                            key={opt.value}
+                            title={meta.title}
+                            desc={meta.desc}
+                            icon={meta.icon}
+                            selected={data.purpose.includes(opt.value)}
+                            onClick={() => setData({ ...data, purpose: toggle(data.purpose, opt.value) })}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="mb-3 font-black text-cocoa">Bạn muốn match với ai?</h3>
+                    <div className="grid gap-3 md:grid-cols-3">
+                      {genderPreferenceCards.map((opt) => (
+                        <MateChoiceCard
+                          key={opt.value}
+                          title={opt.title}
+                          desc={opt.desc}
+                          icon={opt.icon}
+                          compact
+                          selected={data.preferences.preferredGender === opt.value}
+                          onClick={() => setData({ ...data, preferences: { ...data.preferences, preferredGender: opt.value } })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="mb-3 font-black text-cocoa">Ngành học mong muốn</h3>
+                    <div className="grid gap-3 md:grid-cols-3">
+                      {majorPreferenceCards.map((opt) => (
+                        <MateChoiceCard
+                          key={opt.value}
+                          title={opt.title}
+                          desc={opt.desc}
+                          icon={opt.icon}
+                          compact
+                          selected={data.majorPreference === opt.value}
+                          onClick={() => setData({ ...data, majorPreference: opt.value })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="mb-3 font-black text-cocoa">Vibe gặp mặt</h3>
+                    <div className="grid gap-3 md:grid-cols-3">
+                      {vibeSpaceOptions.map((opt) => {
+                        const meta = vibeMeta[opt.value] ?? { icon: coffeeIcon, title: opt.label, desc: "" };
+                        return (
+                          <MateChoiceCard
+                            key={opt.value}
+                            title={meta.title}
+                            desc={meta.desc}
+                            icon={meta.icon}
+                            compact
+                            selected={data.vibePreference === opt.value}
+                            onClick={() => setData({ ...data, vibePreference: opt.value })}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
+                    <div className="relative overflow-hidden rounded-lg border border-coffee/10 bg-white p-5">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                          <h3 className="font-black text-cocoa">Khoảng cách tối đa</h3>
+                          <p className="text-sm font-semibold text-coffee/60">Radar sẽ ưu tiên người ở gần bạn hơn.</p>
+                        </div>
+                        <motion.div
+                          animate={{ scale: [1, 1.08, 1] }}
+                          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                          className="relative grid h-14 w-14 place-items-center rounded-full bg-latte/70"
+                        >
+                          <span className="absolute inset-1 rounded-full border border-caramel/20" />
+                          <span className="absolute inset-3 rounded-full border border-caramel/30" />
+                          <AnimatedMateIcon icon={mapIcon} loop className="relative h-8 w-8" />
+                        </motion.div>
+                      </div>
+                      <div className="rounded-lg bg-cream/70 p-4">
+                        <div className="mb-3 flex items-center justify-between">
+                          <span className="text-sm font-bold text-coffee">Bán kính tìm kiếm</span>
+                          <span className="rounded-full bg-caramel px-3 py-1 text-sm font-black text-white">{data.preferences.maxDistanceKm}km</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={1}
+                          max={20}
+                          value={data.preferences.maxDistanceKm}
+                          onChange={(e) => setData({ ...data, preferences: { ...data.preferences, maxDistanceKm: Number(e.target.value) } })}
+                          className="w-full accent-caramel"
+                        />
+                        <div className="mt-2 flex justify-between text-xs font-bold text-coffee/45">
+                          <span>1km</span>
+                          <span>5km</span>
+                          <span>10km</span>
+                          <span>20km</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-coffee/10 bg-white p-5">
+                      <h3 className="font-black text-cocoa">Độ tuổi mong muốn</h3>
+                      <p className="mb-4 text-sm font-semibold text-coffee/60">Giữ khoảng tuổi hợp lý để Discovery không bị quá hẹp.</p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="grid gap-2 text-sm font-bold text-coffee">
+                          Từ tuổi
+                          <Input type="number" min={18} value={data.preferences.ageRange.min} onChange={(e) => setData({ ...data, preferences: { ...data.preferences, ageRange: { ...data.preferences.ageRange, min: Number(e.target.value) } } })} />
+                        </label>
+                        <label className="grid gap-2 text-sm font-bold text-coffee">
+                          Đến tuổi
+                          <Input type="number" min={18} value={data.preferences.ageRange.max} onChange={(e) => setData({ ...data, preferences: { ...data.preferences, ageRange: { ...data.preferences.ageRange, max: Number(e.target.value) } } })} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="mb-3 font-black text-cocoa">Ưu tiên khi xếp hạng match</h3>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {priorities.map((p) => {
+                        const meta = priorityMeta[p] ?? { label: p, icon: ticketIcon };
+                        return (
+                          <MateChoiceCard
+                            key={p}
+                            title={meta.label}
+                            icon={meta.icon}
+                            compact
+                            selected={data.preferences.priorities.includes(p)}
+                            onClick={() => setData({ ...data, preferences: { ...data.preferences, priorities: toggle(data.preferences.priorities, p) } })}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* Step 8: Preferences */}
+              {false && index === 8 && (
                 <section className="space-y-5">
                   <h2 className="text-2xl font-black">Gu tìm kiếm</h2>
                   <div>
