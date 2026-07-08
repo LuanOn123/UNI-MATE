@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AdminAuditPage, AdminDashboardPage, AdminMatchesPage, AdminPlacesPage, AdminReportsPage, AdminTagsPage, AdminUserDetailPage, AdminUsersPage } from "../features/admin/AdminPage";
 import { AuthPage } from "../features/auth/AuthPage";
+import { PartnerAuthPage } from "../features/auth/PartnerAuthPage";
 import { OtpPage } from "../features/auth/OtpPage";
 import { ChatListPage } from "../features/chat/ChatListPage";
 import { ChatRoomPage } from "../features/chat/ChatRoomPage";
@@ -14,6 +15,9 @@ import { PlacesPage } from "../features/places/PlacesPage";
 import { ProfilePage } from "../features/profile/ProfilePage";
 import { SettingsPage } from "../features/profile/SettingsPage";
 import { SafetyPage } from "../features/safety/SafetyPage";
+import { GroupPage } from "../features/groups/GroupPage";
+import { PartnerDashboardPage } from "../features/partner/PartnerDashboardPage";
+import { PartnerRegisterPage } from "../features/partner/PartnerRegisterPage";
 import { AdminLayout } from "../layouts/AdminLayout";
 import { AppLayout } from "../layouts/AppLayout";
 import { ProtectedRoute } from "../routes/ProtectedRoute";
@@ -24,13 +28,17 @@ export default function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/auth/otp" element={<OtpPage />} />
+      <Route path="/partner/auth" element={<PartnerAuthPage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/onboarding/disclaimer" element={<OnboardingPage />} />
         <Route path="/onboarding/basic-info" element={<OnboardingPage />} />
+        <Route path="/onboarding/survey-purpose" element={<OnboardingPage />} />
         <Route path="/onboarding/survey-goals" element={<OnboardingPage />} />
         <Route path="/onboarding/survey-cafe" element={<OnboardingPage />} />
         <Route path="/onboarding/survey-personality" element={<OnboardingPage />} />
         <Route path="/onboarding/survey-interests" element={<OnboardingPage />} />
+        <Route path="/onboarding/survey-vibe" element={<OnboardingPage />} />
         <Route path="/onboarding/preferences" element={<OnboardingPage />} />
         <Route path="/onboarding/location" element={<OnboardingPage />} />
         <Route path="/onboarding/result" element={<OnboardingPage />} />
@@ -47,6 +55,9 @@ export default function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="safety" element={<SafetyPage />} />
+          <Route path="groups" element={<GroupPage />} />
+          <Route path="partner/dashboard" element={<PartnerDashboardPage />} />
+          <Route path="partner-register" element={<PartnerRegisterPage />} />
         </Route>
       </Route>
       <Route element={<ProtectedRoute adminOnly />}>

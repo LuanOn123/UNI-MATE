@@ -17,6 +17,9 @@ const onboardingSchema = new Schema(
     cafeStyles: [{ type: String }],
     budgetRange: String,
     frequency: String,
+    purpose: [{ type: String, enum: ["study_buddy", "cafe_chat", "boardgame_sport", "dating"] }],
+    majorPreference: { type: String, enum: ["same", "different", "any"], default: "any" },
+    vibePreference: { type: String, enum: ["quiet_study", "acoustic_view", "boardgame_lively"], default: "quiet_study" },
     personality: {
       introvertExtrovert: { type: Number, min: 1, max: 5, default: 3 },
       talkListen: { type: Number, min: 1, max: 5, default: 3 },
@@ -41,7 +44,7 @@ const userSchema = new Schema(
     emailVerified: { type: Boolean, default: false },
     passwordHash: String,
     twoFactorEnabled: { type: Boolean, default: false },
-    role: { type: String, enum: ["user", "admin"], default: "user" },
+    role: { type: String, enum: ["user", "admin", "partner"], default: "user" },
     status: { type: String, enum: ["active", "suspended", "banned"], default: "active" },
     displayName: { type: String, trim: true },
     birthDate: Date,
@@ -53,7 +56,8 @@ const userSchema = new Schema(
     avatarUrl: String,
     profilePhotos: [{ type: String }],
     onboardingCompleted: { type: Boolean, default: false },
-    location: { type: locationSchema, index: "2dsphere" },
+    disclaimerAccepted: { type: Boolean, default: false },
+    location: { type: locationSchema },
     onboarding: { type: onboardingSchema, default: {} },
     blockedUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     refreshTokenHash: String,
@@ -65,6 +69,7 @@ const userSchema = new Schema(
 );
 
 userSchema.index({ role: 1, status: 1, isActive: 1 });
+userSchema.index({ location: "2dsphere" });
 
 export type UserDoc = InferSchemaType<typeof userSchema> & { _id: mongoose.Types.ObjectId };
 export const User = mongoose.model("User", userSchema);

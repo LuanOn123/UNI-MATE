@@ -10,6 +10,7 @@ import { useAuthStore } from "../../stores/authStore";
 import type { ChatRoom, Message, User } from "../../types";
 
 type UiMessage = Message & { pending?: boolean; senderId?: string; mine?: boolean };
+type BlockState = { blockedByMe: boolean; blockedByOther: boolean };
 
 function idOf(value: any) {
   if (!value) return "";
@@ -45,11 +46,16 @@ export function ChatRoomPage() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [notice, setNotice] = useState("");
+  const [composerNote, setComposerNote] = useState("");
+  const [blockState, setBlockState] = useState<BlockState>({ blockedByMe: false, blockedByOther: false });
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const partner = useMemo(() => otherUser(room?.users, currentId), [room?.users, currentId]);
   const partnerId = idOf(partner);
-  const blocked = room?.status === "blocked";
+  const blockedByMe = blockState.blockedByMe;
+  const blockedByOther = blockState.blockedByOther;
+  const generallyBlocked = room?.status === "blocked" && !blockedByMe && !blockedByOther;
+  const inputDisabled = blockedByMe || generallyBlocked;
 
   useEffect(() => {
     let mounted = true;
@@ -58,6 +64,7 @@ export function ChatRoomPage() {
       const serverCurrentId = r.data.currentUserId ?? "";
       setApiCurrentId(serverCurrentId);
       setRoom(r.data.room);
+      setBlockState(r.data.blockState ?? { blockedByMe: false, blockedByOther: false });
       setMessages((r.data.messages ?? []).map((message: UiMessage) => ({
         ...message,
         mine: typeof message.mine === "boolean" ? message.mine : isMine(message, serverCurrentId || idOf(currentUser))
@@ -86,14 +93,19 @@ export function ChatRoomPage() {
       }));
     };
     const onTyping = (event: { typing: boolean }) => setTyping(event.typing);
+    const onMessageError = (event: { roomId?: string; message?: string }) => {
+      if (!event.roomId || event.roomId === roomId) setComposerNote(event.message ?? "Không gửi được tin nhắn.");
+    };
     socket.on("new_message", onNewMessage);
     socket.on("message_read", onRead);
     socket.on("user_typing", onTyping);
+    socket.on("message_error", onMessageError);
     return () => {
       mounted = false;
       socket.off("new_message", onNewMessage);
       socket.off("message_read", onRead);
       socket.off("user_typing", onTyping);
+      socket.off("message_error", onMessageError);
     };
   }, [roomId, apiCurrentId, currentUser]);
 
@@ -104,8 +116,21 @@ export function ChatRoomPage() {
   const lastMineId = useMemo(() => [...messages].reverse().find((message) => isMine(message, currentId))?._id, [messages, currentId]);
 
   const send = async () => {
-    if (!text.trim() || blocked) return;
+    if (!text.trim()) return;
+    if (blockedByMe) {
+      setComposerNote("Bạn đã chặn người dùng này.");
+      return;
+    }
+    if (blockedByOther) {
+      setComposerNote("Bạn đã bị chặn.");
+      return;
+    }
+    if (generallyBlocked) {
+      setComposerNote("Chat đã khóa.");
+      return;
+    }
     const content = text.trim();
+    setComposerNote("");
     const temp: UiMessage = {
       _id: `temp-${Date.now()}`,
       room: roomId ?? "",
@@ -129,7 +154,7 @@ export function ChatRoomPage() {
       setMessages((list) => [...list.filter((m) => m._id !== temp._id), data.message]);
     } catch (e: any) {
       setMessages((list) => list.filter((m) => m._id !== temp._id));
-      setNotice(e.response?.data?.message ?? "Không gửi được tin nhắn.");
+      setComposerNote(e.response?.data?.message ?? "Không gửi được tin nhắn.");
     }
   };
 
@@ -145,7 +170,8 @@ export function ChatRoomPage() {
     if (!partnerId) return;
     await api.post("/safety/block", { targetUserId: partnerId });
     setRoom((value) => value ? { ...value, status: "blocked" } : value);
-    setNotice("Đã block người dùng. Chat đã khóa.");
+    setBlockState({ blockedByMe: true, blockedByOther: false });
+    setComposerNote("");
   };
 
   return (
@@ -179,9 +205,17 @@ export function ChatRoomPage() {
       </header>
 
       {notice ? <p className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-5xl rounded-lg bg-mint p-3 text-sm font-bold text-cocoa">{notice}</p> : null}
-      {blocked ? <p className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-5xl rounded-lg bg-rose-50 p-3 text-sm font-bold text-rose-700">Chat đã khóa vì một bên đã block.</p> : null}
-
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-1 overflow-y-auto p-4">
+        {blockedByMe ? (
+          <div className="my-3 flex justify-center">
+            <span className="rounded-full bg-coffee/10 px-4 py-2 text-sm font-bold text-coffee">Bạn đã chặn người dùng này.</span>
+          </div>
+        ) : null}
+        {generallyBlocked ? (
+          <div className="my-3 flex justify-center">
+            <span className="rounded-full bg-coffee/10 px-4 py-2 text-sm font-bold text-coffee">Chat đã khóa.</span>
+          </div>
+        ) : null}
         <AnimatePresence initial={false}>
           {messages.map((message, index) => {
             const mine = isMine(message, currentId);
@@ -214,18 +248,20 @@ export function ChatRoomPage() {
         <div className="mx-auto flex max-w-5xl gap-2">
           <Input
             value={text}
-            disabled={blocked}
-            placeholder={blocked ? "Chat đã khóa" : "Nhắn tin để chốt thời gian cafe"}
+            disabled={inputDisabled}
+            placeholder={blockedByMe ? "Bạn đã chặn người dùng này" : generallyBlocked ? "Chat đã khóa" : "Nhắn tin để chốt thời gian cafe"}
             onChange={(e) => {
               setText(e.target.value);
-              getSocket().emit("typing_start", { roomId });
+              setComposerNote("");
+              if (!inputDisabled) getSocket().emit("typing_start", { roomId });
             }}
-            onBlur={() => getSocket().emit("typing_stop", { roomId })}
+            onBlur={() => !inputDisabled && getSocket().emit("typing_stop", { roomId })}
             onKeyDown={(e) => e.key === "Enter" && send()}
             className="rounded-full"
           />
-          <Button icon={<Send />} onClick={send} disabled={!text.trim() || blocked} className="rounded-full px-5">Gửi</Button>
+          <Button icon={<Send />} onClick={send} disabled={!text.trim() || inputDisabled} className="rounded-full px-5">Gửi</Button>
         </div>
+        {composerNote ? <p className="mx-auto mt-2 max-w-5xl text-center text-xs font-bold text-rose-600">{composerNote}</p> : null}
       </footer>
 
       {reportOpen ? (
@@ -254,3 +290,4 @@ function Avatar({ user, size = "md" }: { user?: User; size?: "sm" | "md" }) {
     </div>
   );
 }
+// Hoangswd update code chat room

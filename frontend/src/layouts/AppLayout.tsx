@@ -1,4 +1,4 @@
-import { Bell, Coffee, Compass, Eye, Heart, HeartHandshake, MessageCircle, Store, User, X } from "lucide-react";
+import { Bell, Coffee, Compass, Eye, Heart, HeartHandshake, MessageCircle, Store, User, Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { CoffeeMeter } from "../components/common/CoffeeMeter";
@@ -6,11 +6,13 @@ import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
 import { getSocket } from "../lib/socket";
 import type { NotificationItem, User as UserType } from "../types";
+import { useAuthStore } from "../stores/authStore";
 
 const nav = [
   { to: "/app/discovery", label: "Khám phá", icon: HeartHandshake },
   { to: "/app/matches", label: "Match", icon: Coffee },
   { to: "/app/chat", label: "Chat", icon: MessageCircle },
+  { to: "/app/groups", label: "Nhóm", icon: Users },
   { to: "/app/places", label: "Quán", icon: Store },
   { to: "/app/profile", label: "Hồ sơ", icon: User }
 ];
@@ -22,6 +24,7 @@ function idOf(user?: Partial<UserType> | null) {
 }
 
 export function AppLayout() {
+  const user = useAuthStore((s) => s.user);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [toast, setToast] = useState<NotificationItem | null>(null);
@@ -114,6 +117,19 @@ export function AppLayout() {
             {to === "/app/chat" && unread ? <span className="absolute right-2 top-1 h-2.5 w-2.5 rounded-full bg-caramel md:hidden" /> : null}
           </NavLink>
         ))}
+        {user?.role === "partner" && (
+          <NavLink
+            to="/app/partner/dashboard"
+            className={({ isActive }) =>
+              `relative flex min-w-[62px] flex-col items-center gap-1 rounded-lg px-3 py-2 text-xs font-bold transition md:mb-2 md:min-w-0 md:flex-row md:gap-3 md:py-3 md:text-sm ${
+                isActive ? "bg-caramel text-white shadow-sm" : "text-caramel hover:bg-latte"
+              }`
+            }
+          >
+            <Store className="h-5 w-5" />
+            <span>Quán của tôi</span>
+          </NavLink>
+        )}
         <NavLink
           to="/app/safety"
           className={({ isActive }) =>

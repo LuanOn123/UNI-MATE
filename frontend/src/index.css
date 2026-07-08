@@ -51,3 +51,13 @@ body {
 }
 
 .bell-ring { animation: bell-ring 0.9s ease-in-out 2; transform-origin: top center; }
+
+@keyframes sparkle-pop {
+  0% { opacity: 0; transform: translate3d(0, 8px, 0) scale(0.45); }
+  35% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  100% { opacity: 0; transform: translate3d(0, -16px, 0) scale(0.2); }
+}
+
+.sparkle-pop {
+  animation: sparkle-pop 900ms ease-out both;
+}

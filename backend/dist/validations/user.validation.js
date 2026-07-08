@@ -1,6 +1,7 @@
 import { z } from "zod";
 export const onboardingSchema = z.object({
     body: z.object({
+        disclaimerAccepted: z.boolean().refine((v) => v === true, { message: "Bạn cần đồng ý điều khoản" }),
         displayName: z.string().min(1),
         birthDate: z.coerce.date(),
         gender: z.enum(["male", "female", "other", "prefer_not"]),
@@ -8,11 +9,14 @@ export const onboardingSchema = z.object({
         major: z.string().optional(),
         avatarUrl: z.string().url().optional().or(z.literal("")),
         profilePhotos: z.array(z.string().url().or(z.literal(""))).default([]),
+        purpose: z.enum(["study_buddy", "cafe_chat", "boardgame_sport", "dating"]),
         goals: z.array(z.string()).min(1),
         preferredTimes: z.array(z.string()).default([]),
         cafeStyles: z.array(z.string()).min(3),
         budgetRange: z.string(),
         frequency: z.string(),
+        majorPreference: z.enum(["same", "different", "any"]).default("any"),
+        vibePreference: z.enum(["quiet_study", "acoustic_view", "boardgame_lively"]),
         personality: z.object({
             introvertExtrovert: z.number().min(1).max(5),
             talkListen: z.number().min(1).max(5),
