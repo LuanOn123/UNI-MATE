@@ -31,8 +31,18 @@ export const sendMessage = asyncHandler(async (req, res) => {
     const match = await Match.findById(room.match);
     if (match?.status !== "chat_opened" || room.status !== "active")
         return res.status(403).json({ message: "Chat is not active" });
-    const message = await Message.create({ room: room._id, sender: req.user.id, text: req.body.text, readBy: [req.user.id] });
-    room.lastMessage = req.body.text;
+    if (!req.body.text?.trim() && !req.body.fileUrl)
+        return res.status(400).json({ message: "Tin nhắn không được để trống" });
+    const message = await Message.create({
+        room: room._id,
+        sender: req.user.id,
+        text: req.body.text || "",
+        type: req.body.type || "text",
+        fileUrl: req.body.fileUrl,
+        fileName: req.body.fileName,
+        readBy: [req.user.id]
+    });
+    room.lastMessage = req.body.type === "image" ? "[Hình ảnh]" : req.body.type === "video" ? "[Video]" : req.body.type === "file" ? "[Tập tin]" : req.body.text;
     room.lastMessageAt = new Date();
     await room.save();
     await message.populate("sender", "displayName avatarUrl");

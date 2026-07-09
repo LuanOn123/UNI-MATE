@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import type { Request, Response } from "express";
 import { AdminAction } from "../models/AdminAction.js";
 import { ChatRoom } from "../models/ChatRoom.js";
@@ -28,6 +29,7 @@ export const dashboard = asyncHandler(async (_req: Request, res: Response) => {
 export const adminUsers = asyncHandler(async (req: Request, res: Response) => {
   const query: any = {};
   if (req.query.status) query.status = req.query.status;
+  if (req.query.role) query.role = req.query.role;
   if (req.query.q) query.$or = [{ email: new RegExp(String(req.query.q), "i") }, { displayName: new RegExp(String(req.query.q), "i") }];
   res.json({ users: await User.find(query).select("-refreshTokenHash -passwordHash").sort({ createdAt: -1 }).limit(100) });
 });
@@ -40,6 +42,80 @@ export const adminUserDetail = asyncHandler(async (req: Request, res: Response) 
     Report.find({ reportedUser: user._id }).populate("reporter match message").sort({ createdAt: -1 }).limit(50)
   ]);
   res.json({ user, matches, reports });
+});
+
+export const createAdminUser = asyncHandler(async (req: Request, res: Response) => {
+  const { email, password, displayName, role, status, gender, birthDate, school, major } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
+  const existing = await User.findOne({ email: email.toLowerCase() });
+  if (existing) {
+    return res.status(409).json({ message: "Email already exists" });
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const age = birthDate ? Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 3600 * 1000)) : undefined;
+
+  const user = await User.create({
+    email,
+    passwordHash,
+    displayName,
+    role: role || "user",
+    status: status || "active",
+    isActive: status === "active" || !status,
+    gender: gender || "prefer_not",
+    birthDate: birthDate ? new Date(birthDate) : undefined,
+    age,
+    school,
+    major,
+    emailVerified: true,
+    onboardingCompleted: true,
+    disclaimerAccepted: true
+  });
+
+  await audit(req, "create_user", "user", String(user._id), `Admin created user ${email}`);
+
+  res.status(201).json({ user });
+});
+
+export const updateAdminUser = asyncHandler(async (req: Request, res: Response) => {
+  const { email, displayName, role, status, gender, birthDate, school, major, password } = req.body;
+  const user = await User.findById(req.params.userId);
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  if (email && email.toLowerCase() !== user.email.toLowerCase()) {
+    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (existing) return res.status(409).json({ message: "Email already exists" });
+    user.email = email;
+  }
+
+  if (password) {
+    user.passwordHash = await bcrypt.hash(password, 10);
+  }
+
+  if (displayName !== undefined) user.displayName = displayName;
+  if (role !== undefined) user.role = role;
+  if (status !== undefined) {
+    user.status = status;
+    user.isActive = status === "active";
+  }
+  if (gender !== undefined) user.gender = gender;
+  if (birthDate !== undefined) {
+    user.birthDate = birthDate ? new Date(birthDate) : undefined;
+    if (birthDate) {
+      user.age = Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 3600 * 1000));
+    } else {
+      user.age = undefined;
+    }
+  }
+  if (school !== undefined) user.school = school;
+  if (major !== undefined) user.major = major;
+
+  await user.save();
+  await audit(req, "update_user", "user", String(user._id), `Admin updated user details`);
+
+  res.json({ user });
 });
 
 export const updateUserStatus = asyncHandler(async (req: Request, res: Response) => {
@@ -79,8 +155,24 @@ export const adminMatches = asyncHandler(async (_req: Request, res: Response) =>
   res.json({ matches: await Match.find().populate("users selectedPlace chatRoom").sort({ createdAt: -1 }).limit(100) });
 });
 
-export const adminPlaces = asyncHandler(async (_req: Request, res: Response) => {
-  res.json({ places: await PlaceCache.find().sort({ updatedAt: -1 }).limit(100) });
+export const adminPlaces = asyncHandler(async (req: Request, res: Response) => {
+  const query: any = {};
+  if (req.query.status) query.status = req.query.status;
+  if (req.query.district) query.district = new RegExp(String(req.query.district), "i");
+  if (req.query.q) {
+    query.$or = [
+      { name: new RegExp(String(req.query.q), "i") },
+      { address: new RegExp(String(req.query.q), "i") }
+    ];
+  }
+  res.json({ places: await PlaceCache.find(query).sort({ updatedAt: -1 }).limit(100) });
+});
+
+export const deletePlace = asyncHandler(async (req: Request, res: Response) => {
+  const place = await PlaceCache.findByIdAndDelete(req.params.placeId);
+  if (!place) return res.status(404).json({ message: "Cafe not found" });
+  await audit(req, "delete_place", "place", req.params.placeId, `Admin deleted cafe: ${place.name}`);
+  res.json({ success: true, message: "Cafe deleted successfully" });
 });
 
 export const upsertPlace = asyncHandler(async (req: Request, res: Response) => {

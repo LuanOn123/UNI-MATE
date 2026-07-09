@@ -17,7 +17,10 @@ function purposeToVibe(purpose) {
         dating: "acoustic_view",
         boardgame_sport: "boardgame_lively"
     };
-    return purpose ? map[purpose] : undefined;
+    if (!purpose)
+        return undefined;
+    const first = Array.isArray(purpose) ? purpose[0] : purpose;
+    return first ? map[first] : undefined;
 }
 /**
  * Suggest cafe places for a match.

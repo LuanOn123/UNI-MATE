@@ -84,20 +84,20 @@ export const confirmPlace = asyncHandler(async (req, res) => {
         return res.status(410).json({ message: "Match expired" });
     if (String(match.selectedBy) === req.user.id)
         return res.status(400).json({ message: "Waiting for the other user to accept" });
-    const confirmed = new Set(match.confirmedBy.map(String));
-    confirmed.add(req.user.id);
-    match.confirmedBy = [...confirmed];
-    if (match.confirmedBy.length >= 2) {
-        match.status = "chat_opened";
+    const updatedMatch = await Match.findOneAndUpdate({ _id: match._id }, { $addToSet: { confirmedBy: req.user.id } }, { new: true });
+    if (!updatedMatch)
+        return res.status(404).json({ message: "Match not found" });
+    if (updatedMatch.confirmedBy.length >= 2 && updatedMatch.status !== "chat_opened") {
+        updatedMatch.status = "chat_opened";
         await CafeProposal.findOneAndUpdate({ match: match._id, status: "active" }, { status: "accepted" });
         const room = await ChatRoom.findOneAndUpdate({ match: match._id }, { match: match._id, users: match.users, place: match.selectedPlace, status: "active" }, { upsert: true, new: true });
-        match.chatRoom = room._id;
+        updatedMatch.chatRoom = room._id;
     }
-    await match.save();
-    await match.populate("selectedPlace chatRoom");
+    await updatedMatch.save();
+    await updatedMatch.populate("selectedPlace chatRoom");
     const io = req.app.get("io");
-    emitMatchUpdated(io, matchUserIds(match), { matchId: String(match._id), status: match.status, chatRoom: match.chatRoom });
-    res.json({ match });
+    emitMatchUpdated(io, matchUserIds(updatedMatch), { matchId: String(updatedMatch._id), status: updatedMatch.status, chatRoom: updatedMatch.chatRoom });
+    res.json({ match: updatedMatch });
 });
 export const rejectPlace = asyncHandler(async (req, res) => {
     const match = await Match.findOne({ _id: req.params.matchId, users: req.user.id });
