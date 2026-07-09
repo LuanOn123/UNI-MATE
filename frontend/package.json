@@ -12,6 +12,7 @@
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
     "axios": "^1.7.5",
+    "emoji-picker-react": "^4.19.1",
     "firebase": "^10.13.0",
     "framer-motion": "^11.3.30",
     "lottie-react": "^2.4.1",

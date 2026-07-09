@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Users, UserPlus, LogOut, Trash2, Crown, X } from "lucide-react";
+import { Plus, Users, UserPlus, LogOut, Trash2, Crown, X, MessageCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -210,6 +211,9 @@ export function GroupPage() {
                   {group.description && <p className="mt-0.5 text-sm text-coffee/60">{group.description}</p>}
                 </div>
                 <div className="flex gap-2">
+                  <Link to={`/app/groups/${group._id}/chat`} className="rounded-lg border border-caramel bg-caramel p-2 text-white transition hover:bg-caramel/90 shadow-soft" title="Chat nhóm">
+                    <MessageCircle className="h-4 w-4" />
+                  </Link>
                   {isCreator && (
                     <>
                       <button type="button" onClick={() => { setShowAddMember(group._id); setMemberEmail(""); setError(""); }} className="rounded-lg border border-coffee/10 bg-white p-2 text-coffee transition hover:bg-cream" title="Thêm thành viên">
