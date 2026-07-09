@@ -7,8 +7,9 @@ export const onboardingSchema = z.object({
     birthDate: z.coerce.date().refine((date) => {
       const ageDiffMs = Date.now() - date.getTime();
       const ageDate = new Date(ageDiffMs);
-      return Math.abs(ageDate.getUTCFullYear() - 1970) >= 18;
-    }, { message: "Bạn phải từ 18 tuổi trở lên" }),
+      const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+      return age >= 18 && age < 30;
+    }, { message: "Bạn phải từ 18 đến dưới 30 tuổi" }),
     gender: z.enum(["male", "female", "other", "prefer_not"]),
     school: z.string().optional(),
     major: z.string().optional(),
@@ -32,9 +33,9 @@ export const onboardingSchema = z.object({
     interests: z.array(z.string()).min(3),
     preferences: z.object({
       preferredGender: z.enum(["same", "opposite", "all"]),
-      ageRange: z.object({ min: z.number().min(18), max: z.number().max(80) }),
+      ageRange: z.object({ min: z.number().min(18), max: z.number().max(29) }).refine((range) => range.min <= range.max, { message: "Khoảng tuổi mong muốn chưa hợp lệ" }),
       maxDistanceKm: z.number().min(1).max(20),
-      priorities: z.array(z.string()).default([])
+      priorities: z.array(z.enum(["nearby", "same_interest"])).default(["nearby", "same_interest"])
     }),
     location: z.object({ lat: z.number(), lng: z.number(), addressLabel: z.string().optional(), source: z.enum(["gps", "manual"]).default("manual") })
   })

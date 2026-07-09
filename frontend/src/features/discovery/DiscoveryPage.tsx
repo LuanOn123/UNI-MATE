@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Eye, Heart, MapPin, RotateCcw, ShieldAlert, Sparkles, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, Heart, MapPin, MessageCircle, RotateCcw, ShieldAlert, Sparkles, X } from "lucide-react";
 import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -58,7 +58,7 @@ export function DiscoveryPage() {
       const { data } = await api.post(`/discovery/${action}`, { targetUserId: userId(candidate) });
       setUsers((list) => list.slice(1));
       if (data.matched) setMatch(data.match);
-      if (action === "like" && !data.matched) setNotice("Đã like. Quán cafe và chat sẽ mở khi người kia cũng like lại bạn.");
+      if (action === "like" && !data.matched) setNotice("Đã like. Chat sẽ mở khi người kia cũng like lại bạn.");
     } catch (e: any) {
       setError(e.response?.data?.message ?? "Không thực hiện được hành động");
     }
@@ -70,9 +70,13 @@ export function DiscoveryPage() {
 
   const user = users[0];
   const meta = user.matchMeta;
+  const matchScore = meta?.score ?? 0;
+  const distanceScore = meta?.distanceScore ?? 0;
+  const isMatchStronger = matchScore >= distanceScore;
   const tags = [...(meta?.commonTags ?? []), ...(meta?.commonCafeStyles ?? [])].slice(0, 7);
   const photos = [user.avatarUrl, ...(user.profilePhotos ?? [])].filter(Boolean) as string[];
   const gallery = photos.length ? photos : ["https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop"];
+  const matchedRoomId = typeof match?.chatRoom === "string" ? match.chatRoom : match?.chatRoom?._id;
 
   return (
     <div className="mx-auto grid max-w-6xl gap-6 p-4 md:grid-cols-[1fr_320px] md:p-8">
@@ -113,19 +117,8 @@ export function DiscoveryPage() {
                   NOPE
                 </motion.div>
                 <div className="absolute inset-x-0 bottom-0 p-6 text-white">
-                  <div className="flex items-end justify-between gap-3">
-                    <div>
-                      <h2 className="text-4xl font-black">{user.displayName || "UNI-MATE user"}, {user.age ?? "18+"}</h2>
-                      <p className="mt-1 font-semibold text-white/82">{user.school || "Sinh viên"} {user.major ? `· ${user.major}` : ""}</p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2 rounded-lg bg-white/92 px-3 py-2 text-cocoa">
-                      <CoffeeMeter value={meta?.score ?? 70} size="sm" />
-                      <div className="leading-tight">
-                        <p className="text-sm font-black">{meta?.score ?? 70}</p>
-                        <p className="text-[10px] font-bold uppercase text-coffee/55">Match</p>
-                      </div>
-                    </div>
-                  </div>
+                  <h2 className="text-4xl font-black">{user.displayName || "UNI-MATE user"}, {user.age ?? "18+"}</h2>
+                  <p className="mt-1 font-semibold text-white/82">{user.school || "Sinh viên"} {user.major ? `· ${user.major}` : ""}</p>
                 </div>
               </div>
 
@@ -134,10 +127,13 @@ export function DiscoveryPage() {
                   {tags.length ? tags.map((tag) => <span key={tag} className="rounded-full bg-cream px-3 py-1 text-sm font-bold text-coffee">{tag}</span>) : <span className="rounded-full bg-cream px-3 py-1 text-sm font-bold text-coffee">Gu cafe gần bạn</span>}
                 </div>
                 {meta?.durationMinutes !== null && meta?.durationMinutes !== undefined ? (
-                  <div className="mt-3 grid gap-2 rounded-lg bg-latte/60 p-3 text-sm font-bold text-cocoa sm:grid-cols-3">
+                  <div className="mt-3 grid gap-2 rounded-lg bg-latte/60 p-3 text-sm font-bold text-cocoa sm:grid-cols-[1fr_1fr_1.2fr]">
                     <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-caramel" /> {meta.durationMinutes} phút</span>
                     <span>Đường đi: {formatRoadDistance(meta.distanceMeters)}</span>
-                    <span>Điểm KC: {meta.distanceScore ?? 0}</span>
+                    <span className="grid gap-0.5 leading-tight">
+                      <span className={isMatchStronger ? "font-black" : "font-semibold text-coffee/72"}>% hợp nhau: {matchScore}</span>
+                      <span className={!isMatchStronger ? "font-black" : "font-semibold text-coffee/72"}>Điểm KC: {distanceScore}</span>
+                    </span>
                   </div>
                 ) : null}
                 <ul className="mt-4 space-y-2 text-sm font-medium text-coffee/78">
@@ -171,9 +167,9 @@ export function DiscoveryPage() {
           <h2 className="font-black">Cách mở chat</h2>
           <div className="mt-4 space-y-3 text-sm font-medium text-coffee/72">
             <p>1. Like người hợp gu.</p>
-            <p>2. Mutual match sẽ tạo một kết nối.</p>
-            <p>3. Hai bên cùng xác nhận một quán cafe.</p>
-            <p>4. Chat mở để chốt thời gian gặp.</p>
+            <p>2. Mutual match sẽ mở chat ngay.</p>
+            <p>3. Vào chat để trò chuyện và chốt thời gian gặp.</p>
+            <p>4. Hẹn gặp ở nơi công cộng, an toàn.</p>
           </div>
         </div>
         <div className="rounded-lg bg-white p-5 shadow-soft">
@@ -190,9 +186,9 @@ export function DiscoveryPage() {
               <Heart className="h-8 w-8 fill-caramel text-caramel" />
             </div>
             <h2 className="text-3xl font-black">Mutual Match!</h2>
-            <p className="mt-2 text-coffee/70">Hai bạn đã thích nhau. Chọn một quán cafe để mở phòng chat.</p>
+            <p className="mt-2 text-coffee/70">Hai bạn đã thích nhau. Phòng chat đã được mở để bắt đầu trò chuyện.</p>
             <div className="mt-6 grid gap-3">
-              <Button onClick={() => navigate(`/app/matches/${match._id}/places`)}>Xem quán gợi ý</Button>
+              <Button icon={<MessageCircle />} onClick={() => navigate(matchedRoomId ? `/app/chat/${matchedRoomId}` : "/app/chat")}>Vào chat</Button>
               <Button variant="ghost" onClick={() => setMatch(null)}>Để sau</Button>
             </div>
           </motion.div>
@@ -229,7 +225,11 @@ export function DiscoveryPage() {
                 <div className="min-w-0 text-sm font-semibold text-coffee/70">
                   <p className="text-base font-black text-cocoa">Điểm match tổng: {meta?.score ?? 70}</p>
                   {meta?.durationMinutes !== null && meta?.durationMinutes !== undefined ? (
-                    <p className="mt-1">Ước tính: {meta.durationMinutes} phút · {formatRoadDistance(meta.distanceMeters)} · điểm khoảng cách {meta.distanceScore ?? 0}</p>
+                    <p className="mt-1">
+                      Ước tính: {meta.durationMinutes} phút · {formatRoadDistance(meta.distanceMeters)} ·{" "}
+                      <span className={isMatchStronger ? "font-black text-cocoa" : ""}>% hợp nhau {matchScore}</span> ·{" "}
+                      <span className={!isMatchStronger ? "font-black text-cocoa" : ""}>điểm khoảng cách {distanceScore}</span>
+                    </p>
                   ) : (
                     <p className="mt-1">Đang cập nhật điểm khoảng cách.</p>
                   )}

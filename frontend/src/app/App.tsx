@@ -8,7 +8,6 @@ import { ChatRoomPage } from "../features/chat/ChatRoomPage";
 import { DiscoveryPage } from "../features/discovery/DiscoveryPage";
 import { LandingPage } from "../features/LandingPage";
 import { MatchesPage } from "../features/matches/MatchesPage";
-import { PlaceSuggestionsPage } from "../features/matches/PlaceSuggestionsPage";
 import { OnboardingPage } from "../features/onboarding/OnboardingPage";
 import { PlaceDetailPage } from "../features/places/PlaceDetailPage";
 import { PlacesPage } from "../features/places/PlacesPage";
@@ -46,8 +45,6 @@ export default function App() {
           <Route index element={<Navigate to="/app/discovery" replace />} />
           <Route path="discovery" element={<DiscoveryPage />} />
           <Route path="matches" element={<MatchesPage />} />
-          <Route path="matches/:matchId" element={<PlaceSuggestionsPage />} />
-          <Route path="matches/:matchId/places" element={<PlaceSuggestionsPage />} />
           <Route path="chat" element={<ChatListPage />} />
           <Route path="chat/:roomId" element={<ChatRoomPage />} />
           <Route path="places" element={<PlacesPage />} />

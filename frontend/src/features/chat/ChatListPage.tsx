@@ -1,4 +1,4 @@
-import { Coffee, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -15,7 +15,7 @@ export function ChatListPage() {
   }, []);
 
   if (loading) return <div className="p-6"><StateBlock title="Đang tải phòng chat" /></div>;
-  if (!rooms.length) return <div className="p-6"><StateBlock title="Chat đang khóa" text="Phòng chat sẽ xuất hiện sau khi match được xác nhận quán cafe." /></div>;
+  if (!rooms.length) return <div className="p-6"><StateBlock title="Chưa có phòng chat" text="Phòng chat sẽ xuất hiện ngay sau khi hai bên mutual match." /></div>;
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-8">
@@ -31,11 +31,8 @@ export function ChatListPage() {
                 <MessageCircle />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="truncate font-black">{room.place?.name || "Cafe chat"}</h3>
+                <h3 className="truncate font-black">{room.place?.name || "UNI-MATE chat"}</h3>
                 <p className="truncate text-sm text-coffee/70">{room.lastMessage ?? "Bắt đầu trò chuyện"}</p>
-              </div>
-              <div className="hidden items-center gap-1 rounded-full bg-cream px-3 py-1 text-xs font-bold text-coffee md:flex">
-                <Coffee className="h-3.5 w-3.5" /> Đã chốt quán
               </div>
             </Link>
           </motion.div>

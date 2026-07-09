@@ -183,8 +183,8 @@ export function ChatRoomPage() {
             <div className="mt-1 flex items-center gap-3">
               <Avatar user={partner} />
               <div className="min-w-0">
-                <h1 className="truncate text-xl font-black">{partner?.displayName || "Cafe chat"}</h1>
-                <p className="text-xs font-semibold text-coffee/55">Đang trong cafe-gated chat</p>
+                <h1 className="truncate text-xl font-black">{partner?.displayName || "UNI-MATE chat"}</h1>
+                <p className="text-xs font-semibold text-coffee/55">Chat đã mở sau mutual match</p>
               </div>
             </div>
             {room?.place ? (
@@ -249,7 +249,7 @@ export function ChatRoomPage() {
           <Input
             value={text}
             disabled={inputDisabled}
-            placeholder={blockedByMe ? "Bạn đã chặn người dùng này" : generallyBlocked ? "Chat đã khóa" : "Nhắn tin để chốt thời gian cafe"}
+            placeholder={blockedByMe ? "Bạn đã chặn người dùng này" : generallyBlocked ? "Chat đã khóa" : "Nhắn tin để bắt đầu trò chuyện"}
             onChange={(e) => {
               setText(e.target.value);
               setComposerNote("");

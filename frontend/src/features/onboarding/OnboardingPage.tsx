@@ -9,7 +9,7 @@ import { Input } from "../../components/ui/Input";
 import { api } from "../../lib/api";
 import { useAuthStore } from "../../stores/authStore";
 import { cities, districtsFor, findLocation, manualLocationPayload } from "../../utils/locationOptions";
-import { cafeStyles, goals, interestGroups, majorCategories, majorPreferenceOptions, preferredTimes, priorities, purposeOptions, vibeSpaceOptions } from "../../utils/options";
+import { cafeStyles, goals, interestGroups, majorCategories, majorPreferenceOptions, preferredTimes, purposeOptions, vibeSpaceOptions } from "../../utils/options";
 import boardgameAnimation from "../../assets/lordicons/boardgame.json";
 import cameraAnimation from "../../assets/lordicons/wired-flat-61-camera-hover-flash.json";
 import coffeeAnimation from "../../assets/lordicons/coffe.json";
@@ -80,6 +80,7 @@ const priorityMeta: Record<string, { label: string; icon: object }> = {
   same_goal: { label: "Cùng mục tiêu", icon: chatIcon },
   complement_personality: { label: "Bù trừ tính cách", icon: heartIcon }
 };
+const matchPriorityOptions = ["nearby", "same_interest"];
 
 const vibeMeta: Record<string, { icon: object; title: string; desc: string }> = {
   quiet_study: { icon: bookIcon, title: "Yên tĩnh học bài", desc: "Hợp laptop, sách vở, tập trung." },
@@ -122,6 +123,21 @@ function calculateAge(date: string) {
   const monthDiff = today.getMonth() - dob.getMonth();
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age -= 1;
   return age;
+}
+
+function clampNumber(value: number, min: number, max: number) {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, value));
+}
+
+function clampAgeRange(range: { min: number; max: number }) {
+  const min = clampNumber(range.min, 18, 29);
+  const max = clampNumber(range.max, 18, 29);
+  return min <= max ? { min, max } : { min, max: min };
+}
+
+function rangePercent(value: number, min = 1, max = 20) {
+  return ((value - min) / (max - min)) * 100;
 }
 
 type MateChoiceProps = {
@@ -212,7 +228,7 @@ export function OnboardingPage() {
     // Step 0: Disclaimer
     if (index === 0 && !data.disclaimerAccepted) return setError("Bạn cần đồng ý với điều khoản để tiếp tục.");
     // Step 1: Basic info
-    if (index === 1 && (!data.displayName.trim() || !data.birthDate || age < 18)) return setError("Bạn cần nhập tên, ngày sinh hợp lệ và đủ 18 tuổi.");
+    if (index === 1 && (!data.displayName.trim() || !data.birthDate || age < 18 || age >= 30)) return setError("Bạn cần nhập tên, ngày sinh hợp lệ, từ 18 đến dưới 30 tuổi.");
     // Step 2: Purpose (hard filter)
     if (index === 2 && data.purpose.length < 1) return setError("Chọn ít nhất 1 mục đích hôm nay của bạn.");
     // Step 3: Goals
@@ -224,7 +240,7 @@ export function OnboardingPage() {
     // Step 7: Vibe
     if (index === 7 && !data.vibePreference) return setError("Chọn vibe không gian bạn mong muốn.");
     // Step 8: Mate preference
-    if (index === 8 && data.preferences.ageRange.min > data.preferences.ageRange.max) return setError("Khoảng tuổi mong muốn chưa hợp lệ.");
+    if (index === 8 && (data.preferences.ageRange.min < 18 || data.preferences.ageRange.max > 29 || data.preferences.ageRange.min > data.preferences.ageRange.max)) return setError("Khoảng tuổi mong muốn phải từ 18 đến dưới 30.");
     navigate(steps[Math.min(index + 1, steps.length - 1)]);
   };
 
@@ -629,12 +645,13 @@ export function OnboardingPage() {
                           value={data.preferences.maxDistanceKm}
                           onChange={(e) => setData({ ...data, preferences: { ...data.preferences, maxDistanceKm: Number(e.target.value) } })}
                           className="w-full accent-caramel"
+                          style={{ backgroundSize: `${rangePercent(data.preferences.maxDistanceKm)}% 100%` }}
                         />
-                        <div className="mt-2 flex justify-between text-xs font-bold text-coffee/45">
-                          <span>1km</span>
-                          <span>5km</span>
-                          <span>10km</span>
-                          <span>20km</span>
+                        <div className="relative mt-2 h-4 text-xs font-bold text-coffee/45">
+                          <span className="absolute left-0">1km</span>
+                          <span className="absolute -translate-x-1/2" style={{ left: `${rangePercent(5)}%` }}>5km</span>
+                          <span className="absolute -translate-x-1/2" style={{ left: `${rangePercent(10)}%` }}>10km</span>
+                          <span className="absolute right-0">20km</span>
                         </div>
                       </div>
                     </div>
@@ -645,11 +662,11 @@ export function OnboardingPage() {
                       <div className="grid gap-3 sm:grid-cols-2">
                         <label className="grid gap-2 text-sm font-bold text-coffee">
                           Từ tuổi
-                          <Input type="number" min={18} value={data.preferences.ageRange.min} onChange={(e) => setData({ ...data, preferences: { ...data.preferences, ageRange: { ...data.preferences.ageRange, min: Number(e.target.value) } } })} />
+                          <Input type="number" min={18} max={29} value={data.preferences.ageRange.min} onChange={(e) => setData({ ...data, preferences: { ...data.preferences, ageRange: clampAgeRange({ ...data.preferences.ageRange, min: Number(e.target.value) }) } })} />
                         </label>
                         <label className="grid gap-2 text-sm font-bold text-coffee">
                           Đến tuổi
-                          <Input type="number" min={18} value={data.preferences.ageRange.max} onChange={(e) => setData({ ...data, preferences: { ...data.preferences, ageRange: { ...data.preferences.ageRange, max: Number(e.target.value) } } })} />
+                          <Input type="number" min={18} max={29} value={data.preferences.ageRange.max} onChange={(e) => setData({ ...data, preferences: { ...data.preferences, ageRange: clampAgeRange({ ...data.preferences.ageRange, max: Number(e.target.value) }) } })} />
                         </label>
                       </div>
                     </div>
@@ -658,7 +675,7 @@ export function OnboardingPage() {
                   <div>
                     <h3 className="mb-3 font-black text-cocoa">Ưu tiên khi xếp hạng match</h3>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {priorities.map((p) => {
+                      {matchPriorityOptions.map((p) => {
                         const meta = priorityMeta[p] ?? { label: p, icon: ticketIcon };
                         return (
                           <MateChoiceCard
@@ -710,7 +727,7 @@ export function OnboardingPage() {
                     <Input type="number" value={data.preferences.ageRange.max} onChange={(e) => setData({ ...data, preferences: { ...data.preferences, ageRange: { ...data.preferences.ageRange, max: Number(e.target.value) } } })} />
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {priorities.map((p) => (
+                    {matchPriorityOptions.map((p) => (
                       <Chip key={p} selected={data.preferences.priorities.includes(p)} onClick={() => setData({ ...data, preferences: { ...data.preferences, priorities: toggle(data.preferences.priorities, p) } })}>
                         {p}
                       </Chip>
