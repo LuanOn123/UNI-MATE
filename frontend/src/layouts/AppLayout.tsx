@@ -66,7 +66,11 @@ export function AppLayout() {
     setLikePopup(null);
     setNotifications((items) => items.map((item) => item._id === notification._id ? { ...item, readAt: item.readAt ?? new Date().toISOString() } : item));
     await api.patch(`/notifications/${notification._id}/read`).catch(() => undefined);
-    if (data.matched) navigate(`/app/matches/${data.match._id}/places`);
+    if (data.matched) {
+      const chatRoomId = typeof data.match?.chatRoom === "string" ? data.match.chatRoom : data.match?.chatRoom?._id;
+      if (chatRoomId) navigate(`/app/chat/${chatRoomId}`);
+      else navigate(`/app/chat`);
+    }
   };
 
   const openNotification = (notification: NotificationItem) => {
@@ -88,7 +92,7 @@ export function AppLayout() {
           </div>
           <div>
             <span className="block text-xl font-black text-cocoa">UNI-MATE</span>
-            <span className="text-xs font-semibold text-coffee/55">Cafe-gated chat</span>
+            <span className="text-xs font-semibold text-coffee/55">Kết nối sinh viên</span>
           </div>
         </div>
         <button
