@@ -108,7 +108,10 @@ export function ChatRoomPage() {
         return { ...message, readBy: [...readBy] };
       }));
     };
-    const onTyping = (event: { typing: boolean }) => setTyping(event.typing);
+    const onTyping = (event: { typing: boolean; userId: string }) => {
+      console.log("Received user_typing event", event);
+      setTyping(event.typing);
+    };
     const onMessageError = (event: { roomId?: string; message?: string }) => {
       if (!event.roomId || event.roomId === roomId) setComposerNote(event.message ?? "Không gửi được tin nhắn.");
     };
@@ -162,6 +165,7 @@ export function ChatRoomPage() {
     setMessages((list) => [...list, temp]);
     const socket = getSocket();
     if (socket.connected) {
+      socket.emit("typing_stop", { roomId });
       socket.emit("send_message", { roomId, text: content });
       return;
     }
@@ -295,8 +299,23 @@ export function ChatRoomPage() {
               </motion.div>
             );
           })}
+          {typing && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="mt-3 flex items-end gap-2 justify-start">
+              <div className="w-8 shrink-0">
+                <Avatar user={partner} size="sm" />
+              </div>
+              <div className="flex max-w-[72%] flex-col items-start">
+                <div className="rounded-[1.35rem] rounded-bl-md bg-white px-4 py-3.5 shadow-sm">
+                  <span className="flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-coffee/40" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-coffee/40" style={{ animationDelay: "150ms" }} />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-coffee/40" style={{ animationDelay: "300ms" }} />
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
-        {typing ? <p className="ml-10 mt-2 text-sm font-semibold text-coffee/60">Đang nhập...</p> : null}
         <div ref={scrollRef} />
       </main>
 
@@ -328,7 +347,12 @@ export function ChatRoomPage() {
               onChange={(e) => {
                 setText(e.target.value);
                 setComposerNote("");
-                if (!inputDisabled) getSocket().emit("typing_start", { roomId });
+                const socket = getSocket();
+                if (!inputDisabled) {
+                  socket.emit("typing_start", { roomId });
+                  if ((window as any).typingTimeoutPrivate) clearTimeout((window as any).typingTimeoutPrivate);
+                  (window as any).typingTimeoutPrivate = setTimeout(() => socket.emit("typing_stop", { roomId }), 2000);
+                }
               }}
               onBlur={() => !inputDisabled && getSocket().emit("typing_stop", { roomId })}
               onKeyDown={(e) => e.key === "Enter" && send()}
