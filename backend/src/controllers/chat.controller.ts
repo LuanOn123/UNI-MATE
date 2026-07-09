@@ -58,7 +58,8 @@ export const sendMessage = asyncHandler(async (req: Request, res: Response) => {
           userId,
           type: "message",
           title: "Tin nhắn mới",
-          body: req.body.text.slice(0, 120)
+          body: (req.body.text || "Đã gửi một tệp tin").slice(0, 120),
+          data: { roomId: String(room._id), senderId: req.user!.id }
         })
       )
   );

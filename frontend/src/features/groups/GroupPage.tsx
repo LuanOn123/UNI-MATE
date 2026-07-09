@@ -203,13 +203,13 @@ export function GroupPage() {
             <motion.div key={group._id} layout className="overflow-hidden rounded-xl border border-coffee/8 bg-white shadow-soft">
               {/* Group header */}
               <div className="flex items-center justify-between border-b border-coffee/6 bg-cream/40 px-5 py-4">
-                <div>
-                  <h3 className="flex items-center gap-2 font-black text-cocoa">
+                <Link to={`/app/groups/${group._id}/chat`} className="flex-1 min-w-0 pr-4">
+                  <h3 className="flex items-center gap-2 font-black text-cocoa transition hover:text-caramel">
                     {group.name}
                     <span className="rounded-full bg-latte px-2 py-0.5 text-xs font-semibold text-coffee">{purposeLabels[group.purpose] ?? group.purpose}</span>
                   </h3>
-                  {group.description && <p className="mt-0.5 text-sm text-coffee/60">{group.description}</p>}
-                </div>
+                  {group.description && <p className="mt-0.5 text-sm text-coffee/60 truncate">{group.description}</p>}
+                </Link>
                 <div className="flex gap-2">
                   <Link to={`/app/groups/${group._id}/chat`} className="rounded-lg border border-caramel bg-caramel p-2 text-white transition hover:bg-caramel/90 shadow-soft" title="Chat nhóm">
                     <MessageCircle className="h-4 w-4" />
@@ -245,34 +245,7 @@ export function GroupPage() {
                 )}
               </AnimatePresence>
 
-              {/* Members list */}
-              <div className="divide-y divide-coffee/6 px-5">
-                {group.members.map((member) => (
-                  <div key={member._id} className="flex items-center justify-between py-3">
-                    <div className="flex items-center gap-3">
-                      {member.avatarUrl ? (
-                        <img src={member.avatarUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
-                      ) : (
-                        <div className="grid h-9 w-9 place-items-center rounded-full bg-cream text-xs font-bold text-coffee">{(member.displayName ?? "?")[0]}</div>
-                      )}
-                      <div>
-                        <p className="flex items-center gap-1.5 text-sm font-semibold text-cocoa">
-                          {member.displayName ?? "Ẩn danh"}
-                          {String(group.creator._id) === String(member._id) && <Crown className="h-3.5 w-3.5 text-amber-500" />}
-                        </p>
-                        <p className="text-xs text-coffee/50">
-                          {[member.school, member.major, member.age ? `${member.age} tuổi` : ""].filter(Boolean).join(" · ") || "Chưa cập nhật"}
-                        </p>
-                      </div>
-                    </div>
-                    {isCreator && String(member._id) !== myId && (
-                      <button type="button" onClick={() => handleRemoveMember(group._id, member._id)} className="rounded p-1 text-coffee/30 transition hover:bg-rose-50 hover:text-rose-500" title="Xóa thành viên">
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
+
 
               <div className="bg-cream/30 px-5 py-2 text-right text-xs text-coffee/40">
                 {group.members.length}/{group.maxMembers} thành viên
