@@ -22,6 +22,14 @@ const envSchema = z.object({
     OTP_MAX_SEND_PER_HOUR: z.coerce.number().default(5),
     DEV_PRINT_OTP: z.coerce.boolean().default(true),
     GOOGLE_MAPS_API_KEY: z.string().optional(),
+    OSRM_BASE_URL: z.string().default("https://router.project-osrm.org"),
+    OSRM_PROFILE: z.string().default("driving"),
+    DISTANCE_R_PREFILTER_METERS: z.coerce.number().default(10000),
+    DISTANCE_T50_MINUTES: z.coerce.number().default(15),
+    DISTANCE_TMAX_MINUTES: z.coerce.number().default(45),
+    DISTANCE_CANDIDATE_LIMIT: z.coerce.number().default(50),
+    DISTANCE_RDR_THRESHOLD: z.coerce.number().default(2.5),
+    DISTANCE_CITY_SPEED_KMH: z.coerce.number().default(25),
     UPLOAD_BASE_URL: z.string().default("http://localhost:5000/uploads")
 });
 export const env = envSchema.parse(process.env);

@@ -42,7 +42,7 @@ export type Place = {
   city?: string;
   district?: string;
   priceLevel?: string;
-  status?: "active" | "hidden";
+  status?: "active" | "hidden" | "pending";
   tags?: string[];
   amenities?: string[];
   openingHours?: string;

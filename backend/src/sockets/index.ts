@@ -69,7 +69,8 @@ export function registerSockets(io: Server) {
               userId: uId,
               type: "message",
               title: "Tin nhắn mới",
-              body: (data.text || "Đã gửi một tệp tin").trim().slice(0, 120)
+              body: (data.text || "Đã gửi một tệp tin").trim().slice(0, 120),
+              data: { roomId: String(room._id), senderId: userId }
             })
           )
         );

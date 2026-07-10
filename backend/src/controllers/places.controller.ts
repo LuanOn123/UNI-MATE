@@ -24,11 +24,25 @@ export const getPlaceVouchers = asyncHandler(async (req: Request, res: Response)
 });
 
 /** POST /api/places/partner-register — Register a partner cafe */
+export const getMyPartnerRegistration = asyncHandler(async (req: Request, res: Response) => {
+  const place = await PlaceCache.findOne({ partnerId: req.user!.id, isPartnerPlace: true }).sort({ createdAt: -1 });
+  res.json({ place });
+});
+
 export const registerPartnerPlace = asyncHandler(async (req: Request, res: Response) => {
   const { name, address, description, cafeVibe, tags, amenities, openingHours, partnerName, city, district, lat, lng } = req.body;
   if (!name?.trim()) return res.status(400).json({ message: "Tên quán là bắt buộc." });
   if (!cafeVibe) return res.status(400).json({ message: "Vui lòng chọn phong cách quán." });
   if (!partnerName?.trim()) return res.status(400).json({ message: "Tên chủ quán là bắt buộc." });
+
+  const existingApplication = await PlaceCache.findOne({
+    partnerId: req.user!.id,
+    isPartnerPlace: true,
+    status: { $in: ["pending", "active"] }
+  });
+  if (existingApplication) {
+    return res.status(409).json({ message: "Bạn đã có hồ sơ quán đang chờ duyệt hoặc đã được duyệt." });
+  }
 
   const place = await PlaceCache.create({
     name: name.trim(),

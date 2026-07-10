@@ -1,5 +1,5 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
-import { createVoucher, deleteVoucher, getMyPlaces, getPlaceVouchers, toggleVoucherStatus } from "../controllers/partner.controller.js";
+import { createVoucher, deleteVoucher, getMyPlaces, getPlaceVouchers, toggleVoucherStatus, updateMyPlace } from "../controllers/partner.controller.js";
 import { requireAuth } from "../middlewares/auth.js";
 
 // Middleware to enforce partner role
@@ -17,6 +17,7 @@ partnerRouter.use(requirePartner as any);
 
 // Places
 partnerRouter.get("/places", getMyPlaces);
+partnerRouter.patch("/places/:placeId", updateMyPlace);
 
 // Vouchers
 partnerRouter.get("/places/:placeId/vouchers", getPlaceVouchers);

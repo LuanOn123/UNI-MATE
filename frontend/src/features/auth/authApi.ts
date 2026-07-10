@@ -22,11 +22,6 @@ export async function register(email: string, password: string) {
   return unwrap<AuthPayload>(response);
 }
 
-export async function registerPartner(email: string, password: string, partnerName: string) {
-  const response = await api.post("/auth/register-partner", { email, password, partnerName });
-  return unwrap<AuthPayload>(response);
-}
-
 export async function login(email: string, password: string) {
   const response = await api.post("/auth/login", { email, password });
   return unwrap<LoginPayload>(response);
