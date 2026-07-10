@@ -7,8 +7,11 @@ import {
   adminTags,
   adminUserDetail,
   adminUsers,
+  createAdminUser,
   dashboard,
+  deletePlace,
   hidePlace,
+  updateAdminUser,
   updateReport,
   updateUserStatus,
   upsertPlace,
@@ -20,7 +23,9 @@ export const adminRouter = Router();
 adminRouter.use(requireAuth, requireAdmin);
 adminRouter.get("/dashboard", dashboard);
 adminRouter.get("/users", adminUsers);
+adminRouter.post("/users", createAdminUser);
 adminRouter.get("/users/:userId", adminUserDetail);
+adminRouter.put("/users/:userId", updateAdminUser);
 adminRouter.patch("/users/:userId/status", updateUserStatus);
 adminRouter.get("/reports", adminReports);
 adminRouter.patch("/reports/:reportId", updateReport);
@@ -29,6 +34,7 @@ adminRouter.get("/places", adminPlaces);
 adminRouter.get("/places-cache", adminPlaces);
 adminRouter.post("/places", upsertPlace);
 adminRouter.put("/places/:placeId", upsertPlace);
+adminRouter.delete("/places/:placeId", deletePlace);
 adminRouter.patch("/places/:placeId/status", hidePlace);
 adminRouter.get("/tags", adminTags);
 adminRouter.post("/tags", upsertTag);

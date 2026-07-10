@@ -1,8 +1,7 @@
-import { Clock, Coffee, Heart, Lock, MessageCircle, ShieldAlert, X } from "lucide-react";
+import { Heart, Lock, MessageCircle, ShieldAlert, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CoffeeMeter } from "../../components/common/CoffeeMeter";
 import { StateBlock } from "../../components/common/StateBlock";
 import { Button } from "../../components/ui/Button";
 import { api } from "../../lib/api";
@@ -12,11 +11,11 @@ import type { Match, User } from "../../types";
 const fallbackPhoto = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=500&auto=format&fit=crop";
 
 const statusCopy: Record<Match["status"], { label: string; tone: string; icon: any; helper: string }> = {
-  matched: { label: "Cần chọn quán", tone: "bg-latte text-cocoa", icon: Coffee, helper: "Đề xuất một quán để người kia xác nhận." },
-  cafe_proposed: { label: "Chờ xác nhận", tone: "bg-amber-100 text-amber-900", icon: Clock, helper: "Chat vẫn khóa cho tới khi quán được đồng ý." },
-  cafe_confirmed: { label: "Quán đã xác nhận", tone: "bg-mint text-cocoa", icon: Coffee, helper: "Sẵn sàng mở chat." },
-  chat_opened: { label: "Chat đã mở", tone: "bg-mint text-cocoa", icon: MessageCircle, helper: "Vào chat để chốt thời gian gặp." },
-  expired: { label: "Hết hạn", tone: "bg-slate-100 text-slate-600", icon: Lock, helper: "Match hết hạn sau 72 giờ nếu chưa chốt quán." },
+  matched: { label: "Đã match", tone: "bg-mint text-cocoa", icon: MessageCircle, helper: "Phòng chat sẽ mở ngay khi hệ thống tạo xong." },
+  cafe_proposed: { label: "Đã match", tone: "bg-mint text-cocoa", icon: MessageCircle, helper: "Luồng mới không cần chọn quán trước khi chat." },
+  cafe_confirmed: { label: "Đã match", tone: "bg-mint text-cocoa", icon: MessageCircle, helper: "Luồng mới không cần chọn quán trước khi chat." },
+  chat_opened: { label: "Chat đã mở", tone: "bg-mint text-cocoa", icon: MessageCircle, helper: "Vào chat để trò chuyện." },
+  expired: { label: "Hết hạn", tone: "bg-slate-100 text-slate-600", icon: Lock, helper: "Match đã hết hạn." },
   blocked: { label: "Đã khóa", tone: "bg-rose-100 text-rose-700", icon: ShieldAlert, helper: "Kết nối này đã bị khóa vì lý do an toàn." },
   cancelled: { label: "Đã hủy", tone: "bg-slate-100 text-slate-600", icon: Lock, helper: "Match đã được hủy." }
 };
@@ -33,7 +32,7 @@ export function MatchesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [incomingLikes, setIncomingLikes] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "need_cafe" | "chat">("all");
+  const [filter, setFilter] = useState<"all" | "chat">("all");
   const [message, setMessage] = useState("");
   const currentId = getId(useAuthStore((s) => s.user));
   const navigate = useNavigate();
@@ -55,7 +54,6 @@ export function MatchesPage() {
   }, []);
 
   const visible = useMemo(() => {
-    if (filter === "need_cafe") return matches.filter((m) => ["matched", "cafe_proposed"].includes(m.status));
     if (filter === "chat") return matches.filter((m) => m.status === "chat_opened");
     return matches;
   }, [filter, matches]);
@@ -79,21 +77,20 @@ export function MatchesPage() {
   };
 
   if (loading) return <div className="p-6"><StateBlock title="Đang tải match" /></div>;
-  if (!matches.length && !incomingLikes.length) return <div className="p-6"><StateBlock title="Chưa có match" text="Bật GPS thật và like người hợp gu ở Discovery để bắt đầu cafe-gated chat." /></div>;
+  if (!matches.length && !incomingLikes.length) return <div className="p-6"><StateBlock title="Chưa có match" text="Bật GPS thật và like người hợp gu ở Discovery để bắt đầu chat." /></div>;
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-8">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-caramel">Cafe gate</p>
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-caramel">Match chat</p>
           <h1 className="text-3xl font-black">Matches</h1>
           <p className="mt-2 text-sm font-semibold text-coffee/60">Trang này tự cập nhật mỗi 5 giây để thấy lượt like/match mới.</p>
         </div>
         <div className="flex rounded-lg bg-white p-1 shadow-sm">
           {[
             ["all", "Tất cả"],
-            ["need_cafe", "Cần chốt quán"],
-            ["chat", "Đã mở chat"]
+            ["chat", "Đang chat"]
           ].map(([key, label]) => (
             <button key={key} type="button" onClick={() => setFilter(key as any)} className={`rounded-md px-3 py-2 text-sm font-bold transition ${filter === key ? "bg-latte text-cocoa" : "text-coffee/58 hover:text-cocoa"}`}>
               {label}
@@ -115,7 +112,6 @@ export function MatchesPage() {
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate font-black">{user.displayName || "UNI-MATE user"}, {user.age ?? "18+"}</h3>
                     <p className="truncate text-sm text-coffee/60">{user.school || "Sinh viên"} {user.major ? `· ${user.major}` : ""}</p>
-                    <CoffeeMeter value={user.matchMeta?.score ?? 0} size="sm" />
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2">
@@ -135,36 +131,23 @@ export function MatchesPage() {
           const person = otherUser(match, currentId);
           const copy = statusCopy[match.status];
           const Icon = copy.icon;
-          const selectedByMe = String(match.selectedBy ?? "") === currentId;
           return (
             <motion.div key={match._id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.035 }} className="overflow-hidden rounded-lg bg-white shadow-soft">
               <div className="flex gap-4 p-4">
                 <div className="h-20 w-20 shrink-0 rounded-lg bg-cover bg-center" style={{ backgroundImage: `url(${person?.avatarUrl || fallbackPhoto})` }} />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="truncate text-lg font-black">{person?.displayName || "UNI-MATE user"}</h3>
-                      <p className="truncate text-sm text-coffee/62">{person?.school || "Sinh viên"} {person?.major ? `· ${person.major}` : ""}</p>
-                    </div>
-                    <CoffeeMeter value={match.score ?? 0} size="sm" />
-                  </div>
+                  <h3 className="truncate text-lg font-black">{person?.displayName || "UNI-MATE user"}</h3>
+                  <p className="truncate text-sm text-coffee/62">{person?.school || "Sinh viên"} {person?.major ? `· ${person.major}` : ""}</p>
                   <div className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black ${copy.tone}`}>
                     <Icon className="h-4 w-4" /> {copy.label}
                   </div>
                 </div>
               </div>
               <div className="border-t border-coffee/10 p-4">
-                {match.selectedPlace ? (
-                  <div className="mb-3 rounded-lg bg-cream p-3 text-sm">
-                    <p className="font-black">{match.selectedPlace.name}</p>
-                    <p className="mt-1 text-coffee/62">{match.selectedPlace.address}</p>
-                    <p className="mt-2 text-xs font-bold text-caramel">{selectedByMe ? "Bạn đã đề xuất, đang chờ người kia." : "Người kia đã đề xuất, hãy xác nhận nếu phù hợp."}</p>
-                  </div>
-                ) : null}
                 <p className="min-h-10 text-sm font-medium text-coffee/70">{match.reasons?.[0] ?? copy.helper}</p>
-                <Link to={opened ? `/app/chat/${room._id}` : `/app/matches/${match._id}/places`} className="mt-4 block">
-                  <Button className="w-full" icon={opened ? <MessageCircle /> : <Coffee />}>
-                    {opened ? "Vào chat" : match.status === "cafe_proposed" && !selectedByMe ? "Xác nhận quán" : "Chọn quán"}
+                <Link to={opened ? `/app/chat/${room._id}` : "/app/chat"} className="mt-4 block">
+                  <Button className="w-full" icon={<MessageCircle />}>
+                    {opened ? "Vào chat" : "Mở danh sách chat"}
                   </Button>
                 </Link>
               </div>

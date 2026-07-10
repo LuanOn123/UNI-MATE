@@ -11,7 +11,7 @@ const onboardingSchema = new Schema({
     cafeStyles: [{ type: String }],
     budgetRange: String,
     frequency: String,
-    purpose: { type: String, enum: ["study_buddy", "cafe_chat", "boardgame_sport", "dating"], default: "cafe_chat" },
+    purpose: [{ type: String, enum: ["study_buddy", "cafe_chat", "boardgame_sport", "dating"] }],
     majorPreference: { type: String, enum: ["same", "different", "any"], default: "any" },
     vibePreference: { type: String, enum: ["quiet_study", "acoustic_view", "boardgame_lively"], default: "quiet_study" },
     personality: {
@@ -47,7 +47,7 @@ const userSchema = new Schema({
     profilePhotos: [{ type: String }],
     onboardingCompleted: { type: Boolean, default: false },
     disclaimerAccepted: { type: Boolean, default: false },
-    location: { type: locationSchema, index: "2dsphere" },
+    location: { type: locationSchema },
     onboarding: { type: onboardingSchema, default: {} },
     blockedUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     refreshTokenHash: String,
@@ -56,4 +56,5 @@ const userSchema = new Schema({
     lastSeenAt: Date
 }, { timestamps: true });
 userSchema.index({ role: 1, status: 1, isActive: 1 });
+userSchema.index({ location: "2dsphere" });
 export const User = mongoose.model("User", userSchema);

@@ -1,4 +1,19 @@
-﻿import { Camera, Save, Trash2, Upload } from "lucide-react";
+import {
+  ArrowLeft,
+  Camera,
+  CheckCircle2,
+  Compass,
+  Heart,
+  Info,
+  MapPin,
+  Save,
+  Sliders,
+  Sparkles,
+  Target,
+  Trash2,
+  Upload,
+  UserCircle
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -82,6 +97,39 @@ async function uploadPhoto(file: File, field: "avatar" | "photo") {
   return data.url as string;
 }
 
+const personalityConfig = [
+  {
+    key: "introvertExtrovert",
+    title: "Năng lượng giao tiếp",
+    left: "Hướng nội",
+    right: "Hướng ngoại"
+  },
+  {
+    key: "talkListen",
+    title: "Vai trò khi trò chuyện",
+    left: "Thích lắng nghe",
+    right: "Thích kể chuyện"
+  },
+  {
+    key: "newPeopleComfort",
+    title: "Kết nối người mới",
+    left: "Cần thời gian\nmở lòng",
+    right: "Dễ bắt chuyện\nngay lập tức"
+  },
+  {
+    key: "studyChillBalance",
+    title: "Mục đích đến quán",
+    left: "Học tập &\nChạy deadline",
+    right: "Trò chuyện &\nThư giãn"
+  },
+  {
+    key: "plannedSpontaneous",
+    title: "Phong cách lên lịch",
+    left: "Lên kế hoạch\ntừ trước",
+    right: "Ngẫu hứng\nđi ngay"
+  }
+];
+
 export function SettingsPage() {
   const storedUser = useAuthStore((s) => s.user);
   const updateUser = useAuthStore((s) => s.updateUser);
@@ -95,16 +143,22 @@ export function SettingsPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    api.get("/users/profile").then((res) => {
-      const fresh = { ...res.data.user, id: res.data.user._id } as User;
-      updateUser(fresh);
-      setForm(buildForm(fresh));
-      setAvatarPreview(displayUrl(fresh.avatarUrl));
-      setPhotos(photoDrafts(fresh));
-    }).catch(() => undefined);
+    api
+      .get("/users/profile")
+      .then((res) => {
+        const fresh = { ...res.data.user, id: res.data.user._id } as User;
+        updateUser(fresh);
+        setForm(buildForm(fresh));
+        setAvatarPreview(displayUrl(fresh.avatarUrl));
+        setPhotos(photoDrafts(fresh));
+      })
+      .catch(() => undefined);
   }, [updateUser]);
 
-  const previewPhotos = useMemo(() => [avatarPreview, ...photos.map((photo) => photo.preview)].filter(Boolean), [avatarPreview, photos]);
+  const previewPhotos = useMemo(
+    () => [avatarPreview, ...photos.map((photo) => photo.preview)].filter(Boolean),
+    [avatarPreview, photos]
+  );
   const selectedLocation = findLocation(form.location.addressLabel);
   const districtChoices = districtsFor(selectedLocation.city);
 
@@ -116,14 +170,25 @@ export function SettingsPage() {
   const save = async () => {
     setError("");
     setSaved("");
-    if (!form.displayName.trim() || !form.birthDate) return setError("Tên và ngày sinh là bắt buộc.");
-    if (form.cafeStyles.length < 3) return setError("Bạn cần chọn ít nhất 3 tags cafe.");
-    if (form.goals.length < 1) return setError("Bạn cần chọn ít nhất 1 mục tiêu.");
-    if (form.interests.length < 3) return setError("Bạn cần chọn ít nhất 3 sở thích.");
+    if (!form.displayName.trim() || !form.birthDate) {
+      return setError("Tên hiển thị và ngày sinh là bắt buộc.");
+    }
+    if (form.cafeStyles.length < 3) {
+      return setError(`Gu style quán cần chọn ít nhất 3 tags (hiện tại ${form.cafeStyles.length}/3).`);
+    }
+    if (form.goals.length < 1) {
+      return setError("Mục tiêu gặp cần chọn ít nhất 1 mục tiêu.");
+    }
+    if (form.interests.length < 3) {
+      return setError(`Sở thích cần chọn ít nhất 3 tags (hiện tại ${form.interests.length}/3).`);
+    }
+
     setSaving(true);
     try {
       const avatarUrl = avatarFile ? await uploadPhoto(avatarFile, "avatar") : form.avatarUrl;
-      const profilePhotos = await Promise.all(photos.map((photo) => photo.file ? uploadPhoto(photo.file, "photo") : Promise.resolve(photo.url ?? "")));
+      const profilePhotos = await Promise.all(
+        photos.map((photo) => (photo.file ? uploadPhoto(photo.file, "photo") : Promise.resolve(photo.url ?? "")))
+      );
       const payload = { ...form, avatarUrl, profilePhotos: profilePhotos.filter(Boolean) };
       await api.post("/users/onboarding", payload);
       const { data } = await api.get("/users/profile");
@@ -133,7 +198,8 @@ export function SettingsPage() {
       setAvatarFile(null);
       setAvatarPreview(displayUrl(fresh.avatarUrl));
       setPhotos(photoDrafts(fresh));
-      setSaved("Đã cập nhật hồ sơ.");
+      setSaved("Đã cập nhật hồ sơ thành công!");
+      setTimeout(() => setSaved(""), 4000);
     } catch (e: any) {
       setError(e.response?.data?.message ?? "Không lưu được hồ sơ");
     } finally {
@@ -141,13 +207,23 @@ export function SettingsPage() {
     }
   };
 
-  const chipGrid = (items: string[], key: "goals" | "preferredTimes" | "cafeStyles" | "interests") => (
-    <div className="flex flex-wrap gap-2">
-      {items.map((item) => (
-        <Chip key={item} selected={(form[key] as string[]).includes(item)} onClick={() => setForm({ ...form, [key]: toggle(form[key] as string[], item) })}>
-          {item}
-        </Chip>
-      ))}
+  const chipGrid = (
+    items: string[],
+    key: "goals" | "preferredTimes" | "cafeStyles" | "interests"
+  ) => (
+    <div className="flex flex-wrap gap-2.5">
+      {items.map((item) => {
+        const selected = (form[key] as string[]).includes(item);
+        return (
+          <Chip
+            key={item}
+            selected={selected}
+            onClick={() => setForm({ ...form, [key]: toggle(form[key] as string[], item) })}
+          >
+            {item}
+          </Chip>
+        );
+      })}
     </div>
   );
 
@@ -164,154 +240,604 @@ export function SettingsPage() {
 
   const useGps = () => {
     navigator.geolocation?.getCurrentPosition(
-      (pos) => setForm({ ...form, location: { lat: pos.coords.latitude, lng: pos.coords.longitude, addressLabel: "GPS hiện tại", source: "gps" } }),
+      (pos) =>
+        setForm({
+          ...form,
+          location: { lat: pos.coords.latitude, lng: pos.coords.longitude, addressLabel: "GPS hiện tại", source: "gps" }
+        }),
       () => setError("Không lấy được GPS. Vui lòng cấp quyền vị trí cho trình duyệt.")
     );
   };
 
   return (
-    <div className="mx-auto max-w-6xl p-4 md:p-8">
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+    <div className="mx-auto max-w-6xl p-4 md:p-8 pb-32">
+      {/* Header */}
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <Link to="/app/profile" className="text-sm font-bold text-caramel">← Hồ sơ</Link>
-          <h1 className="mt-2 text-3xl font-black">Chỉnh sửa hồ sơ</h1>
+          <Link
+            to="/app/profile"
+            className="inline-flex items-center gap-1.5 text-sm font-bold text-coffee/70 transition hover:text-caramel"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Quay lại Hồ sơ
+          </Link>
+          <h1 className="mt-2 text-3xl font-black text-coffee md:text-4xl">Chỉnh Sửa Hồ Sơ</h1>
         </div>
-        <Button icon={<Save />} onClick={save} disabled={saving}>{saving ? "Đang lưu..." : "Lưu thay đổi"}</Button>
+        <Button
+          icon={<Save className="h-4 w-4" />}
+          onClick={save}
+          disabled={saving}
+          className="rounded-xl px-6 h-11 font-bold shadow-md"
+        >
+          {saving ? "Đang lưu thay đổi..." : "Lưu thay đổi"}
+        </Button>
       </div>
 
-      {error ? <p className="mb-4 rounded-lg bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</p> : null}
-      {saved ? <p className="mb-4 rounded-lg bg-mint p-3 text-sm font-bold text-cocoa">{saved}</p> : null}
+      {error ? (
+        <div className="mb-6 flex items-center gap-3 rounded-2xl bg-rose-50 border border-rose-200 p-4 text-sm font-bold text-rose-700 shadow-sm">
+          <Info className="h-5 w-5 shrink-0" />
+          <span>{error}</span>
+        </div>
+      ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <main className="space-y-5">
-          <Panel title="Thông tin cơ bản">
+      {saved ? (
+        <div className="mb-6 flex items-center gap-3 rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-sm font-bold text-emerald-800 shadow-sm">
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+          <span>{saved}</span>
+        </div>
+      ) : null}
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        {/* Main Column */}
+        <main className="space-y-6">
+          <Panel title="Thông tin cơ bản" icon={<UserCircle />}>
             <div className="grid gap-4 md:grid-cols-2">
-              <Input placeholder="Tên hiển thị" value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} />
-              <Input type="date" value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} />
-              <select className="w-full rounded-lg border border-coffee/15 bg-white p-3 outline-none focus:ring-4 focus:ring-caramel/30" value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}>
-                <option value="prefer_not">Không tiết lộ giới tính</option>
-                <option value="female">Nữ</option>
-                <option value="male">Nam</option>
-                <option value="other">Khác</option>
-              </select>
-              <Input placeholder="Trường" value={form.school} onChange={(e) => setForm({ ...form, school: e.target.value })} />
-              <Input placeholder="Ngành / lĩnh vực" value={form.major} onChange={(e) => setForm({ ...form, major: e.target.value })} />
-            </div>
-          </Panel>
-
-          <Panel title="Mục tiêu gặp">{chipGrid(goals, "goals")}</Panel>
-          <Panel title="Gu cafe">
-            <h3 className="mb-2 text-sm font-black text-coffee/65">Thời gian rảnh</h3>
-            {chipGrid(preferredTimes, "preferredTimes")}
-            <h3 className="mb-2 mt-5 text-sm font-black text-coffee/65">Style quán</h3>
-            {chipGrid(cafeStyles, "cafeStyles")}
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <select className="rounded-lg border border-coffee/15 p-3" value={form.budgetRange} onChange={(e) => setForm({ ...form, budgetRange: e.target.value })}>
-                <option value="under_40">Dưới 40k</option>
-                <option value="40_70">40-70k</option>
-                <option value="70_120">70-120k</option>
-                <option value="above_120">Trên 120k</option>
-              </select>
-              <select className="rounded-lg border border-coffee/15 p-3" value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value })}>
-                <option value="rarely">Hiếm khi</option>
-                <option value="weekly">Hàng tuần</option>
-                <option value="few_times_week">Vài lần/tuần</option>
-                <option value="daily">Mỗi ngày</option>
-              </select>
-            </div>
-          </Panel>
-
-          <Panel title="Sở thích">{chipGrid(interests, "interests")}</Panel>
-
-          <Panel title="Chỉ số tính cách">
-            <div className="grid gap-3">
-              {Object.entries({ introvertExtrovert: "Hướng nội - Hướng ngoại", talkListen: "Lắng nghe - Nói chuyện", newPeopleComfort: "Cần thời gian - Dễ bắt chuyện", studyChillBalance: "Học nghiêm túc - Chill", plannedSpontaneous: "Kế hoạch - Ngẫu hứng" }).map(([key, label]) => (
-                <label key={key} className="rounded-lg bg-cream p-4">
-                  <div className="mb-2 flex justify-between text-sm font-bold"><span>{label}</span><span>{(form.personality as any)[key]}</span></div>
-                  <input type="range" min={1} max={5} value={(form.personality as any)[key]} onChange={(e) => setForm({ ...form, personality: { ...form.personality, [key]: Number(e.target.value) } })} className="w-full accent-caramel" />
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-1.5">
+                  Tên hiển thị <span className="text-rose-500">*</span>
                 </label>
-              ))}
+                <Input
+                  className="rounded-xl h-11"
+                  placeholder="Tên hiển thị của bạn"
+                  value={form.displayName}
+                  onChange={(e) => setForm({ ...form, displayName: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-1.5">
+                  Ngày sinh <span className="text-rose-500">*</span>
+                </label>
+                <Input
+                  type="date"
+                  className="rounded-xl h-11"
+                  value={form.birthDate}
+                  onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-1.5">Giới tính</label>
+                <select
+                  className="w-full h-11 rounded-xl border border-coffee/15 bg-white px-3.5 font-semibold text-coffee outline-none focus:border-caramel focus:ring-4 focus:ring-caramel/20 transition"
+                  value={form.gender}
+                  onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                >
+                  <option value="prefer_not">Không tiết lộ giới tính</option>
+                  <option value="female">Nữ</option>
+                  <option value="male">Nam</option>
+                  <option value="other">Khác</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-1.5">
+                  Trường / Đơn vị
+                </label>
+                <Input
+                  className="rounded-xl h-11"
+                  placeholder="Trường đại học..."
+                  value={form.school}
+                  onChange={(e) => setForm({ ...form, school: e.target.value })}
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-1.5">
+                  Ngành học / Lĩnh vực quan tâm
+                </label>
+                <Input
+                  className="rounded-xl h-11"
+                  placeholder="Khoa học máy tính, Quản trị kinh doanh..."
+                  value={form.major}
+                  onChange={(e) => setForm({ ...form, major: e.target.value })}
+                />
+              </div>
+            </div>
+          </Panel>
+
+          <Panel
+            title="Mục tiêu kết nối"
+            icon={<Target />}
+            badge={
+              form.goals.length >= 1 ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-black text-emerald-800">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  Đã chọn {form.goals.length}/1
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-black text-amber-800">
+                  ⚠️ Chọn ít nhất 1
+                </span>
+              )
+            }
+          >
+            <p className="text-xs font-semibold text-coffee/60 mb-3.5">
+              Chọn mục đích chính mà bạn muốn tìm kiếm người đồng hành tại UNI-MATE
+            </p>
+            {chipGrid(goals, "goals")}
+          </Panel>
+
+          <Panel
+            title="Gu quán Cà phê & Thói quen"
+            icon={<Sparkles />}
+            badge={
+              form.cafeStyles.length >= 3 ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-black text-emerald-800">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  Đã chọn {form.cafeStyles.length}/3
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-black text-amber-800">
+                  ⚠️ Chọn thêm {3 - form.cafeStyles.length} style
+                </span>
+              )
+            }
+          >
+            <div className="space-y-6">
+              <div>
+                <h3 className="mb-1.5 text-sm font-black text-coffee">Style không gian quán yêu thích</h3>
+                <p className="text-xs font-semibold text-coffee/60 mb-3">Chọn ít nhất 3 phong cách quán bạn thích ngồi nhất</p>
+                {chipGrid(cafeStyles, "cafeStyles")}
+              </div>
+
+              <div className="pt-4 border-t border-coffee/10">
+                <h3 className="mb-1.5 text-sm font-black text-coffee">Khung giờ rảnh trong ngày</h3>
+                <p className="text-xs font-semibold text-coffee/60 mb-3">Thời gian bạn thường thuận tiện đi cà phê hoặc học bài</p>
+                {chipGrid(preferredTimes, "preferredTimes")}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 pt-4 border-t border-coffee/10">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-1.5">
+                    Ngân sách trung bình / buổi
+                  </label>
+                  <select
+                    className="w-full h-11 rounded-xl border border-coffee/15 bg-white px-3.5 font-semibold text-coffee outline-none focus:border-caramel focus:ring-4 focus:ring-caramel/20 transition"
+                    value={form.budgetRange}
+                    onChange={(e) => setForm({ ...form, budgetRange: e.target.value })}
+                  >
+                    <option value="under_40">Dưới 40k / buổi</option>
+                    <option value="40_70">40k - 70k / buổi</option>
+                    <option value="70_120">70k - 120k / buổi</option>
+                    <option value="above_120">Trên 120k / buổi</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-1.5">
+                    Tần suất đi quán cafe
+                  </label>
+                  <select
+                    className="w-full h-11 rounded-xl border border-coffee/15 bg-white px-3.5 font-semibold text-coffee outline-none focus:border-caramel focus:ring-4 focus:ring-caramel/20 transition"
+                    value={form.frequency}
+                    onChange={(e) => setForm({ ...form, frequency: e.target.value })}
+                  >
+                    <option value="rarely">Hiếm khi (Thỉnh thoảng)</option>
+                    <option value="weekly">Hàng tuần (Cuối tuần rảnh)</option>
+                    <option value="few_times_week">Vài lần / tuần</option>
+                    <option value="daily">Mỗi ngày (Rất hay ngồi quán)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </Panel>
+
+          <Panel
+            title="Sở thích & Đam mê cá nhân"
+            icon={<Heart />}
+            badge={
+              form.interests.length >= 3 ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-black text-emerald-800">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  Đã chọn {form.interests.length}/3
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-black text-amber-800">
+                  ⚠️ Chọn thêm {3 - form.interests.length} sở thích
+                </span>
+              )
+            }
+          >
+            <p className="text-xs font-semibold text-coffee/60 mb-3.5">
+              Chọn ít nhất 3 chủ đề mà bạn có thể nói chuyện không biết chán
+            </p>
+            {chipGrid(interests, "interests")}
+          </Panel>
+
+          {/* Sleek, Compact 2-Column Personality Sliders */}
+          <Panel title="Chỉ số tính cách (Personality Sliders)" icon={<Sliders />}>
+            <p className="text-xs font-semibold text-coffee/60 mb-5">
+              Kéo thanh trượt từ 1 đến 5 để phản ánh mức độ phù hợp nhất với con người bạn
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {personalityConfig.map((item) => {
+                const val = (form.personality as any)[item.key] ?? 3;
+                const leansLeft = val <= 2;
+                const leansRight = val >= 4;
+                const isBalanced = val === 3;
+
+                return (
+                  <div
+                    key={item.key}
+                    className="flex flex-col justify-between rounded-2xl border border-coffee/10 bg-gradient-to-br from-white to-cream/30 p-4 transition hover:shadow-xs"
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <span className="text-sm font-black text-coffee">{item.title}</span>
+                      <span className="rounded-md bg-caramel/15 px-2 py-0.5 text-[11px] font-black text-caramel shrink-0">
+                        {val} / 5
+                      </span>
+                    </div>
+
+                    <input
+                      type="range"
+                      min={1}
+                      max={5}
+                      value={val}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          personality: { ...form.personality, [item.key]: Number(e.target.value) }
+                        })
+                      }
+                      className="w-full accent-caramel h-2 rounded-lg cursor-pointer bg-coffee/15 my-2"
+                    />
+
+                    <div className="mt-2 flex items-start justify-between text-xs font-bold gap-2">
+                      <span
+                        className={`rounded-lg px-2.5 py-1 leading-snug transition whitespace-pre-line text-left max-w-[48%] ${leansLeft
+                            ? "bg-caramel text-white font-black"
+                            : isBalanced
+                              ? "text-coffee/80 bg-coffee/5"
+                              : "text-coffee/40"
+                          }`}
+                      >
+                        {item.left}
+                      </span>
+                      <span
+                        className={`rounded-lg px-2.5 py-1 leading-snug transition whitespace-pre-line text-right max-w-[48%] ${leansRight
+                            ? "bg-caramel text-white font-black"
+                            : isBalanced
+                              ? "text-coffee/80 bg-coffee/5"
+                              : "text-coffee/40"
+                          }`}
+                      >
+                        {item.right}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </Panel>
         </main>
 
-        <aside className="space-y-5">
-          <Panel title="Ảnh hồ sơ">
-            <div className="grid gap-3">
-              <label className="block cursor-pointer rounded-lg border border-dashed border-coffee/25 bg-cream p-4 text-center font-bold text-coffee">
-                <Upload className="mx-auto mb-2 h-5 w-5 text-caramel" /> Chọn ảnh chính từ máy
+        {/* Right Sidebar */}
+        <aside className="space-y-6">
+          <Panel title="Quản lý Ảnh hồ sơ" icon={<Camera />}>
+            <div className="space-y-3.5">
+              <label className="flex items-center justify-center gap-2.5 cursor-pointer rounded-2xl border-2 border-dashed border-caramel/40 bg-cream/70 p-4 text-center font-bold text-coffee transition hover:bg-cream hover:border-caramel">
+                <Upload className="h-5 w-5 text-caramel shrink-0" />
+                <span>Thay ảnh chính (Avatar)</span>
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => pickAvatar(e.target.files?.[0])} />
               </label>
-              <label className="block cursor-pointer rounded-lg border border-dashed border-coffee/25 bg-white p-4 text-center font-bold text-coffee shadow-sm">
-                <Camera className="mx-auto mb-2 h-5 w-5 text-caramel" /> Thêm ảnh phụ
+
+              <label className="flex items-center justify-center gap-2.5 cursor-pointer rounded-2xl border border-coffee/15 bg-white p-4 text-center font-bold text-coffee shadow-sm transition hover:bg-cream/40 hover:border-caramel/30">
+                <Camera className="h-5 w-5 text-caramel shrink-0" />
+                <span>Thêm ảnh phụ vào Album</span>
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => addPhoto(e.target.files?.[0])} />
               </label>
-              {photos.map((photo) => (
-                <div key={photo.id} className="flex items-center gap-3 rounded-lg bg-cream p-2">
-                  <div className="h-16 w-12 rounded-md bg-cover bg-center" style={{ backgroundImage: `url(${photo.preview})` }} />
-                  <p className="min-w-0 flex-1 truncate text-sm font-semibold">Ảnh phụ {photos.findIndex((item) => item.id === photo.id) + 1}</p>
-                  <Button variant="ghost" icon={<Trash2 />} onClick={() => setPhotos((list) => list.filter((item) => item.id !== photo.id))} />
+
+              {/* Photos list */}
+              {photos.length > 0 && (
+                <div className="space-y-2 pt-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-coffee/50">Danh sách ảnh phụ ({photos.length})</p>
+                  {photos.map((photo, index) => (
+                    <div key={photo.id} className="flex items-center gap-3 rounded-xl border border-coffee/10 bg-cream/30 p-2 shadow-sm">
+                      <div
+                        className="h-14 w-12 rounded-lg bg-cover bg-center shrink-0"
+                        style={{ backgroundImage: `url(${photo.preview})` }}
+                      />
+                      <p className="min-w-0 flex-1 truncate text-xs font-bold text-coffee">
+                        Ảnh phụ #{index + 1}
+                      </p>
+                      <button
+                        onClick={() => setPhotos((list) => list.filter((item) => item.id !== photo.id))}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-coffee/50 hover:bg-rose-100 hover:text-rose-600 transition"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-            <p className="mt-3 text-xs font-semibold text-coffee/60">Ảnh được preview trước, chỉ upload và lưu khi bạn bấm Lưu thay đổi.</p>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {previewPhotos.slice(0, 6).map((url, i) => <div key={`${url}-${i}`} className="aspect-[3/4] rounded-lg bg-cover bg-center" style={{ backgroundImage: `url(${url})` }} />)}
+
+            <p className="mt-4 text-[11px] font-semibold text-coffee/60 leading-relaxed">
+              💡 Ảnh mới sẽ được tải lên và cập nhật ngay sau khi bạn bấm nút "Lưu thay đổi".
+            </p>
+
+            {previewPhotos.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-coffee/10">
+                <p className="text-xs font-bold uppercase tracking-wider text-coffee/50 mb-2.5">Xem trước Album</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {previewPhotos.slice(0, 6).map((url, i) => (
+                    <div
+                      key={`${url}-${i}`}
+                      className="aspect-[3/4] rounded-xl bg-cover bg-center border border-coffee/10 shadow-sm"
+                      style={{ backgroundImage: `url(${url})` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </Panel>
+
+          <Panel title="Tiêu chí Match mong muốn" icon={<Target />}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-1.5">
+                  Đối tượng tìm kiếm
+                </label>
+                <select
+                  className="w-full h-11 rounded-xl border border-coffee/15 bg-white px-3.5 font-semibold text-coffee outline-none focus:border-caramel transition"
+                  value={form.preferences.preferredGender}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      preferences: { ...form.preferences, preferredGender: e.target.value }
+                    })
+                  }
+                >
+                  <option value="all">Tất cả mọi người</option>
+                  <option value="same">Cùng giới tính</option>
+                  <option value="opposite">Khác giới tính</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-1.5">
+                  Độ tuổi phù hợp
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <Input
+                    type="number"
+                    min={18}
+                    placeholder="Từ"
+                    className="rounded-xl h-11"
+                    value={form.preferences.ageRange.min}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        preferences: {
+                          ...form.preferences,
+                          ageRange: { ...form.preferences.ageRange, min: Number(e.target.value) }
+                        }
+                      })
+                    }
+                  />
+                  <Input
+                    type="number"
+                    max={80}
+                    placeholder="Đến"
+                    className="rounded-xl h-11"
+                    value={form.preferences.ageRange.max}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        preferences: {
+                          ...form.preferences,
+                          ageRange: { ...form.preferences.ageRange, max: Number(e.target.value) }
+                        }
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-1.5">
+                  Khoảng cách tối đa (Bán kính km)
+                </label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  className="rounded-xl h-11"
+                  value={form.preferences.maxDistanceKm}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      preferences: { ...form.preferences, maxDistanceKm: Number(e.target.value) }
+                    })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-2">
+                  Ưu tiên thuật toán
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {priorities.map((item) => (
+                    <Chip
+                      key={item}
+                      selected={form.preferences.priorities.includes(item)}
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          preferences: {
+                            ...form.preferences,
+                            priorities: toggle(form.preferences.priorities, item)
+                          }
+                        })
+                      }
+                    >
+                      {item}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
             </div>
           </Panel>
 
-          <Panel title="Gu tìm kiếm">
-            <div className="grid gap-3">
-              <select className="rounded-lg border border-coffee/15 p-3" value={form.preferences.preferredGender} onChange={(e) => setForm({ ...form, preferences: { ...form.preferences, preferredGender: e.target.value } })}>
-                <option value="all">Tất cả</option>
-                <option value="same">Cùng giới</option>
-                <option value="opposite">Khác giới</option>
-              </select>
-              <div className="grid grid-cols-2 gap-2">
-                <Input type="number" min={18} value={form.preferences.ageRange.min} onChange={(e) => setForm({ ...form, preferences: { ...form.preferences, ageRange: { ...form.preferences.ageRange, min: Number(e.target.value) } } })} />
-                <Input type="number" max={80} value={form.preferences.ageRange.max} onChange={(e) => setForm({ ...form, preferences: { ...form.preferences, ageRange: { ...form.preferences.ageRange, max: Number(e.target.value) } } })} />
+          <Panel title="Khu vực & GPS" icon={<MapPin />}>
+            <div className="space-y-4">
+              <div
+                className={`rounded-2xl p-4 text-xs font-bold leading-relaxed border ${form.location.source === "gps"
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                    : "bg-latte/50 border-caramel/20 text-cocoa"
+                  }`}
+              >
+                {form.location.source === "gps"
+                  ? "🛰️ Đang sử dụng tọa độ GPS thực tế. Thuật toán Discovery sẽ tính toán chính xác từ vị trí hiện tại của bạn."
+                  : `📍 Đang chọn khu vực thủ công: ${form.location.addressLabel}.`}
               </div>
-              <Input type="number" min={1} max={20} value={form.preferences.maxDistanceKm} onChange={(e) => setForm({ ...form, preferences: { ...form.preferences, maxDistanceKm: Number(e.target.value) } })} />
-              <div className="flex flex-wrap gap-2">
-                {priorities.map((item) => <Chip key={item} selected={form.preferences.priorities.includes(item)} onClick={() => setForm({ ...form, preferences: { ...form.preferences, priorities: toggle(form.preferences.priorities, item) } })}>{item}</Chip>)}
+
+              <Button
+                variant="ghost"
+                onClick={useGps}
+                className="w-full rounded-xl border border-coffee/15 h-11 font-bold shadow-sm flex items-center justify-center gap-2"
+                icon={<Compass className="h-4 w-4 text-caramel" />}
+              >
+                Cập nhật theo GPS thực tế
+              </Button>
+
+              <div className="grid gap-3 pt-2 border-t border-coffee/10">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-1.5">
+                    Thành phố
+                  </label>
+                  <select
+                    className="w-full h-11 rounded-xl border border-coffee/15 bg-white px-3.5 font-semibold text-coffee outline-none focus:border-caramel transition"
+                    value={selectedLocation.city}
+                    onChange={(e) => chooseManualLocation(districtsFor(e.target.value)[0].label)}
+                  >
+                    {cities.map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-1.5">
+                    Quận / Huyện
+                  </label>
+                  <select
+                    className="w-full h-11 rounded-xl border border-coffee/15 bg-white px-3.5 font-semibold text-coffee outline-none focus:border-caramel transition"
+                    value={selectedLocation.label}
+                    onChange={(e) => chooseManualLocation(e.target.value)}
+                  >
+                    {districtChoices.map((choice) => (
+                      <option key={choice.label} value={choice.label}>
+                        {choice.district}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </Panel>
 
-          <Panel title="Khu vực">
-            <div className="grid gap-3">
-              <p className={`rounded-lg p-3 text-sm font-bold ${form.location.source === "gps" ? "bg-mint text-cocoa" : "bg-latte text-cocoa"}`}>
-                {form.location.source === "gps" ? "Đang dùng GPS thật, Discovery sẽ ưu tiên vị trí hiện tại." : `Đang dùng khu vực: ${form.location.addressLabel}.`}
-              </p>
-              <Button variant="ghost" onClick={useGps}>Dùng GPS thật</Button>
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="grid gap-2 text-sm font-bold text-coffee">
-                  Thành phố
-                  <select className="rounded-lg border border-coffee/15 bg-white p-3 outline-none focus:ring-4 focus:ring-caramel/30" value={selectedLocation.city} onChange={(e) => chooseManualLocation(districtsFor(e.target.value)[0].label)}>
-                    {cities.map((city) => <option key={city} value={city}>{city}</option>)}
-                  </select>
-                </label>
-                <label className="grid gap-2 text-sm font-bold text-coffee">
-                  Quận / khu vực
-                  <select className="rounded-lg border border-coffee/15 bg-white p-3 outline-none focus:ring-4 focus:ring-caramel/30" value={selectedLocation.label} onChange={(e) => chooseManualLocation(e.target.value)}>
-                    {districtChoices.map((choice) => <option key={choice.label} value={choice.label}>{choice.district}</option>)}
-                  </select>
-                </label>
-              </div>
-            </div>
-          </Panel>
-          <Button className="w-full" icon={<Save />} onClick={save} disabled={saving}>{saving ? "Đang lưu..." : "Lưu thay đổi"}</Button>
-          <Button className="w-full" variant="ghost" onClick={() => navigate("/app/profile")}>Xem hồ sơ</Button>
+          <Button
+            className="w-full rounded-xl h-12 font-bold shadow-md text-base"
+            icon={<Save className="h-5 w-5" />}
+            onClick={save}
+            disabled={saving}
+          >
+            {saving ? "Đang lưu thay đổi..." : "Lưu thay đổi"}
+          </Button>
+
+          <Button
+            className="w-full rounded-xl h-11 font-bold border border-coffee/15"
+            variant="ghost"
+            onClick={() => navigate("/app/profile")}
+          >
+            Quay lại xem hồ sơ
+          </Button>
         </aside>
+      </div>
+
+      {/* Sticky Save Bar */}
+      <div className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-coffee/15 shadow-2xl p-4 md:px-8">
+        <div className="mx-auto max-w-6xl flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-caramel/15 text-caramel font-black">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-coffee">Bạn đang ở chế độ chỉnh sửa hồ sơ</p>
+              <p className="text-xs font-medium text-coffee/65 hidden sm:block">
+                Đảm bảo chọn đủ số lượng thẻ tối thiểu để hồ sơ của bạn đạt độ phù hợp cao nhất
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/app/profile")}
+              className="rounded-xl border border-coffee/15 h-11 px-4 font-bold"
+            >
+              Hủy
+            </Button>
+            <Button
+              icon={<Save className="h-4 w-4" />}
+              onClick={save}
+              disabled={saving}
+              className="rounded-xl px-6 h-11 font-bold shadow-lg shadow-caramel/25"
+            >
+              {saving ? "Đang lưu..." : "Lưu thay đổi"}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
+function Panel({
+  title,
+  icon,
+  badge,
+  children
+}: {
+  title: string;
+  icon?: ReactNode;
+  badge?: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <section className="rounded-lg bg-white p-5 shadow-soft">
-      <h2 className="mb-4 text-lg font-black">{title}</h2>
+    <section className="rounded-3xl border border-coffee/10 bg-white p-6 md:p-8 shadow-soft">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-coffee/10 pb-4">
+        <h2 className="flex items-center gap-2.5 text-lg sm:text-xl font-black text-coffee">
+          {icon ? <span className="text-caramel">{icon}</span> : null}
+          {title}
+        </h2>
+        {badge}
+      </div>
       {children}
     </section>
   );

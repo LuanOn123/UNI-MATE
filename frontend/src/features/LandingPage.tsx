@@ -42,8 +42,8 @@ export function LandingPage() {
             </div>
             <div className="mt-6 flex items-center gap-2 text-sm text-white/80">
               <span>Bạn là chủ quán cafe?</span>
-              <Link to="/partner/auth" className="font-bold text-white underline underline-offset-2 hover:text-caramel">
-                Trở thành đối tác
+              <Link to="/app/partner-register" className="font-bold text-white underline underline-offset-2 hover:text-caramel">
+                Đăng ký quán đối tác
               </Link>
             </div>
           </motion.div>

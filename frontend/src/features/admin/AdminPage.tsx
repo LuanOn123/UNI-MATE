@@ -80,14 +80,55 @@ export function AdminUsersPage() {
   const [users, setUsers] = useState<AnyRecord[]>([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
+  const [role, setRole] = useState("");
   const [message, setMessage] = useState("");
-  const load = () => api.get("/admin/users", { params: { q: q || undefined, status: status || undefined } }).then((r) => setUsers(r.data.users));
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    email: "",
+    password: "",
+    displayName: "",
+    role: "user",
+    status: "active",
+    gender: "prefer_not",
+    birthDate: "",
+    school: "",
+    major: ""
+  });
+  const [createError, setCreateError] = useState("");
+
+  const load = () => api.get("/admin/users", { params: { q: q || undefined, status: status || undefined, role: role || undefined } }).then((r) => setUsers(r.data.users));
   useEffect(() => { load(); }, []);
+
   const updateStatus = async (id: string, nextStatus: "active" | "suspended" | "banned") => {
     await api.patch(`/admin/users/${id}/status`, { status: nextStatus, reason: `Admin set ${nextStatus}` });
     setMessage("Đã cập nhật trạng thái user.");
     load();
   };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateError("");
+    try {
+      await api.post("/admin/users", createForm);
+      setMessage("Đã tạo người dùng mới thành công.");
+      setShowCreateModal(false);
+      setCreateForm({
+        email: "",
+        password: "",
+        displayName: "",
+        role: "user",
+        status: "active",
+        gender: "prefer_not",
+        birthDate: "",
+        school: "",
+        major: ""
+      });
+      load();
+    } catch (err: any) {
+      setCreateError(err.response?.data?.message || "Lỗi tạo người dùng");
+    }
+  };
+
   return (
     <AdminPageShell eyebrow="Users" title="Quản lý người dùng">
       <AdminToolbar>
@@ -101,15 +142,23 @@ export function AdminUsersPage() {
           <option value="suspended">Suspended</option>
           <option value="banned">Banned</option>
         </select>
+        <select className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold" value={role} onChange={(e) => setRole(e.target.value)}>
+          <option value="">Tất cả vai trò</option>
+          <option value="user">User</option>
+          <option value="partner">Partner</option>
+          <option value="admin">Admin</option>
+        </select>
         <Button onClick={load}>Lọc</Button>
+        <Button onClick={() => setShowCreateModal(true)} icon={<Plus />}>Thêm User</Button>
       </AdminToolbar>
       <Notice message={message} />
       <AdminTable>
-        <thead><tr><Th>User</Th><Th>Profile</Th><Th>Status</Th><Th>Created</Th><Th>Action</Th></tr></thead>
+        <thead><tr><Th>User</Th><Th>Vai trò</Th><Th>Profile</Th><Th>Status</Th><Th>Created</Th><Th>Action</Th></tr></thead>
         <tbody>
           {users.map((user) => (
             <tr key={user._id} className="border-t">
               <Td><p className="font-bold">{displayUser(user)}</p><p className="text-xs text-slate-500">{user.email}</p></Td>
+              <Td><span className="capitalize font-semibold text-xs bg-slate-100 rounded px-2 py-1 text-slate-700">{user.role}</span></Td>
               <Td>{user.age ?? "-"} tuổi · {user.gender ?? "-"} · {user.location?.addressLabel ?? "TP.HCM"}</Td>
               <Td><StatusPill value={user.status} /></Td>
               <Td>{formatDate(user.createdAt)}</Td>
@@ -125,6 +174,76 @@ export function AdminUsersPage() {
           ))}
         </tbody>
       </AdminTable>
+
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-black mb-4">Tạo người dùng mới</h2>
+            {createError && <p className="mb-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{createError}</p>}
+            <form onSubmit={handleCreate} className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Email *</label>
+                <Input type="email" required value={createForm.email} onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Mật khẩu *</label>
+                <Input type="password" required value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Tên hiển thị</label>
+                <Input value={createForm.displayName} onChange={(e) => setCreateForm({ ...createForm, displayName: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Vai trò</label>
+                  <select className="w-full rounded-lg border border-slate-200 p-3 text-sm" value={createForm.role} onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })}>
+                    <option value="user">User</option>
+                    <option value="partner">Partner</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Trạng thái</label>
+                  <select className="w-full rounded-lg border border-slate-200 p-3 text-sm" value={createForm.status} onChange={(e) => setCreateForm({ ...createForm, status: e.target.value })}>
+                    <option value="active">Active</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="banned">Banned</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Giới tính</label>
+                  <select className="w-full rounded-lg border border-slate-200 p-3 text-sm" value={createForm.gender} onChange={(e) => setCreateForm({ ...createForm, gender: e.target.value })}>
+                    <option value="prefer_not">Không tiết lộ</option>
+                    <option value="male">Nam</option>
+                    <option value="female">Nữ</option>
+                    <option value="other">Khác</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Ngày sinh</label>
+                  <Input type="date" value={createForm.birthDate} onChange={(e) => setCreateForm({ ...createForm, birthDate: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Trường học</label>
+                  <Input value={createForm.school} onChange={(e) => setCreateForm({ ...createForm, school: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Chuyên ngành</label>
+                  <Input value={createForm.major} onChange={(e) => setCreateForm({ ...createForm, major: e.target.value })} />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="ghost" onClick={() => setShowCreateModal(false)}>Hủy</Button>
+                <Button type="submit">Xác nhận tạo</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminPageShell>
   );
 }
@@ -133,13 +252,63 @@ export function AdminUserDetailPage() {
   const { id } = useParams();
   const [data, setData] = useState<AnyRecord | null>(null);
   const [message, setMessage] = useState("");
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    email: "",
+    password: "",
+    displayName: "",
+    role: "user",
+    status: "active",
+    gender: "prefer_not",
+    birthDate: "",
+    school: "",
+    major: ""
+  });
+  const [editError, setEditError] = useState("");
+
   useEffect(() => { api.get(`/admin/users/${id}`).then((r) => setData(r.data)); }, [id]);
+
   const updateStatus = async (status: "active" | "suspended" | "banned") => {
     await api.patch(`/admin/users/${id}/status`, { status, reason: `Admin detail set ${status}` });
     setMessage("Đã cập nhật user.");
     const r = await api.get(`/admin/users/${id}`);
     setData(r.data);
   };
+
+  const openEdit = () => {
+    if (!data?.user) return;
+    const u = data.user;
+    setEditForm({
+      email: u.email || "",
+      password: "",
+      displayName: u.displayName || "",
+      role: u.role || "user",
+      status: u.status || "active",
+      gender: u.gender || "prefer_not",
+      birthDate: u.birthDate ? new Date(u.birthDate).toISOString().split("T")[0] : "",
+      school: u.school || "",
+      major: u.major || ""
+    });
+    setEditError("");
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditError("");
+    try {
+      const payload: any = { ...editForm };
+      if (!payload.password) delete payload.password;
+      await api.put(`/admin/users/${id}`, payload);
+      setMessage("Đã cập nhật thông tin người dùng thành công.");
+      setShowEditModal(false);
+      const r = await api.get(`/admin/users/${id}`);
+      setData(r.data);
+    } catch (err: any) {
+      setEditError(err.response?.data?.message || "Lỗi cập nhật người dùng");
+    }
+  };
+
   if (!data) return <AdminPageShell title="Đang tải user" />;
   const user = data.user;
   return (
@@ -160,7 +329,8 @@ export function AdminUserDetailPage() {
             {(user.onboarding?.cafeStyles ?? []).map((tag: string) => <span key={tag} className="rounded-full bg-orange-50 px-3 py-1 text-sm font-bold text-caramel">{tag}</span>)}
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
-            <Button onClick={() => updateStatus("active")}>Reactivate</Button>
+            <Button onClick={openEdit}>Sửa thông tin</Button>
+            <Button variant="ghost" onClick={() => updateStatus("active")}>Reactivate</Button>
             <Button variant="ghost" onClick={() => updateStatus("suspended")}>Suspend</Button>
             <Button variant="danger" onClick={() => updateStatus("banned")}>Ban</Button>
           </div>
@@ -180,6 +350,76 @@ export function AdminUserDetailPage() {
         <h2 className="mb-3 font-black">Reports liên quan</h2>
         <CompactList items={data.reports ?? []} empty="Chưa có report" render={(report) => <span>{report.reason} · {report.status} · {formatDate(report.createdAt)}</span>} />
       </section>
+
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-black mb-4">Sửa thông tin người dùng</h2>
+            {editError && <p className="mb-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{editError}</p>}
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Email *</label>
+                <Input type="email" required value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Mật khẩu (để trống nếu không đổi)</label>
+                <Input type="password" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Tên hiển thị</label>
+                <Input value={editForm.displayName} onChange={(e) => setEditForm({ ...editForm, displayName: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Vai trò</label>
+                  <select className="w-full rounded-lg border border-slate-200 p-3 text-sm" value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}>
+                    <option value="user">User</option>
+                    <option value="partner">Partner</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Trạng thái</label>
+                  <select className="w-full rounded-lg border border-slate-200 p-3 text-sm" value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}>
+                    <option value="active">Active</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="banned">Banned</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Giới tính</label>
+                  <select className="w-full rounded-lg border border-slate-200 p-3 text-sm" value={editForm.gender} onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })}>
+                    <option value="prefer_not">Không tiết lộ</option>
+                    <option value="male">Nam</option>
+                    <option value="female">Nữ</option>
+                    <option value="other">Khác</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Ngày sinh</label>
+                  <Input type="date" value={editForm.birthDate} onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Trường học</label>
+                  <Input value={editForm.school} onChange={(e) => setEditForm({ ...editForm, school: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Chuyên ngành</label>
+                  <Input value={editForm.major} onChange={(e) => setEditForm({ ...editForm, major: e.target.value })} />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="ghost" onClick={() => setShowEditModal(false)}>Hủy</Button>
+                <Button type="submit">Lưu thay đổi</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminPageShell>
   );
 }
@@ -237,8 +477,13 @@ export function AdminPlacesPage() {
   const [form, setForm] = useState<AnyRecord>(emptyPlace);
   const [editingId, setEditingId] = useState("");
   const [message, setMessage] = useState("");
-  const load = () => api.get("/admin/places").then((r) => setPlaces(r.data.places));
+  const [q, setQ] = useState("");
+  const [statusVal, setStatusVal] = useState("");
+  const [district, setDistrict] = useState("");
+
+  const load = () => api.get("/admin/places", { params: { q: q || undefined, status: statusVal || undefined, district: district || undefined } }).then((r) => setPlaces(r.data.places));
   useEffect(() => { load(); }, []);
+
   const save = async () => {
     const payload = {
       ...form,
@@ -255,17 +500,43 @@ export function AdminPlacesPage() {
     setForm(emptyPlace);
     load();
   };
+
   const edit = (place: AnyRecord) => {
     setEditingId(place._id);
     setForm({ ...emptyPlace, ...place, tags: (place.tags ?? []).join(", "), amenities: (place.amenities ?? []).join(", "), location: place.location ?? emptyPlace.location });
   };
-  const status = async (id: string, next: "active" | "hidden") => {
+  const status = async (id: string, next: "active" | "hidden" | "pending") => {
     await api.patch(`/admin/places/${id}/status`, { status: next, reason: `Admin set ${next}` });
     setMessage("Đã cập nhật trạng thái quán.");
     load();
   };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa quán cafe này không?")) return;
+    try {
+      await api.delete(`/admin/places/${id}`);
+      setMessage("Đã xóa quán cafe thành công.");
+      load();
+    } catch (err: any) {
+      setMessage(err.response?.data?.message || "Lỗi khi xóa quán");
+    }
+  };
+
   return (
     <AdminPageShell eyebrow="Places" title="Quản lý quán cafe">
+      <AdminToolbar>
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input className="pl-10" placeholder="Tìm tên quán hoặc địa chỉ" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
+        </div>
+        <Input placeholder="Quận/Huyện" className="max-w-[180px]" value={district} onChange={(e) => setDistrict(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
+        <select className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold" value={statusVal} onChange={(e) => setStatusVal(e.target.value)}>
+          <option value="">Tất cả trạng thái</option>
+          <option value="active">Active</option>
+          <option value="hidden">Hidden</option>
+        </select>
+        <Button onClick={load}>Lọc</Button>
+      </AdminToolbar>
       <Notice message={message} />
       <div className="grid gap-5 xl:grid-cols-[390px_1fr]">
         <section className="rounded-lg bg-white p-5 shadow-sm">
@@ -277,17 +548,26 @@ export function AdminPlacesPage() {
           </div>
         </section>
         <AdminTable>
-          <thead><tr><Th>Quán</Th><Th>Rating</Th><Th>Status</Th><Th>Action</Th></tr></thead>
+          <thead><tr><Th>Quán</Th><Th>Partner</Th><Th>Rating</Th><Th>Status</Th><Th>Action</Th></tr></thead>
           <tbody>
             {places.map((place) => (
               <tr key={place._id} className="border-t align-top">
                 <Td><p className="font-bold">{place.name}</p><p className="text-xs text-slate-500">{place.address}</p></Td>
+                <Td>
+                  {place.isPartnerPlace ? (
+                    <div>
+                      <p className="font-bold text-caramel">Partner place</p>
+                      <p className="text-xs text-slate-500">{place.partnerName ?? "Chưa có tên chủ quán"}</p>
+                    </div>
+                  ) : "-"}
+                </Td>
                 <Td>{place.rating ?? "N/A"} · {place.priceLevel}</Td>
                 <Td><StatusPill value={place.status} /></Td>
                 <Td><div className="flex flex-wrap gap-2">
                   <Button variant="ghost" onClick={() => edit(place)}>Sửa</Button>
-                  <Button variant="ghost" onClick={() => status(place._id, "active")}>Show</Button>
-                  <Button variant="ghost" onClick={() => status(place._id, "hidden")}>Hide</Button>
+                  <Button variant="ghost" onClick={() => status(place._id, "active")}>{place.status === "pending" ? "Duyệt" : "Show"}</Button>
+                  <Button variant="ghost" onClick={() => status(place._id, "hidden")}>{place.status === "pending" ? "Từ chối" : "Hide"}</Button>
+                  {place.status !== "pending" ? <Button variant="ghost" onClick={() => status(place._id, "pending")}>Pending</Button> : null}
                 </div></Td>
               </tr>
             ))}
@@ -458,7 +738,7 @@ function Td({ children }: { children: ReactNode }) { return <td className="p-3 a
 function Notice({ message }: { message: string }) { return message ? <p className="mb-4 rounded-lg bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{message}</p> : null; }
 function StatusPill({ value }: { value?: string }) {
   const danger = ["banned", "blocked", "new"].includes(value ?? "");
-  const warn = ["suspended", "reviewing", "cafe_proposed", "hidden"].includes(value ?? "");
+  const warn = ["suspended", "reviewing", "cafe_proposed", "hidden", "pending"].includes(value ?? "");
   return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${danger ? "bg-rose-50 text-rose-700" : warn ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>{value ?? "-"}</span>;
 }
 function CompactList({ items, empty, render }: { items: AnyRecord[]; empty: string; render: (item: AnyRecord) => ReactNode }) {
