@@ -50,6 +50,9 @@ export type Place = {
   imageUrl?: string;
   openNow?: boolean;
   mapsUrl?: string;
+  isPartnerPlace?: boolean;
+  cafeVibe?: string;
+  partnerName?: string;
 };
 
 export type Match = {

@@ -505,12 +505,7 @@ export function AdminPlacesPage() {
     setEditingId(place._id);
     setForm({ ...emptyPlace, ...place, tags: (place.tags ?? []).join(", "), amenities: (place.amenities ?? []).join(", "), location: place.location ?? emptyPlace.location });
   };
-<<<<<<< HEAD
   const status = async (id: string, next: "active" | "hidden" | "pending") => {
-=======
-
-  const status = async (id: string, next: "active" | "hidden") => {
->>>>>>> origin/PhucNT
     await api.patch(`/admin/places/${id}/status`, { status: next, reason: `Admin set ${next}` });
     setMessage("Đã cập nhật trạng thái quán.");
     load();
@@ -570,15 +565,9 @@ export function AdminPlacesPage() {
                 <Td><StatusPill value={place.status} /></Td>
                 <Td><div className="flex flex-wrap gap-2">
                   <Button variant="ghost" onClick={() => edit(place)}>Sửa</Button>
-<<<<<<< HEAD
                   <Button variant="ghost" onClick={() => status(place._id, "active")}>{place.status === "pending" ? "Duyệt" : "Show"}</Button>
                   <Button variant="ghost" onClick={() => status(place._id, "hidden")}>{place.status === "pending" ? "Từ chối" : "Hide"}</Button>
                   {place.status !== "pending" ? <Button variant="ghost" onClick={() => status(place._id, "pending")}>Pending</Button> : null}
-=======
-                  <Button variant="ghost" onClick={() => status(place._id, "active")}>Show</Button>
-                  <Button variant="ghost" onClick={() => status(place._id, "hidden")}>Hide</Button>
-                  <Button variant="danger" onClick={() => handleDelete(place._id)}>Xóa</Button>
->>>>>>> origin/PhucNT
                 </div></Td>
               </tr>
             ))}
