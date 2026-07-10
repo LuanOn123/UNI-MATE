@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
+<<<<<<< HEAD
 import { ChatRoom } from "../models/ChatRoom.js";
 import { env } from "../config/env.js";
+=======
+import { env } from "../config/env.js";
+import { ChatRoom } from "../models/ChatRoom.js";
+>>>>>>> origin/PhucNT
 import { Match } from "../models/Match.js";
 import { Notification } from "../models/Notification.js";
 import { Swipe } from "../models/Swipe.js";
@@ -96,7 +101,11 @@ export function scoreUsers(me, candidate, routeDistance) {
     let score = 0;
     // --- Distance score (0-25): OSRM travel-time score, not bird-flight distance ---
     if (hasUsableLocation(me) && hasUsableLocation(candidate)) {
+<<<<<<< HEAD
         score += Math.round((routeDistance?.distanceScore ?? 0) * distanceWeight);
+=======
+        score += Math.round((routeDistance?.distanceScore ?? 0) * 0.25);
+>>>>>>> origin/PhucNT
     }
     // --- Cafe style overlap (0-20) ---
     score += Math.min(20, styles.length * 7);
@@ -199,7 +208,11 @@ export async function getDiscoveryFeed(userId) {
     const routeMetaByUserId = await buildRouteDistanceMeta(me, filteredUsers);
     return filteredUsers
         .map((candidate) => ({ ...candidate, matchMeta: scoreUsers(me, candidate, routeMetaByUserId.get(String(candidate._id))) }))
+<<<<<<< HEAD
         .sort((a, b) => b.matchMeta.score - a.matchMeta.score || b.matchMeta.distanceScore - a.matchMeta.distanceScore)
+=======
+        .sort((a, b) => b.matchMeta.distanceScore - a.matchMeta.distanceScore || b.matchMeta.score - a.matchMeta.score)
+>>>>>>> origin/PhucNT
         .slice(0, 10);
 }
 export async function swipe(userId, targetUserId, action) {

@@ -11,6 +11,13 @@ export const registerSchema = z.object({
         password: passwordSchema
     })
 });
+export const registerPartnerSchema = z.object({
+    body: z.object({
+        email: z.string().email().toLowerCase(),
+        password: passwordSchema,
+        partnerName: z.string().min(2, "Tên chủ quán tối thiểu 2 ký tự").max(100)
+    })
+});
 export const loginSchema = z.object({
     body: z.object({
         email: z.string().email().toLowerCase(),
