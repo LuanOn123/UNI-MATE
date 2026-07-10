@@ -65,11 +65,13 @@ export function PlaceDetailPage() {
                     <div>
                       <p className="font-bold text-cocoa">{v.title}</p>
                       {v.description && <p className="mt-0.5 text-xs text-coffee/60">{v.description}</p>}
+                      {v.terms && <p className="mt-0.5 text-xs font-semibold text-coffee/50">{v.terms}</p>}
                       <p className="mt-1 text-xs font-semibold text-coffee/40">HSD: {new Date(v.expiresAt).toLocaleDateString("vi-VN")}</p>
                     </div>
                     <div className="rounded border-2 border-dashed border-caramel/40 bg-cream px-3 py-1.5 text-center">
                       <p className="text-[10px] font-bold text-coffee/50">MÃ GIẢM {v.discountPercent}%</p>
                       <p className="font-black tracking-wider text-caramel">{v.code}</p>
+                      {v.minOrderValue ? <p className="mt-0.5 text-[10px] font-bold text-coffee/45">Từ {Number(v.minOrderValue).toLocaleString("vi-VN")}đ</p> : null}
                     </div>
                   </div>
                 ))}

@@ -259,7 +259,7 @@ export function AdminPlacesPage() {
     setEditingId(place._id);
     setForm({ ...emptyPlace, ...place, tags: (place.tags ?? []).join(", "), amenities: (place.amenities ?? []).join(", "), location: place.location ?? emptyPlace.location });
   };
-  const status = async (id: string, next: "active" | "hidden") => {
+  const status = async (id: string, next: "active" | "hidden" | "pending") => {
     await api.patch(`/admin/places/${id}/status`, { status: next, reason: `Admin set ${next}` });
     setMessage("Đã cập nhật trạng thái quán.");
     load();
@@ -277,17 +277,26 @@ export function AdminPlacesPage() {
           </div>
         </section>
         <AdminTable>
-          <thead><tr><Th>Quán</Th><Th>Rating</Th><Th>Status</Th><Th>Action</Th></tr></thead>
+          <thead><tr><Th>Quán</Th><Th>Partner</Th><Th>Rating</Th><Th>Status</Th><Th>Action</Th></tr></thead>
           <tbody>
             {places.map((place) => (
               <tr key={place._id} className="border-t align-top">
                 <Td><p className="font-bold">{place.name}</p><p className="text-xs text-slate-500">{place.address}</p></Td>
+                <Td>
+                  {place.isPartnerPlace ? (
+                    <div>
+                      <p className="font-bold text-caramel">Partner place</p>
+                      <p className="text-xs text-slate-500">{place.partnerName ?? "Chưa có tên chủ quán"}</p>
+                    </div>
+                  ) : "-"}
+                </Td>
                 <Td>{place.rating ?? "N/A"} · {place.priceLevel}</Td>
                 <Td><StatusPill value={place.status} /></Td>
                 <Td><div className="flex flex-wrap gap-2">
                   <Button variant="ghost" onClick={() => edit(place)}>Sửa</Button>
-                  <Button variant="ghost" onClick={() => status(place._id, "active")}>Show</Button>
-                  <Button variant="ghost" onClick={() => status(place._id, "hidden")}>Hide</Button>
+                  <Button variant="ghost" onClick={() => status(place._id, "active")}>{place.status === "pending" ? "Duyệt" : "Show"}</Button>
+                  <Button variant="ghost" onClick={() => status(place._id, "hidden")}>{place.status === "pending" ? "Từ chối" : "Hide"}</Button>
+                  {place.status !== "pending" ? <Button variant="ghost" onClick={() => status(place._id, "pending")}>Pending</Button> : null}
                 </div></Td>
               </tr>
             ))}
@@ -458,7 +467,7 @@ function Td({ children }: { children: ReactNode }) { return <td className="p-3 a
 function Notice({ message }: { message: string }) { return message ? <p className="mb-4 rounded-lg bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{message}</p> : null; }
 function StatusPill({ value }: { value?: string }) {
   const danger = ["banned", "blocked", "new"].includes(value ?? "");
-  const warn = ["suspended", "reviewing", "cafe_proposed", "hidden"].includes(value ?? "");
+  const warn = ["suspended", "reviewing", "cafe_proposed", "hidden", "pending"].includes(value ?? "");
   return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${danger ? "bg-rose-50 text-rose-700" : warn ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>{value ?? "-"}</span>;
 }
 function CompactList({ items, empty, render }: { items: AnyRecord[]; empty: string; render: (item: AnyRecord) => ReactNode }) {

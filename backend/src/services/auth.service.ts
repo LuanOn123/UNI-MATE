@@ -95,24 +95,6 @@ export async function registerWithPassword(emailInput: string, password: string)
   return { user: publicUser(user), ...tokens };
 }
 
-export async function registerPartnerWithPassword(emailInput: string, password: string, partnerName: string) {
-  const email = emailSchema.parse(emailInput);
-  const existing = await User.findOne({ email });
-  if (existing) throw serviceError("Email already exists", 409);
-
-  const passwordHash = await bcrypt.hash(password, 10);
-  const user = await User.create({
-    email,
-    passwordHash,
-    emailVerified: true,
-    role: "partner",
-    displayName: partnerName,
-    onboardingCompleted: true
-  });
-  const tokens = await issueTokens(user);
-  return { user: publicUser(user), ...tokens };
-}
-
 export async function loginWithPassword(emailInput: string, password: string) {
   const email = emailSchema.parse(emailInput);
   const user = await User.findOne({ email });

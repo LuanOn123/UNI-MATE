@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import type { Server } from "socket.io";
 import { AdminAction } from "../models/AdminAction.js";
 import { ChatRoom } from "../models/ChatRoom.js";
 import { Match } from "../models/Match.js";
@@ -6,6 +7,7 @@ import { PlaceCache } from "../models/PlaceCache.js";
 import { Report } from "../models/Report.js";
 import { Tag } from "../models/Tag.js";
 import { User } from "../models/User.js";
+import { createAndEmitNotification } from "../services/notification.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 async function audit(req: Request, action: string, targetType: string, targetId: string, reason?: string) {
@@ -93,8 +95,32 @@ export const upsertPlace = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const hidePlace = asyncHandler(async (req: Request, res: Response) => {
-  const place = await PlaceCache.findByIdAndUpdate(req.params.placeId, { status: req.body.status ?? "hidden" }, { new: true });
+  const nextStatus = req.body.status ?? "hidden";
+  if (!["active", "hidden", "pending"].includes(nextStatus)) return res.status(400).json({ message: "Invalid place status" });
+
+  const place = await PlaceCache.findById(req.params.placeId);
   if (!place) return res.status(404).json({ message: "Cafe not found" });
+  const previousStatus = place.status;
+  place.status = nextStatus;
+  await place.save();
+
+  if (nextStatus === "active" && place.isPartnerPlace && place.partnerId) {
+    await User.findByIdAndUpdate(place.partnerId, { role: "partner" });
+  }
+
+  if (previousStatus !== nextStatus && place.isPartnerPlace && place.partnerId && ["active", "hidden"].includes(nextStatus)) {
+    const io = req.app.get("io") as Server | undefined;
+    await createAndEmitNotification(io, {
+      userId: String(place.partnerId),
+      type: nextStatus === "active" ? "partner_place_approved" : "partner_place_rejected",
+      title: nextStatus === "active" ? "Quán của bạn đã được duyệt" : "Đăng ký quán chưa được duyệt",
+      body: nextStatus === "active"
+        ? `${place.name} đã được kích hoạt trên UNI-MATE. Bạn có thể vào Quán của tôi để quản lý voucher.`
+        : `${place.name} hiện chưa được hiển thị. Vui lòng kiểm tra lại thông tin quán hoặc liên hệ admin.`,
+      data: { placeId: String(place._id), status: nextStatus }
+    });
+  }
+
   await audit(req, "set_place_status", "place", req.params.placeId, req.body.reason);
   res.json({ place });
 });
