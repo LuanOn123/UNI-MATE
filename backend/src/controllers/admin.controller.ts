@@ -188,7 +188,7 @@ export const upsertPlace = asyncHandler(async (req: Request, res: Response) => {
 
 export const hidePlace = asyncHandler(async (req: Request, res: Response) => {
   const nextStatus = req.body.status ?? "hidden";
-  if (!["active", "hidden", "pending"].includes(nextStatus)) return res.status(400).json({ message: "Invalid place status" });
+  if (!["active", "hidden", "pending", "rejected"].includes(nextStatus)) return res.status(400).json({ message: "Invalid place status" });
 
   const place = await PlaceCache.findById(req.params.placeId);
   if (!place) return res.status(404).json({ message: "Cafe not found" });
@@ -200,7 +200,7 @@ export const hidePlace = asyncHandler(async (req: Request, res: Response) => {
     await User.findByIdAndUpdate(place.partnerId, { role: "partner" });
   }
 
-  if (previousStatus !== nextStatus && place.isPartnerPlace && place.partnerId && ["active", "hidden"].includes(nextStatus)) {
+  if (previousStatus !== nextStatus && place.isPartnerPlace && place.partnerId && ["active", "hidden", "rejected"].includes(nextStatus)) {
     const io = req.app.get("io") as Server | undefined;
     await createAndEmitNotification(io, {
       userId: String(place.partnerId),

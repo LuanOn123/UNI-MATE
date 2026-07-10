@@ -18,6 +18,7 @@ export type User = {
   onboardingCompleted: boolean;
   twoFactorEnabled?: boolean;
   onboarding?: Record<string, any>;
+  preferences?: Record<string, any>;
   location?: { coordinates: [number, number]; addressLabel?: string; source?: "gps" | "manual" };
   matchMeta?: {
     score: number;

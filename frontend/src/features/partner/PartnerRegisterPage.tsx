@@ -20,7 +20,7 @@ type PartnerPlace = {
   address?: string;
   district?: string;
   city?: string;
-  status: "pending" | "active" | "hidden";
+  status: "pending" | "active" | "hidden" | "rejected";
   cafeVibe?: string;
   partnerName?: string;
   createdAt?: string;
@@ -176,12 +176,12 @@ export function PartnerRegisterPage() {
     );
   }
 
-  if (application?.status === "hidden") {
+  if (application?.status === "hidden" || application?.status === "rejected") {
     return (
       <PartnerShell title="Hồ sơ quán chưa được duyệt" subtitle="Bạn có thể kiểm tra lại thông tin và liên hệ admin để được hỗ trợ." icon={<XCircle />}>
         <div className="rounded-xl border border-rose-100 bg-white p-6 shadow-soft">
           <p className="text-sm font-semibold text-coffee/65">
-            Hồ sơ <strong>{application.name}</strong> hiện chưa được hiển thị trên UNI-MATE.
+            Hồ sơ <strong>{application.name}</strong> hiện chưa được hiển thị trên UNI-MATE. Bạn có thể chỉnh sửa lại thông tin hoặc gửi đăng ký mới.
           </p>
         </div>
       </PartnerShell>

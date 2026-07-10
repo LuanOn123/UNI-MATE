@@ -56,8 +56,16 @@ export const verifyOtpController = asyncHandler(async (req: Request, res: Respon
 
 export const refreshController = asyncHandler(async (req: Request, res: Response) => {
   const token = req.cookies.refreshToken || req.body.refreshToken;
-  const data = await refreshToken(token);
-  res.json({ success: true, data });
+  try {
+    const data = await refreshToken(token);
+    if (data.refreshToken) {
+      setRefreshCookie(res, data.refreshToken);
+    }
+    res.json({ success: true, data });
+  } catch (error) {
+    res.clearCookie("refreshToken");
+    throw error;
+  }
 });
 
 export const meController = asyncHandler(async (req: Request, res: Response) => {

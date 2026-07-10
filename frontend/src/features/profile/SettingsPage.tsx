@@ -24,7 +24,7 @@ import { api } from "../../lib/api";
 import { useAuthStore } from "../../stores/authStore";
 import type { User } from "../../types";
 import { cities, districtsFor, findLocation, manualLocationPayload } from "../../utils/locationOptions";
-import { cafeStyles, goals, interests, preferredTimes, priorities } from "../../utils/options";
+import { cafeStyles, goals, interests, majorCategories, preferredTimes, priorities, priorityLabels } from "../../utils/options";
 
 type PhotoDraft = { id: string; url?: string; file?: File; preview: string };
 
@@ -48,12 +48,16 @@ function buildForm(user?: User | null) {
   const onboarding = user?.onboarding ?? {};
   const coords = user?.location?.coordinates ?? [106.7009, 10.7769];
   return {
+    disclaimerAccepted: true,
     displayName: user?.displayName ?? "",
     birthDate: toDateInput(user?.birthDate),
     gender: user?.gender ?? "prefer_not",
     school: user?.school ?? "",
     major: user?.major ?? "",
     avatarUrl: user?.avatarUrl ?? "",
+    purpose: onboarding.purpose && onboarding.purpose.length ? onboarding.purpose : ["study_buddy", "cafe_chat"],
+    vibePreference: onboarding.vibePreference ?? "quiet_study",
+    majorPreference: onboarding.majorPreference ?? "any",
     goals: onboarding.goals ?? [],
     preferredTimes: onboarding.preferredTimes ?? [],
     cafeStyles: onboarding.cafeStyles ?? [],
@@ -67,15 +71,18 @@ function buildForm(user?: User | null) {
       plannedSpontaneous: onboarding.personality?.plannedSpontaneous ?? 3
     },
     interests: onboarding.interests ?? [],
-    preferences: {
-      preferredGender: onboarding.preferences?.preferredGender ?? "all",
-      ageRange: {
-        min: onboarding.preferences?.ageRange?.min ?? 18,
-        max: onboarding.preferences?.ageRange?.max ?? 28
-      },
-      maxDistanceKm: onboarding.preferences?.maxDistanceKm ?? 10,
-      priorities: onboarding.preferences?.priorities ?? ["nearby", "same_interest"]
-    },
+    preferences: (() => {
+      const prefs = onboarding.preferences ?? user?.preferences ?? {};
+      return {
+        preferredGender: prefs.preferredGender ?? "all",
+        ageRange: {
+          min: prefs.ageRange?.min ?? 18,
+          max: prefs.ageRange?.max ?? 28
+        },
+        maxDistanceKm: prefs.maxDistanceKm ?? 10,
+        priorities: prefs.priorities ?? ["nearby", "same_interest"]
+      };
+    })(),
     location: {
       lat: coords[1] ?? 10.7769,
       lng: coords[0] ?? 106.7009,
@@ -190,7 +197,7 @@ export function SettingsPage() {
         photos.map((photo) => (photo.file ? uploadPhoto(photo.file, "photo") : Promise.resolve(photo.url ?? "")))
       );
       const payload = { ...form, avatarUrl, profilePhotos: profilePhotos.filter(Boolean) };
-      await api.post("/users/onboarding", payload);
+      await api.patch("/users/profile", payload);
       const { data } = await api.get("/users/profile");
       const fresh = { ...data.user, id: data.user._id } as User;
       updateUser(fresh);
@@ -201,7 +208,32 @@ export function SettingsPage() {
       setSaved("Đã cập nhật hồ sơ thành công!");
       setTimeout(() => setSaved(""), 4000);
     } catch (e: any) {
-      setError(e.response?.data?.message ?? "Không lưu được hồ sơ");
+      const issues = e.response?.data?.validationIssues;
+      const labels: Record<string, string> = {
+        disclaimerAccepted: "Điều khoản",
+        displayName: "Tên hiển thị",
+        birthDate: "Ngày sinh",
+        gender: "Giới tính",
+        purpose: "Mục đích",
+        goals: "Mục tiêu",
+        cafeStyles: "Gu cafe",
+        vibePreference: "Vibe gặp mặt",
+        interests: "Sở thích",
+        preferences: "Gu tìm",
+        location: "Khu vực",
+        school: "Trường",
+        major: "Ngành học"
+      };
+      if (Array.isArray(issues) && issues.length > 0) {
+        const details = issues.map((iss) => {
+          const field = String(iss.path ?? "").split(".")[0];
+          const label = labels[field] ?? field;
+          return `${label}: ${iss.message}`;
+        }).join(" • ");
+        setError(details);
+      } else {
+        setError(e.response?.data?.message ?? "Không lưu được hồ sơ");
+      }
     } finally {
       setSaving(false);
     }
@@ -251,26 +283,15 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-8 pb-32">
-      {/* Header */}
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <Link
-            to="/app/profile"
-            className="inline-flex items-center gap-1.5 text-sm font-bold text-coffee/70 transition hover:text-caramel"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Quay lại Hồ sơ
-          </Link>
-          <h1 className="mt-2 text-3xl font-black text-coffee md:text-4xl">Chỉnh Sửa Hồ Sơ</h1>
-        </div>
-        <Button
-          icon={<Save className="h-4 w-4" />}
-          onClick={save}
-          disabled={saving}
-          className="rounded-xl px-6 h-11 font-bold shadow-md"
+      <div className="mb-6">
+        <Link
+          to="/app/profile"
+          className="inline-flex items-center gap-1.5 text-sm font-bold text-coffee/70 transition hover:text-caramel"
         >
-          {saving ? "Đang lưu thay đổi..." : "Lưu thay đổi"}
-        </Button>
+          <ArrowLeft className="h-4 w-4" />
+          Quay lại Hồ sơ
+        </Link>
+        <h1 className="mt-2 text-3xl font-black text-coffee md:text-4xl">Chỉnh Sửa Hồ Sơ</h1>
       </div>
 
       {error ? (
@@ -346,12 +367,18 @@ export function SettingsPage() {
                 <label className="block text-xs font-bold uppercase tracking-wider text-coffee/60 mb-1.5">
                   Ngành học / Lĩnh vực quan tâm
                 </label>
-                <Input
-                  className="rounded-xl h-11"
-                  placeholder="Khoa học máy tính, Quản trị kinh doanh..."
+                <select
+                  className="w-full h-11 rounded-xl border border-coffee/15 bg-white px-3.5 font-semibold text-coffee outline-none focus:border-caramel focus:ring-4 focus:ring-caramel/20 transition"
                   value={form.major}
                   onChange={(e) => setForm({ ...form, major: e.target.value })}
-                />
+                >
+                  <option value="">Chọn khối ngành</option>
+                  {majorCategories.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </Panel>
@@ -662,7 +689,7 @@ export function SettingsPage() {
                 <Input
                   type="number"
                   min={1}
-                  max={20}
+                  max={100}
                   className="rounded-xl h-11"
                   value={form.preferences.maxDistanceKm}
                   onChange={(e) =>
@@ -693,7 +720,7 @@ export function SettingsPage() {
                         })
                       }
                     >
-                      {item}
+                      {priorityLabels[item] ?? item}
                     </Chip>
                   ))}
                 </div>

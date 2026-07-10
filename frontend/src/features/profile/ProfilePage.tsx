@@ -106,6 +106,7 @@ export function ProfilePage() {
   const budgetRange = user?.onboarding?.budgetRange;
   const frequency = user?.onboarding?.frequency;
   const personality = user?.onboarding?.personality ?? {};
+  const prefs = user?.onboarding?.preferences ?? (user as any)?.preferences ?? {};
 
   const photos = useMemo(
     () => [user?.avatarUrl, ...(user?.profilePhotos ?? [])].filter(Boolean) as string[],
@@ -595,9 +596,9 @@ export function ProfilePage() {
               <div className="flex items-center justify-between rounded-xl bg-cream/60 p-3.5">
                 <span className="text-coffee/60">Đối tượng tìm kiếm:</span>
                 <span className="font-black text-coffee">
-                  {user?.onboarding?.preferences?.preferredGender === "same"
+                  {prefs.preferredGender === "same"
                     ? "Cùng giới"
-                    : user?.onboarding?.preferences?.preferredGender === "opposite"
+                    : prefs.preferredGender === "opposite"
                       ? "Khác giới"
                       : "Tất cả mọi người"}
                 </span>
@@ -606,14 +607,14 @@ export function ProfilePage() {
               <div className="flex items-center justify-between rounded-xl bg-cream/60 p-3.5">
                 <span className="text-coffee/60">Độ tuổi phù hợp:</span>
                 <span className="font-black text-coffee">
-                  {user?.onboarding?.preferences?.ageRange?.min ?? 18} - {user?.onboarding?.preferences?.ageRange?.max ?? 28} tuổi
+                  {prefs.ageRange?.min ?? 18} - {prefs.ageRange?.max ?? 28} tuổi
                 </span>
               </div>
 
               <div className="flex items-center justify-between rounded-xl bg-cream/60 p-3.5">
                 <span className="text-coffee/60">Khoảng cách tối đa:</span>
                 <span className="font-black text-caramel">
-                  Bán kính {user?.onboarding?.preferences?.maxDistanceKm ?? 10} km
+                  Bán kính {prefs.maxDistanceKm ?? 10} km
                 </span>
               </div>
             </div>
