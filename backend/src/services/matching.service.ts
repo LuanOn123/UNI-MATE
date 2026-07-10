@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import { ChatRoom } from "../models/ChatRoom.js";
 import { env } from "../config/env.js";
-import { ChatRoom } from "../models/ChatRoom.js";
 import { Match } from "../models/Match.js";
 import { Notification } from "../models/Notification.js";
 import { Swipe } from "../models/Swipe.js";

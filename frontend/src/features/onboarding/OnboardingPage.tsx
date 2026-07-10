@@ -140,6 +140,44 @@ function rangePercent(value: number, min = 1, max = 20) {
   return ((value - min) / (max - min)) * 100;
 }
 
+const validationFieldLabels: Record<string, string> = {
+  disclaimerAccepted: "Điều khoản",
+  displayName: "Tên hiển thị",
+  birthDate: "Ngày sinh",
+  gender: "Giới tính",
+  purpose: "Mục đích",
+  goals: "Mục tiêu",
+  cafeStyles: "Gu cafe",
+  vibePreference: "Vibe gặp mặt",
+  interests: "Sở thích",
+  preferences: "Gu tìm",
+  location: "Khu vực"
+};
+
+function formatValidationErrors(error: any) {
+  const validationIssues = error.response?.data?.validationIssues;
+  if (Array.isArray(validationIssues)) {
+    const details = validationIssues
+      .map((issue) => {
+        const field = String(issue.path ?? "").split(".")[0];
+        const label = validationFieldLabels[field] ?? field;
+        return `${label}: ${issue.message}`;
+      })
+      .slice(0, 5);
+    if (details.length) return details;
+  }
+
+  const fieldErrors = error.response?.data?.issues?.fieldErrors;
+  if (!fieldErrors || typeof fieldErrors !== "object") return [error.response?.data?.message ?? "Không lưu được onboarding"];
+  const details = Object.entries(fieldErrors)
+    .flatMap(([field, messages]) => {
+      const label = validationFieldLabels[field] ?? field;
+      return Array.isArray(messages) ? messages.map((message) => `${label}: ${message}`) : [];
+    })
+    .slice(0, 4);
+  return details.length ? details : [error.response?.data?.message ?? "Không lưu được onboarding"];
+}
+
 type MateChoiceProps = {
   title: string;
   desc?: string;
@@ -210,49 +248,77 @@ export function OnboardingPage() {
   const navigate = useNavigate();
   const updateUser = useAuthStore((s) => s.updateUser);
   const [data, setData] = useState(initial);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [customLocationOpen, setCustomLocationOpen] = useState(false);
+  const [customLocation, setCustomLocation] = useState({ city: "", district: "" });
+  const [locationSuggestions, setLocationSuggestions] = useState<Array<{ lat: number; lng: number; addressLabel: string; source: "manual"; cityMatches?: boolean }>>([]);
+  const [geocoding, setGeocoding] = useState(false);
   const index = Math.max(0, steps.indexOf(location.pathname === "/onboarding" ? "/onboarding/disclaimer" : location.pathname));
   const progress = ((index + 1) / steps.length) * 100;
   const age = useMemo(() => calculateAge(data.birthDate), [data.birthDate]);
   const selectedLocation = findLocation(data.location.addressLabel);
   const districtChoices = districtsFor(selectedLocation.city);
+  const publicLocationLabel = data.location.source === "gps" ? "GPS hiện tại" : data.location.addressLabel;
 
   const chooseManualLocation = (label: string) => {
     const choice = findLocation(label);
     setData({ ...data, location: manualLocationPayload(choice) });
   };
 
+  const useCustomLocation = async () => {
+    setError([]);
+    if (customLocation.city.trim().length < 3 || customLocation.district.trim().length < 3) {
+      setError(["Nhập ít nhất 3 ký tự cho thành phố và quận/khu vực."]);
+      return;
+    }
+    setGeocoding(true);
+    try {
+      const { data: res } = await api.post("/users/location/geocode", customLocation);
+      setLocationSuggestions(res.suggestions ?? []);
+    } catch (e: any) {
+      setError([e.response?.data?.message ?? "Không tìm được tọa độ khu vực này."]);
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
+  const chooseSuggestedLocation = (location: { lat: number; lng: number; addressLabel: string; source: "manual" }) => {
+    setData({ ...data, location });
+    setCustomLocationOpen(false);
+    setLocationSuggestions([]);
+  };
+
   const next = () => {
-    setError("");
+    setError([]);
     // Step 0: Disclaimer
-    if (index === 0 && !data.disclaimerAccepted) return setError("Bạn cần đồng ý với điều khoản để tiếp tục.");
+    if (index === 0 && !data.disclaimerAccepted) return setError(["Bạn cần đồng ý với điều khoản để tiếp tục."]);
     // Step 1: Basic info
-    if (index === 1 && (!data.displayName.trim() || !data.birthDate || age < 18 || age >= 30)) return setError("Bạn cần nhập tên, ngày sinh hợp lệ, từ 18 đến dưới 30 tuổi.");
+    if (index === 1 && (!data.displayName.trim() || !data.birthDate || age < 18 || age >= 30)) return setError(["Bạn cần nhập tên, ngày sinh hợp lệ, từ 18 đến dưới 30 tuổi."]);
     // Step 2: Purpose (hard filter)
-    if (index === 2 && data.purpose.length < 1) return setError("Chọn ít nhất 1 mục đích hôm nay của bạn.");
+    if (index === 2 && data.purpose.length < 1) return setError(["Chọn ít nhất 1 mục đích hôm nay của bạn."]);
     // Step 3: Goals
-    if (index === 3 && data.goals.length < 1) return setError("Chọn ít nhất 1 mục tiêu gặp.");
+    if (index === 3 && data.goals.length < 1) return setError(["Chọn ít nhất 1 mục tiêu gặp."]);
     // Step 4: Cafe styles
-    if (index === 4 && data.cafeStyles.length < 3) return setError("Chọn ít nhất 3 tags cafe để matching chính xác hơn.");
+    if (index === 4 && data.cafeStyles.length < 3) return setError(["Chọn ít nhất 3 tags cafe để matching chính xác hơn."]);
     // Step 6: Interests
-    if (index === 6 && data.interests.length < 3) return setError("Chọn ít nhất 3 sở thích.");
+    if (index === 6 && data.interests.length < 3) return setError(["Chọn ít nhất 3 sở thích."]);
     // Step 7: Vibe
-    if (index === 7 && !data.vibePreference) return setError("Chọn vibe không gian bạn mong muốn.");
+    if (index === 7 && !data.vibePreference) return setError(["Chọn vibe không gian bạn mong muốn."]);
     // Step 8: Mate preference
-    if (index === 8 && (data.preferences.ageRange.min < 18 || data.preferences.ageRange.max > 29 || data.preferences.ageRange.min > data.preferences.ageRange.max)) return setError("Khoảng tuổi mong muốn phải từ 18 đến dưới 30.");
+    if (index === 8 && (data.preferences.ageRange.min < 18 || data.preferences.ageRange.max > 29 || data.preferences.ageRange.min > data.preferences.ageRange.max)) return setError(["Khoảng tuổi mong muốn phải từ 18 đến dưới 30."]);
     navigate(steps[Math.min(index + 1, steps.length - 1)]);
   };
 
   const finish = async () => {
     setLoading(true);
-    setError("");
+    setError([]);
     try {
       const { data: res } = await api.post("/users/onboarding", data);
       updateUser({ ...res.user, id: res.user._id });
       navigate("/app/discovery");
     } catch (e: any) {
-      setError(e.response?.data?.message ?? "Không lưu được onboarding");
+      setError(formatValidationErrors(e));
     } finally {
       setLoading(false);
     }
@@ -741,11 +807,11 @@ export function OnboardingPage() {
                 <section className="space-y-4">
                   <h2 className="text-2xl font-black">Khu vực cafe</h2>
                   <p className="text-coffee/70">Bạn có thể dùng GPS thật hoặc chọn khu vực thủ công. Cả hai cách đều dùng được cho Discovery và Match.</p>
-                  <Button icon={<LocateFixed />} onClick={() => navigator.geolocation?.getCurrentPosition((pos) => setData({ ...data, location: { lat: pos.coords.latitude, lng: pos.coords.longitude, addressLabel: "GPS hiện tại", source: "gps" } }), () => setError("Không lấy được GPS, bạn có thể chọn khu vực thủ công bên dưới."))}>
+                  <Button icon={<LocateFixed />} onClick={() => navigator.geolocation?.getCurrentPosition((pos) => setData({ ...data, location: { lat: pos.coords.latitude, lng: pos.coords.longitude, addressLabel: "GPS hiện tại", source: "gps" } }), () => setError(["Không lấy được GPS, bạn có thể chọn khu vực thủ công bên dưới."]))}>
                     Dùng GPS thật
                   </Button>
                   <p className={`rounded-lg p-3 text-sm font-semibold ${data.location.source === "gps" ? "bg-mint text-cocoa" : "bg-latte text-cocoa"}`}>
-                    {data.location.source === "gps" ? "Đang dùng GPS thật." : `Đang dùng khu vực: ${data.location.addressLabel}.`}
+                    {data.location.source === "gps" ? "Đang dùng GPS thật." : `Đang dùng khu vực: ${publicLocationLabel}.`}
                   </p>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2 text-sm font-bold text-coffee">
@@ -761,6 +827,53 @@ export function OnboardingPage() {
                       </select>
                     </label>
                   </div>
+                  <div className="rounded-lg border border-coffee/10 bg-cream/50 p-4">
+                    <button type="button" className="text-sm font-black text-caramel" onClick={() => setCustomLocationOpen((value) => !value)}>
+                      Không thấy khu vực của bạn?
+                    </button>
+                    {customLocationOpen ? (
+                      <div className="mt-4 grid gap-3">
+                        <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                          <Input
+                            placeholder="Thành phố / tỉnh"
+                            value={customLocation.city}
+                            onChange={(e) => {
+                              setCustomLocation({ ...customLocation, city: e.target.value });
+                              setLocationSuggestions([]);
+                            }}
+                          />
+                          <Input
+                            placeholder="Quận / khu vực"
+                            value={customLocation.district}
+                            onChange={(e) => {
+                              setCustomLocation({ ...customLocation, district: e.target.value });
+                              setLocationSuggestions([]);
+                            }}
+                          />
+                          <Button type="button" onClick={useCustomLocation} disabled={geocoding}>
+                            {geocoding ? "Đang tìm..." : "Tìm khu vực"}
+                          </Button>
+                        </div>
+                        {locationSuggestions.length ? (
+                          <div className="grid gap-2">
+                            <p className="text-sm font-black text-cocoa">Bạn muốn chọn khu vực nào?</p>
+                            {locationSuggestions.map((item) => (
+                              <button
+                                key={`${item.lat}-${item.lng}-${item.addressLabel}`}
+                                type="button"
+                                onClick={() => chooseSuggestedLocation(item)}
+                                className="rounded-lg border border-coffee/10 bg-white px-3 py-2 text-left text-sm font-semibold text-coffee transition hover:border-caramel hover:bg-latte/50"
+                              >
+                                <span className="block text-cocoa">{item.addressLabel}</span>
+                                {!item.cityMatches ? <span className="mt-1 block text-xs text-amber-700">Kết quả này có thể không khớp hoàn toàn với thành phố đã nhập.</span> : null}
+                              </button>
+                            ))}
+                            <p className="text-xs font-semibold text-coffee/55">Nếu không thấy kết quả đúng, hãy nhập tên rõ hơn hoặc dùng GPS thật.</p>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
                 </section>
               )}
 
@@ -773,14 +886,18 @@ export function OnboardingPage() {
                   <p className="text-coffee/70">Mục tiêu chính: {data.goals[0] || "kết bạn cafe"}</p>
                   <p className="text-coffee/70">Mục đích: {data.purpose.length > 0 ? data.purpose.map((p) => purposeOptions.find((o) => o.value === p)?.label).filter(Boolean).join(", ") : "chưa chọn"}</p>
                   <p className="mt-3 inline-flex items-center gap-2 rounded-lg bg-cream px-4 py-2 text-sm font-bold text-coffee">
-                    <MapPin className="h-4 w-4" /> {data.location.addressLabel}
+                    <MapPin className="h-4 w-4" /> {publicLocationLabel}
                   </p>
                 </section>
               )}
             </motion.div>
           </AnimatePresence>
 
-          {error ? <p className="mt-5 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p> : null}
+          {error.length ? (
+            <div className="mt-5 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
+              {error.map((line) => <p key={line}>{line}</p>)}
+            </div>
+          ) : null}
           <div className="mt-8 flex justify-between gap-3">
             <Button variant="ghost" onClick={() => navigate(steps[Math.max(0, index - 1)])} disabled={index === 0}>
               Quay lại

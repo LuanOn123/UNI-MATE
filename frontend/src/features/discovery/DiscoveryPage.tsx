@@ -2,7 +2,6 @@ import { ChevronLeft, ChevronRight, Eye, Heart, MapPin, MessageCircle, RotateCcw
 import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CoffeeMeter } from "../../components/common/CoffeeMeter";
 import { StateBlock } from "../../components/common/StateBlock";
 import { Button } from "../../components/ui/Button";
 import { api } from "../../lib/api";
@@ -127,10 +126,10 @@ export function DiscoveryPage() {
                   {tags.length ? tags.map((tag) => <span key={tag} className="rounded-full bg-cream px-3 py-1 text-sm font-bold text-coffee">{tag}</span>) : <span className="rounded-full bg-cream px-3 py-1 text-sm font-bold text-coffee">Gu cafe gần bạn</span>}
                 </div>
                 {meta?.durationMinutes !== null && meta?.durationMinutes !== undefined ? (
-                  <div className="mt-3 grid gap-2 rounded-lg bg-latte/60 p-3 text-sm font-bold text-cocoa sm:grid-cols-[1fr_1fr_1.2fr]">
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-x-8 gap-y-2 rounded-lg bg-latte/60 px-4 py-3 text-sm font-bold text-cocoa">
                     <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-caramel" /> {meta.durationMinutes} phút</span>
                     <span>Đường đi: {formatRoadDistance(meta.distanceMeters)}</span>
-                    <span className="grid gap-0.5 leading-tight">
+                    <span className="grid content-center gap-0.5 leading-tight">
                       <span className={isMatchStronger ? "font-black" : "font-semibold text-coffee/72"}>% hợp nhau: {matchScore}</span>
                       <span className={!isMatchStronger ? "font-black" : "font-semibold text-coffee/72"}>Điểm KC: {distanceScore}</span>
                     </span>
@@ -221,10 +220,7 @@ export function DiscoveryPage() {
                 </div>
                 <button type="button" onClick={() => setDetailOpen(false)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-cream text-coffee"><X /></button>
               </div>
-              <div className="mt-5 flex items-center gap-4 rounded-lg bg-cream p-4">
-                <div className="shrink-0">
-                  <CoffeeMeter value={meta?.score ?? 70} size="lg" />
-                </div>
+              <div className="mt-5 rounded-lg bg-cream p-4">
                 <div className="min-w-0 text-sm font-semibold text-coffee/70">
                   <p className="text-base font-black text-cocoa">Điểm match tổng: {meta?.score ?? 70}</p>
                   {meta?.durationMinutes !== null && meta?.durationMinutes !== undefined ? (
@@ -241,7 +237,6 @@ export function DiscoveryPage() {
               <div className="mt-5 grid gap-3 text-sm font-medium text-coffee/75">
                 <p><b>Cung:</b> {user.zodiac || "Đang cập nhật"}</p>
                 <p><b>Giới tính:</b> {user.gender || "Chưa tiết lộ"}</p>
-                <p><b>Khu vực:</b> {user.location?.addressLabel || "TP.HCM"}</p>
               </div>
               <div className="mt-5 flex flex-wrap gap-2">
                 {tags.map((tag) => <span key={tag} className="rounded-full bg-latte px-3 py-1 text-sm font-bold text-cocoa">{tag}</span>)}

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { MessageCircle } from "lucide-react";
-=======
 import { MessageCircle, UserCircle } from "lucide-react";
->>>>>>> origin
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -31,11 +27,7 @@ export function ChatListPage() {
   }, []);
 
   if (loading) return <div className="p-6"><StateBlock title="Đang tải phòng chat" /></div>;
-<<<<<<< HEAD
-  if (!rooms.length) return <div className="p-6"><StateBlock title="Chưa có phòng chat" text="Phòng chat sẽ xuất hiện ngay sau khi hai bên mutual match." /></div>;
-=======
   if (!rooms.length) return <div className="p-6"><StateBlock title="Chưa có cuộc trò chuyện" text="Chat sẽ xuất hiện khi bạn match thành công với ai đó." /></div>;
->>>>>>> origin
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-8">
@@ -44,21 +36,6 @@ export function ChatListPage() {
         <h1 className="text-3xl font-black">Chat</h1>
       </div>
       <div className="space-y-3">
-<<<<<<< HEAD
-        {rooms.map((room, i) => (
-          <motion.div key={room._id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-            <Link to={`/app/chat/${room._id}`} className="flex items-center gap-4 rounded-lg bg-white p-4 shadow-soft transition hover:-translate-y-0.5 hover:shadow-[0_22px_60px_rgba(111,78,55,0.18)]">
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-lg bg-latte text-cocoa">
-                <MessageCircle />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="truncate font-black">{room.place?.name || "UNI-MATE chat"}</h3>
-                <p className="truncate text-sm text-coffee/70">{room.lastMessage ?? "Bắt đầu trò chuyện"}</p>
-              </div>
-            </Link>
-          </motion.div>
-        ))}
-=======
         {rooms.map((room, i) => {
           const partner = otherUser(room.users, currentId);
           return (
@@ -79,7 +56,6 @@ export function ChatListPage() {
             </motion.div>
           );
         })}
->>>>>>> origin
       </div>
     </div>
   );
