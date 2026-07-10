@@ -57,7 +57,7 @@ export function DiscoveryPage() {
     try {
       const { data } = await api.post(`/discovery/${action}`, { targetUserId: userId(candidate) });
       setUsers((list) => list.slice(1));
-      if (data.matched) setMatch(data.match);
+      if (data.matched) setMatch(data);
       if (action === "like" && !data.matched) setNotice("Đã like. Chat sẽ mở khi người kia cũng like lại bạn.");
     } catch (e: any) {
       setError(e.response?.data?.message ?? "Không thực hiện được hành động");
@@ -167,9 +167,8 @@ export function DiscoveryPage() {
           <h2 className="font-black">Cách mở chat</h2>
           <div className="mt-4 space-y-3 text-sm font-medium text-coffee/72">
             <p>1. Like người hợp gu.</p>
-            <p>2. Mutual match sẽ mở chat ngay.</p>
-            <p>3. Vào chat để trò chuyện và chốt thời gian gặp.</p>
-            <p>4. Hẹn gặp ở nơi công cộng, an toàn.</p>
+            <p>2. Mutual match sẽ tự động mở chat.</p>
+            <p>3. Nhắn tin để chốt thời gian gặp.</p>
           </div>
         </div>
         <div className="rounded-lg bg-white p-5 shadow-soft">
@@ -186,9 +185,13 @@ export function DiscoveryPage() {
               <Heart className="h-8 w-8 fill-caramel text-caramel" />
             </div>
             <h2 className="text-3xl font-black">Mutual Match!</h2>
-            <p className="mt-2 text-coffee/70">Hai bạn đã thích nhau. Phòng chat đã được mở để bắt đầu trò chuyện.</p>
+            <p className="mt-2 text-coffee/70">Hai bạn đã thích nhau. Chat đã mở, hãy bắt đầu trò chuyện!</p>
             <div className="mt-6 grid gap-3">
-              <Button icon={<MessageCircle />} onClick={() => navigate(matchedRoomId ? `/app/chat/${matchedRoomId}` : "/app/chat")}>Vào chat</Button>
+              <Button onClick={() => {
+                const chatRoomId = typeof match.match?.chatRoom === "string" ? match.match.chatRoom : match.match?.chatRoom?._id;
+                if (chatRoomId) navigate(`/app/chat/${chatRoomId}`);
+                else navigate(`/app/chat`);
+              }}>Vào chat ngay</Button>
               <Button variant="ghost" onClick={() => setMatch(null)}>Để sau</Button>
             </div>
           </motion.div>

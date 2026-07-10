@@ -81,6 +81,9 @@ export type Message = {
   senderId?: string;
   mine?: boolean;
   text: string;
+  type?: "text" | "image" | "video" | "file";
+  fileUrl?: string;
+  fileName?: string;
   readBy: string[];
   createdAt: string;
 };

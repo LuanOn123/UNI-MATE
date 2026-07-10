@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { ChatRoom } from "../models/ChatRoom.js";
 import { env } from "../config/env.js";
+import { ChatRoom } from "../models/ChatRoom.js";
 import { Match } from "../models/Match.js";
 import { Notification } from "../models/Notification.js";
 import { Swipe } from "../models/Swipe.js";
@@ -270,6 +271,13 @@ export async function swipe(userId: string, targetUserId: string, action: "like"
       score: meta.score,
       reasons: meta.reasons
     });
+    const room = await ChatRoom.create({
+      match: match._id,
+      users: [userId, targetUserId],
+      status: "active"
+    });
+    match.chatRoom = room._id;
+    await match.save();
   }
   const room = await ChatRoom.findOneAndUpdate(
     { match: match._id },

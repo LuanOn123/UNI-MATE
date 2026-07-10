@@ -65,10 +65,11 @@ export function MatchesPage() {
       const { data } = await api.post(`/discovery/${action}`, { targetUserId });
       setIncomingLikes((list) => list.filter((item) => getId(item) !== targetUserId));
       if (data.matched) {
-        setMessage("Đã match. Phòng chat đã được mở.");
+        setMessage("Đã match! Chat đã mở.");
         await load();
-        const chatRoomId = typeof data.match.chatRoom === "string" ? data.match.chatRoom : data.match.chatRoom?._id;
-        navigate(chatRoomId ? `/app/chat/${chatRoomId}` : "/app/chat");
+        const chatRoomId = typeof data.match?.chatRoom === "string" ? data.match.chatRoom : data.match?.chatRoom?._id;
+        if (chatRoomId) navigate(`/app/chat/${chatRoomId}`);
+        else navigate(`/app/chat`);
       }
     } catch (e: any) {
       setMessage(e.response?.data?.message ?? "Không xử lý được lượt like.");

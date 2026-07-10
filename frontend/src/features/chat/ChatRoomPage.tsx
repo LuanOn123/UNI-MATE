@@ -1,4 +1,5 @@
-import { Ban, Coffee, ExternalLink, Flag, MapPin, Send, UserCircle } from "lucide-react";
+import { Ban, Coffee, ExternalLink, Flag, MapPin, Send, Smile, UserCircle, Paperclip, FileText, Play } from "lucide-react";
+import EmojiPicker, { Theme } from "emoji-picker-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -47,8 +48,23 @@ export function ChatRoomPage() {
   const [reason, setReason] = useState("");
   const [notice, setNotice] = useState("");
   const [composerNote, setComposerNote] = useState("");
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [blockState, setBlockState] = useState<BlockState>({ blockedByMe: false, blockedByOther: false });
   const scrollRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Close emoji picker on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowEmoji(false);
+      }
+    };
+    if (showEmoji) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showEmoji]);
 
   const partner = useMemo(() => otherUser(room?.users, currentId), [room?.users, currentId]);
   const partnerId = idOf(partner);
@@ -92,7 +108,10 @@ export function ChatRoomPage() {
         return { ...message, readBy: [...readBy] };
       }));
     };
-    const onTyping = (event: { typing: boolean }) => setTyping(event.typing);
+    const onTyping = (event: { typing: boolean; userId: string }) => {
+      console.log("Received user_typing event", event);
+      setTyping(event.typing);
+    };
     const onMessageError = (event: { roomId?: string; message?: string }) => {
       if (!event.roomId || event.roomId === roomId) setComposerNote(event.message ?? "Không gửi được tin nhắn.");
     };
@@ -146,6 +165,7 @@ export function ChatRoomPage() {
     setMessages((list) => [...list, temp]);
     const socket = getSocket();
     if (socket.connected) {
+      socket.emit("typing_stop", { roomId });
       socket.emit("send_message", { roomId, text: content });
       return;
     }
@@ -155,6 +175,34 @@ export function ChatRoomPage() {
     } catch (e: any) {
       setMessages((list) => list.filter((m) => m._id !== temp._id));
       setComposerNote(e.response?.data?.message ?? "Không gửi được tin nhắn.");
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      setComposerNote("File quá lớn (tối đa 20MB).");
+      return;
+    }
+    setUploading(true);
+    setComposerNote("");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const { data } = await api.post("/upload/chat-file", formData);
+      const socket = getSocket();
+      if (socket.connected) {
+        socket.emit("send_message", { roomId, text: "", type: data.type, fileUrl: data.url, fileName: data.fileName });
+      } else {
+        await api.post(`/chat/${roomId}/messages`, { text: "", type: data.type, fileUrl: data.url, fileName: data.fileName });
+        // Optional: Trigger a refresh or manually add to messages, but usually socket is connected.
+      }
+    } catch (e: any) {
+      setComposerNote(e.response?.data?.message ?? "Không tải lên được file.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -183,8 +231,8 @@ export function ChatRoomPage() {
             <div className="mt-1 flex items-center gap-3">
               <Avatar user={partner} />
               <div className="min-w-0">
-                <h1 className="truncate text-xl font-black">{partner?.displayName || "UNI-MATE chat"}</h1>
-                <p className="text-xs font-semibold text-coffee/55">Chat đã mở sau mutual match</p>
+                <h1 className="truncate text-xl font-black">{partner?.displayName || "Cafe chat"}</h1>
+                <p className="text-xs font-semibold text-coffee/55">Đang trò chuyện</p>
               </div>
             </div>
             {room?.place ? (
@@ -232,34 +280,99 @@ export function ChatRoomPage() {
                 {!mine ? <div className="w-8 shrink-0">{showAvatar ? <Avatar user={partner} size="sm" /> : null}</div> : null}
                 <div className={`max-w-[72%] ${mine ? "items-end" : "items-start"} flex flex-col`}>
                   <div className={`rounded-[1.35rem] px-4 py-2.5 text-[15px] leading-relaxed shadow-sm ${mine ? "bg-coffee text-white" : "bg-white text-cocoa"} ${mine && groupedWithNext ? "rounded-br-md" : ""} ${mine && groupedWithPrevious ? "rounded-tr-md" : ""} ${!mine && groupedWithNext ? "rounded-bl-md" : ""} ${!mine && groupedWithPrevious ? "rounded-tl-md" : ""}`}>
-                    <p className="whitespace-pre-wrap break-words">{message.text}</p>
+                    {message.type === "image" && message.fileUrl ? (
+                      <a href={message.fileUrl} target="_blank" rel="noreferrer">
+                        <img src={message.fileUrl} alt="attachment" className="max-h-60 w-auto rounded-lg object-contain" />
+                      </a>
+                    ) : message.type === "video" && message.fileUrl ? (
+                      <video src={message.fileUrl} controls className="max-h-60 w-auto rounded-lg" />
+                    ) : message.type === "file" && message.fileUrl ? (
+                      <a href={message.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-lg bg-black/5 p-2 transition hover:bg-black/10">
+                        <FileText className="h-6 w-6 shrink-0" />
+                        <span className="truncate text-sm font-semibold underline underline-offset-2">{message.fileName || "Tải xuống file"}</span>
+                      </a>
+                    ) : null}
+                    {message.text ? <p className="whitespace-pre-wrap break-words">{message.text}</p> : null}
                   </div>
                   {showStatus ? <span className="mt-1 pr-1 text-[11px] font-semibold text-coffee/55">{statusFor(message, partnerId)}</span> : null}
                 </div>
               </motion.div>
             );
           })}
+          {typing && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="mt-3 flex items-end gap-2 justify-start">
+              <div className="w-8 shrink-0">
+                <Avatar user={partner} size="sm" />
+              </div>
+              <div className="flex max-w-[72%] flex-col items-start">
+                <div className="rounded-[1.35rem] rounded-bl-md bg-white px-4 py-3.5 shadow-sm">
+                  <span className="flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-coffee/40" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-coffee/40" style={{ animationDelay: "150ms" }} />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-coffee/40" style={{ animationDelay: "300ms" }} />
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
-        {typing ? <p className="ml-10 mt-2 text-sm font-semibold text-coffee/60">Đang nhập...</p> : null}
         <div ref={scrollRef} />
       </main>
 
       <footer className="border-t border-coffee/10 bg-white p-3">
         <div className="mx-auto flex max-w-5xl gap-2">
-          <Input
-            value={text}
-            disabled={inputDisabled}
-            placeholder={blockedByMe ? "Bạn đã chặn người dùng này" : generallyBlocked ? "Chat đã khóa" : "Nhắn tin để bắt đầu trò chuyện"}
-            onChange={(e) => {
-              setText(e.target.value);
-              setComposerNote("");
-              if (!inputDisabled) getSocket().emit("typing_start", { roomId });
-            }}
-            onBlur={() => !inputDisabled && getSocket().emit("typing_stop", { roomId })}
-            onKeyDown={(e) => e.key === "Enter" && send()}
-            className="rounded-full"
-          />
-          <Button icon={<Send />} onClick={send} disabled={!text.trim() || inputDisabled} className="rounded-full px-5">Gửi</Button>
+          <div className="relative flex w-full flex-1 gap-2 rounded-full border border-coffee/20 bg-white px-2 py-1 shadow-inner focus-within:border-caramel/50 focus-within:ring-2 focus-within:ring-caramel/10">
+            <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
+            <button
+              type="button"
+              className="ml-1 shrink-0 p-2 text-coffee/40 hover:text-caramel disabled:opacity-50"
+              disabled={inputDisabled || uploading}
+              onClick={() => setShowEmoji(!showEmoji)}
+            >
+              <Smile className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              className="shrink-0 p-2 text-coffee/40 hover:text-caramel disabled:opacity-50"
+              disabled={inputDisabled || uploading}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Paperclip className="h-5 w-5" />
+            </button>
+            <input
+              type="text"
+              value={text}
+              disabled={inputDisabled || uploading}
+              placeholder={uploading ? "Đang tải lên..." : blockedByMe ? "Bạn đã chặn người dùng này" : generallyBlocked ? "Chat đã khóa" : "Nhắn tin để chốt thời gian cafe"}
+              onChange={(e) => {
+                setText(e.target.value);
+                setComposerNote("");
+                const socket = getSocket();
+                if (!inputDisabled) {
+                  socket.emit("typing_start", { roomId });
+                  if ((window as any).typingTimeoutPrivate) clearTimeout((window as any).typingTimeoutPrivate);
+                  (window as any).typingTimeoutPrivate = setTimeout(() => socket.emit("typing_stop", { roomId }), 2000);
+                }
+              }}
+              onBlur={() => !inputDisabled && getSocket().emit("typing_stop", { roomId })}
+              onKeyDown={(e) => e.key === "Enter" && send()}
+              className="min-w-0 flex-1 border-none bg-transparent p-2 text-[15px] outline-none ring-0 placeholder:text-coffee/30 focus:ring-0"
+            />
+            {showEmoji && !inputDisabled && (
+              <div ref={pickerRef} className="absolute bottom-full left-0 z-50 mb-2">
+                <EmojiPicker
+                  theme={Theme.LIGHT}
+                  onEmojiClick={(e) => setText((t) => t + e.emoji)}
+                  lazyLoadEmojis={true}
+                  searchDisabled={true}
+                  skinTonesDisabled={true}
+                  width={300}
+                  height={400}
+                />
+              </div>
+            )}
+          </div>
+          <Button icon={<Send />} onClick={send} disabled={!text.trim() || inputDisabled} className="shrink-0 rounded-full px-5">Gửi</Button>
         </div>
         {composerNote ? <p className="mx-auto mt-2 max-w-5xl text-center text-xs font-bold text-rose-600">{composerNote}</p> : null}
       </footer>

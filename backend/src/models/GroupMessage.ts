@@ -1,8 +1,8 @@
 import mongoose, { Schema, type InferSchemaType } from "mongoose";
 
-const messageSchema = new Schema(
+const groupMessageSchema = new Schema(
   {
-    room: { type: Schema.Types.ObjectId, ref: "ChatRoom", required: true, index: true },
+    group: { type: Schema.Types.ObjectId, ref: "Group", required: true, index: true },
     sender: { type: Schema.Types.ObjectId, ref: "User", required: true },
     text: { type: String, trim: true, maxlength: 2000 },
     type: { type: String, enum: ["text", "image", "video", "file"], default: "text" },
@@ -13,5 +13,5 @@ const messageSchema = new Schema(
   { timestamps: true }
 );
 
-export type MessageDoc = InferSchemaType<typeof messageSchema> & { _id: mongoose.Types.ObjectId };
-export const Message = mongoose.model("Message", messageSchema);
+export type GroupMessageDoc = InferSchemaType<typeof groupMessageSchema> & { _id: mongoose.Types.ObjectId };
+export const GroupMessage = mongoose.model("GroupMessage", groupMessageSchema);

@@ -15,6 +15,7 @@ import { ProfilePage } from "../features/profile/ProfilePage";
 import { SettingsPage } from "../features/profile/SettingsPage";
 import { SafetyPage } from "../features/safety/SafetyPage";
 import { GroupPage } from "../features/groups/GroupPage";
+import { GroupChatPage } from "../features/groups/GroupChatPage";
 import { PartnerDashboardPage } from "../features/partner/PartnerDashboardPage";
 import { PartnerRegisterPage } from "../features/partner/PartnerRegisterPage";
 import { AdminLayout } from "../layouts/AdminLayout";
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="safety" element={<SafetyPage />} />
           <Route path="groups" element={<GroupPage />} />
+          <Route path="groups/:groupId/chat" element={<GroupChatPage />} />
           <Route path="partner/dashboard" element={<PartnerDashboardPage />} />
           <Route path="partner-register" element={<PartnerRegisterPage />} />
         </Route>
