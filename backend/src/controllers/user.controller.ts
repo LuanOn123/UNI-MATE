@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import bcrypt from "bcryptjs";
 import { User } from "../models/User.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { getAge, getZodiac } from "../utils/zodiac.js";
@@ -42,6 +43,7 @@ export const completeOnboarding = asyncHandler(async (req: Request, res: Respons
         interests: req.body.interests,
         preferences: req.body.preferences
       },
+      preferences: req.body.preferences,
       location: { type: "Point", coordinates: [req.body.location.lng, req.body.location.lat], addressLabel: req.body.location.addressLabel, source: req.body.location.source ?? "manual" }
     },
     { new: true }
@@ -129,4 +131,87 @@ export const uploadProfilePhoto = asyncHandler(async (req: Request, res: Respons
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
   const user = await User.findById(req.user!.id).select("-refreshTokenHash");
   res.json({ user });
+});
+
+export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
+  const existingUser = await User.findById(req.user!.id);
+  if (!existingUser) return res.status(404).json({ message: "User not found" });
+
+  const updates: Record<string, any> = {};
+  if (req.body.displayName !== undefined) updates.displayName = req.body.displayName;
+  if (req.body.birthDate !== undefined) {
+    const birthDate = new Date(req.body.birthDate);
+    const age = getAge(birthDate);
+    if (age < 18 || age >= 30) return res.status(422).json({ message: "Bạn phải từ 18 đến dưới 30 tuổi" });
+    updates.birthDate = req.body.birthDate;
+    updates.age = age;
+    updates.zodiac = getZodiac(birthDate);
+  }
+  if (req.body.gender !== undefined) updates.gender = req.body.gender;
+  if (req.body.school !== undefined) updates.school = req.body.school;
+  if (req.body.major !== undefined) updates.major = req.body.major;
+  if (req.body.avatarUrl !== undefined) updates.avatarUrl = req.body.avatarUrl;
+  if (req.body.profilePhotos !== undefined) updates.profilePhotos = req.body.profilePhotos.filter(Boolean);
+
+  if (req.body.location) {
+    updates.location = {
+      type: "Point",
+      coordinates: [req.body.location.lng, req.body.location.lat],
+      addressLabel: req.body.location.addressLabel ?? existingUser.location?.addressLabel,
+      source: req.body.location.source ?? "manual"
+    };
+  }
+
+  const currentOnboarding = existingUser.onboarding || {};
+  const newOnboarding = { ...currentOnboarding };
+  const onboardingFields = ["goals", "preferredTimes", "cafeStyles", "budgetRange", "frequency", "purpose", "majorPreference", "vibePreference", "personality", "interests", "preferences"];
+  let hasOnboardingUpdate = false;
+  for (const field of onboardingFields) {
+    if (req.body[field] !== undefined) {
+      (newOnboarding as any)[field] = req.body[field];
+      hasOnboardingUpdate = true;
+    }
+  }
+  if (hasOnboardingUpdate) {
+    updates.onboarding = newOnboarding;
+  }
+  if (req.body.preferences !== undefined) {
+    updates.preferences = req.body.preferences;
+  }
+
+  const user = await User.findByIdAndUpdate(req.user!.id, { $set: updates }, { new: true }).select("-refreshTokenHash");
+  res.json({ user });
+});
+
+export const updateProfilePhotos = asyncHandler(async (req: Request, res: Response) => {
+  const photos = Array.isArray(req.body.photos) ? req.body.photos.filter(Boolean) : [];
+  const user = await User.findByIdAndUpdate(req.user!.id, { $set: { profilePhotos: photos } }, { new: true }).select("-refreshTokenHash");
+  res.json({ user });
+});
+
+export const changePassword = asyncHandler(async (req: Request, res: Response) => {
+  const user = await User.findById(req.user!.id);
+  if (!user || !user.passwordHash) {
+    return res.status(400).json({ message: "Tài khoản của bạn không sử dụng mật khẩu hoặc không tồn tại." });
+  }
+
+  const ok = await bcrypt.compare(req.body.oldPassword, user.passwordHash);
+  if (!ok) {
+    return res.status(400).json({ message: "Mật khẩu hiện tại không chính xác." });
+  }
+
+  const passwordHash = await bcrypt.hash(req.body.newPassword, 10);
+  user.passwordHash = passwordHash;
+  await user.save();
+
+  res.json({ success: true, message: "Đổi mật khẩu thành công." });
+});
+
+export const deleteAccount = asyncHandler(async (req: Request, res: Response) => {
+  await User.findByIdAndUpdate(req.user!.id, {
+    $set: { isActive: false, status: "suspended" },
+    $unset: { refreshTokenHash: 1 }
+  });
+  res.clearCookie("refreshToken");
+  res.json({ success: true, message: "Tài khoản đã được vô hiệu hóa." });
 });

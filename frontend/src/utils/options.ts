@@ -62,3 +62,13 @@ export const vibeSpaceOptions = [
 ];
 
 export const priorities = ["nearby", "same_interest", "same_school", "same_major", "same_cafe_style", "same_goal", "complement_personality"];
+
+export const priorityLabels: Record<string, string> = {
+  nearby: "Gần mình",
+  same_interest: "Chung sở thích",
+  same_school: "Cùng trường",
+  same_major: "Cùng khối ngành",
+  same_cafe_style: "Cùng gu cafe",
+  same_goal: "Cùng mục tiêu",
+  complement_personality: "Bù trừ tính cách"
+};

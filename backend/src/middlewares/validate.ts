@@ -9,7 +9,15 @@ export const validate =
         path: issue.path.filter((part) => part !== "body").join("."),
         message: issue.message
       }));
-      return res.status(422).json({ success: false, message: "Validation failed", validationIssues, issues: result.error.flatten() });
+      const detailedMessage = validationIssues
+        .map((issue) => `${issue.path ? `[${issue.path}]: ` : ""}${issue.message}`)
+        .join(" | ");
+      return res.status(422).json({
+        success: false,
+        message: detailedMessage || "Validation failed",
+        validationIssues,
+        issues: result.error.flatten()
+      });
     }
     req.body = result.data.body ?? req.body;
     req.params = result.data.params ?? req.params;

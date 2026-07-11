@@ -1,4 +1,5 @@
 export function getAge(birthDate: Date) {
+  if (!birthDate || Number.isNaN(birthDate.getTime())) return 0;
   const today = new Date();
   let age = today.getFullYear() - birthDate.getFullYear();
   const m = today.getMonth() - birthDate.getMonth();
@@ -7,6 +8,7 @@ export function getAge(birthDate: Date) {
 }
 
 export function getZodiac(date: Date) {
+  if (!date || Number.isNaN(date.getTime())) return "Chưa cập nhật";
   const d = date.getDate();
   const m = date.getMonth() + 1;
   const signs = [

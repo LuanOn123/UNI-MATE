@@ -6,7 +6,29 @@ export function notFound(req: Request, res: Response) {
 
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
   const message = err instanceof Error ? err.message : "Unexpected error";
-  const statusCode = typeof err === "object" && err && "statusCode" in err ? Number((err as { statusCode: unknown }).statusCode) : 500;
-  console.error(err);
+  let statusCode = typeof err === "object" && err && "statusCode" in err ? Number((err as { statusCode: unknown }).statusCode) : 500;
+
+  if (typeof err === "object" && err !== null && ("code" in err || "name" in err)) {
+    const code = (err as any).code;
+    const name = (err as any).name;
+    if (code === "LIMIT_FILE_SIZE" || message === "File too large") {
+      return res.status(413).json({
+        success: false,
+        message: "Dung lượng ảnh/file tải lên vượt quá giới hạn cho phép (tối đa 20MB). Vui lòng chọn ảnh nhỏ hơn."
+      });
+    }
+    if (name === "MulterError") {
+      return res.status(400).json({
+        success: false,
+        message: `Lỗi tải ảnh/file: ${message}`
+      });
+    }
+  }
+
+  if (Number.isFinite(statusCode) && statusCode >= 500) {
+    console.error(err);
+  } else {
+    console.warn(`[API ${statusCode}] ${_req.method} ${_req.originalUrl} - ${message}`);
+  }
   res.status(Number.isFinite(statusCode) ? statusCode : 500).json({ success: false, message });
 }

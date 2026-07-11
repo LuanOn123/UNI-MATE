@@ -165,7 +165,7 @@ export async function refreshToken(token: string) {
   }
 
   const accessToken = signAccessToken(user);
-  return { user: publicUser(user), accessToken };
+  return { user: publicUser(user), accessToken, refreshToken: token };
 }
 
 export async function logout(userId: string) {
