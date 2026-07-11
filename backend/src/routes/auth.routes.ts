@@ -1,12 +1,11 @@
 import { Router } from "express";
-import { loginController, logoutController, meController, refreshController, registerController, registerPartnerController, sendOtpController, verifyOtpController } from "../controllers/auth.controller.js";
+import { loginController, logoutController, meController, refreshController, registerController, sendOtpController, verifyOtpController } from "../controllers/auth.controller.js";
 import { requireAuth } from "../middlewares/auth.js";
 import { validate } from "../middlewares/validate.js";
-import { loginSchema, registerPartnerSchema, registerSchema, sendOtpSchema, verifyOtpSchema } from "../validations/auth.validation.js";
+import { loginSchema, registerSchema, sendOtpSchema, verifyOtpSchema } from "../validations/auth.validation.js";
 
 export const authRouter = Router();
 authRouter.post("/register", validate(registerSchema), registerController);
-authRouter.post("/register-partner", validate(registerPartnerSchema), registerPartnerController);
 authRouter.post("/login", validate(loginSchema), loginController);
 authRouter.post("/send-otp", validate(sendOtpSchema), sendOtpController);
 authRouter.post("/verify-otp", validate(verifyOtpSchema), verifyOtpController);

@@ -20,6 +20,10 @@ export const getPlaceVouchers = asyncHandler(async (req, res) => {
     res.json({ vouchers });
 });
 /** POST /api/places/partner-register — Register a partner cafe */
+export const getMyPartnerRegistration = asyncHandler(async (req, res) => {
+    const place = await PlaceCache.findOne({ partnerId: req.user.id, isPartnerPlace: true }).sort({ createdAt: -1 });
+    res.json({ place });
+});
 export const registerPartnerPlace = asyncHandler(async (req, res) => {
     const { name, address, description, cafeVibe, tags, amenities, openingHours, partnerName, city, district, lat, lng } = req.body;
     if (!name?.trim())
@@ -28,6 +32,14 @@ export const registerPartnerPlace = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: "Vui lòng chọn phong cách quán." });
     if (!partnerName?.trim())
         return res.status(400).json({ message: "Tên chủ quán là bắt buộc." });
+    const existingApplication = await PlaceCache.findOne({
+        partnerId: req.user.id,
+        isPartnerPlace: true,
+        status: { $in: ["pending", "active"] }
+    });
+    if (existingApplication) {
+        return res.status(409).json({ message: "Bạn đã có hồ sơ quán đang chờ duyệt hoặc đã được duyệt." });
+    }
     const place = await PlaceCache.create({
         name: name.trim(),
         address,
