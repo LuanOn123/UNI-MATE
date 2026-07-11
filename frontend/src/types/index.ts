@@ -68,7 +68,7 @@ export type ChatRoom = {
   _id: string;
   match: Match | string;
   users: User[];
-  place: Place;
+  place?: Place;
   status: "active" | "blocked" | "archived";
   lastMessage?: string;
   lastMessageAt?: string;
@@ -81,6 +81,9 @@ export type Message = {
   senderId?: string;
   mine?: boolean;
   text: string;
+  type?: "text" | "image" | "video" | "file";
+  fileUrl?: string;
+  fileName?: string;
   readBy: string[];
   createdAt: string;
 };

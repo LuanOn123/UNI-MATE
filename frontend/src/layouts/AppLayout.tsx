@@ -66,15 +66,38 @@ export function AppLayout() {
     setLikePopup(null);
     setNotifications((items) => items.map((item) => item._id === notification._id ? { ...item, readAt: item.readAt ?? new Date().toISOString() } : item));
     await api.patch(`/notifications/${notification._id}/read`).catch(() => undefined);
-    if (data.matched) navigate(`/app/matches/${data.match._id}/places`);
+    if (data.matched) {
+      const chatRoomId = typeof data.match?.chatRoom === "string" ? data.match.chatRoom : data.match?.chatRoom?._id;
+      if (chatRoomId) navigate(`/app/chat/${chatRoomId}`);
+      else navigate(`/app/chat`);
+    }
   };
 
   const openNotification = (notification: NotificationItem) => {
+    let relatedUnread: NotificationItem[] = [];
+    if (notification.type === "message" && notification.data?.roomId) {
+      relatedUnread = notifications.filter((n) => !n.readAt && n.type === "message" && n.data?.roomId === notification.data?.roomId);
+    } else if (notification.type === "group_message" && notification.data?.groupId) {
+      relatedUnread = notifications.filter((n) => !n.readAt && n.type === "group_message" && n.data?.groupId === notification.data?.groupId);
+    } else if (notification.type === "incoming_like" && notification.data?.actorId) {
+      relatedUnread = notifications.filter((n) => !n.readAt && n.type === "incoming_like" && n.data?.actorId === notification.data?.actorId);
+    } else {
+      relatedUnread = notifications.filter((n) => !n.readAt && n._id === notification._id);
+    }
+
+    if (relatedUnread.length > 0) {
+      setNotifications((items) =>
+        items.map((item) => (relatedUnread.some((ru) => ru._id === item._id) ? { ...item, readAt: new Date().toISOString() } : item))
+      );
+      Promise.all(relatedUnread.map((ru) => api.patch(`/notifications/${ru._id}/read`).catch(() => undefined)));
+    }
+
     if (notification.type === "incoming_like" && notification.data?.actor) {
       setLikePopup(notification);
       return;
     }
-    if (notification.type === "message") navigate("/app/chat");
+    if (notification.type === "message") navigate(notification.data?.roomId ? `/app/chat/${notification.data.roomId}` : "/app/chat");
+    if (notification.type === "group_message") navigate(notification.data?.groupId ? `/app/groups/${notification.data.groupId}/chat` : "/app/groups");
     if (notification.type.includes("cafe") || notification.type.includes("match")) navigate("/app/matches");
     setDrawerOpen(false);
   };
@@ -88,7 +111,7 @@ export function AppLayout() {
           </div>
           <div>
             <span className="block text-xl font-black text-cocoa">UNI-MATE</span>
-            <span className="text-xs font-semibold text-coffee/55">Cafe-gated chat</span>
+            <span className="text-xs font-semibold text-coffee/55">Kết nối sinh viên</span>
           </div>
         </div>
         <button
