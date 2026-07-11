@@ -351,6 +351,7 @@ export function GroupChatPage() {
                 <div ref={pickerRef} className="absolute bottom-full left-0 z-50 mb-2">
                   <EmojiPicker
                     theme={Theme.LIGHT}
+                    emojiVersion="12.0"
                     onEmojiClick={(e) => setText((t) => t + e.emoji)}
                     lazyLoadEmojis={true}
                     searchDisabled={true}
