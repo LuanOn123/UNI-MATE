@@ -25,7 +25,7 @@ const onboardingSchema = new Schema({
     preferences: {
         preferredGender: { type: String, enum: ["same", "opposite", "all"], default: "all" },
         ageRange: { min: { type: Number, default: 18 }, max: { type: Number, default: 30 } },
-        maxDistanceKm: { type: Number, min: 1, max: 20, default: 10 },
+        maxDistanceKm: { type: Number, min: 1, max: 100, default: 10 },
         priorities: [{ type: String }]
     }
 }, { _id: false });

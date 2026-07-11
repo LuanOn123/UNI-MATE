@@ -15,6 +15,18 @@ async function audit(req: Request, action: string, targetType: string, targetId:
   await AdminAction.create({ admin: req.user!.id, action, targetType, targetId, reason });
 }
 
+function validateOpeningHours(value?: unknown) {
+  if (value === undefined) return "";
+  if (typeof value !== "string" || !value.trim()) return "Giờ mở cửa là bắt buộc.";
+  if (value === "24/7") return "";
+  const match = /^([01]\d|2[0-3]):([0-5]\d)\s*-\s*([01]\d|2[0-3]):([0-5]\d)$/.exec(value.trim());
+  if (!match) return "Giờ mở cửa phải có định dạng HH:mm - HH:mm.";
+  const open = Number(match[1]) * 60 + Number(match[2]);
+  const close = Number(match[3]) * 60 + Number(match[4]);
+  if (open >= close) return "Giờ đóng cửa phải sau giờ mở cửa.";
+  return "";
+}
+
 export const dashboard = asyncHandler(async (_req: Request, res: Response) => {
   const [users, newUsers, matches, confirmed, reports, places, rooms] = await Promise.all([
     User.countDocuments(),
@@ -178,6 +190,9 @@ export const deletePlace = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const upsertPlace = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.params.placeId) return res.status(403).json({ message: "Admin không tự tạo quán. Vui lòng duyệt hồ sơ quán từ partner." });
+  const openingHoursError = validateOpeningHours(req.body.openingHours);
+  if (openingHoursError) return res.status(400).json({ message: openingHoursError });
   const place = req.params.placeId
     ? await PlaceCache.findByIdAndUpdate(req.params.placeId, req.body, { new: true, runValidators: true })
     : await PlaceCache.create(req.body);

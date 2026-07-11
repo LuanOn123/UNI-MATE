@@ -1,6 +1,6 @@
 import { env } from "../config/env.js";
 import { User } from "../models/User.js";
-import { loginWithPassword, logout, refreshToken, registerWithPassword, sendEmailOtp, verifyEmailOtp } from "../services/auth.service.js";
+import { loginWithPassword, logout, refreshToken, registerWithPassword, resetPasswordWithToken, sendEmailOtp, sendPasswordResetOtp, verifyEmailOtp, verifyPasswordResetOtp } from "../services/auth.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 function publicUser(user) {
     return {
@@ -47,10 +47,31 @@ export const verifyOtpController = asyncHandler(async (req, res) => {
     setRefreshCookie(res, refreshToken);
     res.json({ success: true, message: "Login successful", data: { user, accessToken, refreshToken } });
 });
+export const forgotPasswordSendOtpController = asyncHandler(async (req, res) => {
+    await sendPasswordResetOtp(req.body.email);
+    res.json({ success: true, message: "OTP sent" });
+});
+export const forgotPasswordVerifyOtpController = asyncHandler(async (req, res) => {
+    const { resetToken } = await verifyPasswordResetOtp(req.body.email, req.body.otp ?? req.body.code);
+    res.json({ success: true, message: "OTP verified", data: { resetToken } });
+});
+export const resetPasswordController = asyncHandler(async (req, res) => {
+    await resetPasswordWithToken(req.body.resetToken, req.body.newPassword);
+    res.json({ success: true, message: "Đổi mật khẩu thành công" });
+});
 export const refreshController = asyncHandler(async (req, res) => {
     const token = req.cookies.refreshToken || req.body.refreshToken;
-    const data = await refreshToken(token);
-    res.json({ success: true, data });
+    try {
+        const data = await refreshToken(token);
+        if (data.refreshToken) {
+            setRefreshCookie(res, data.refreshToken);
+        }
+        res.json({ success: true, data });
+    }
+    catch (error) {
+        res.clearCookie("refreshToken");
+        throw error;
+    }
 });
 export const meController = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user.id);

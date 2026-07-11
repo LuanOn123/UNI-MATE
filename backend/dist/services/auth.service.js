@@ -3,7 +3,7 @@ import { z } from "zod";
 import { env } from "../config/env.js";
 import { EmailOtp } from "../models/EmailOtp.js";
 import { User } from "../models/User.js";
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
+import { signAccessToken, signPasswordResetToken, signRefreshToken, verifyPasswordResetToken, verifyRefreshToken } from "../utils/jwt.js";
 import { canSendRealEmail, sendOtpEmail } from "./email.service.js";
 const emailSchema = z.string().email().transform((email) => email.toLowerCase().trim());
 const otpSchema = z.string().regex(/^\d{6}$/);
@@ -130,6 +130,60 @@ export async function verifyEmailOtp(emailInput, otpInput) {
     const tokens = await issueTokens(user);
     return { user: publicUser(user), ...tokens };
 }
+export async function sendPasswordResetOtp(emailInput) {
+    const email = emailSchema.parse(emailInput);
+    const user = await User.findOne({ email });
+    if (!user || !user.passwordHash) {
+        throw serviceError("Email không tồn tại hoặc tài khoản không dùng mật khẩu", 404);
+    }
+    await sendEmailOtp(email);
+    return { message: "OTP sent" };
+}
+export async function verifyPasswordResetOtp(emailInput, otpInput) {
+    const email = emailSchema.parse(emailInput);
+    const code = otpSchema.parse(otpInput);
+    const otp = await EmailOtp.findOne({ email, consumed: false, expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
+    if (!otp)
+        throw serviceError("OTP không tồn tại hoặc đã hết hạn", 400);
+    if (otp.attempts >= env.OTP_MAX_ATTEMPTS)
+        throw serviceError("Bạn đã nhập sai OTP quá nhiều lần", 429);
+    const ok = await bcrypt.compare(code, otp.otpHash);
+    if (!ok) {
+        otp.attempts += 1;
+        await otp.save();
+        throw serviceError("OTP không chính xác", 400);
+    }
+    const user = await User.findOne({ email });
+    if (!user || !user.passwordHash) {
+        throw serviceError("Không tìm thấy tài khoản cần đổi mật khẩu", 404);
+    }
+    if (user.status === "banned" || user.status === "suspended" || user.isActive === false) {
+        throw serviceError("Tài khoản đang bị khóa", 403);
+    }
+    otp.consumed = true;
+    await otp.save();
+    return { resetToken: signPasswordResetToken(user) };
+}
+export async function resetPasswordWithToken(resetToken, newPassword) {
+    let payload;
+    try {
+        payload = verifyPasswordResetToken(resetToken);
+    }
+    catch {
+        throw serviceError("Phiên đổi mật khẩu đã hết hạn. Vui lòng lấy OTP mới.", 401);
+    }
+    const user = await User.findById(payload.userId);
+    if (!user || user.email !== payload.email || !user.passwordHash) {
+        throw serviceError("Không tìm thấy tài khoản cần đổi mật khẩu", 404);
+    }
+    if (user.status === "banned" || user.status === "suspended" || user.isActive === false) {
+        throw serviceError("Tài khoản đang bị khóa", 403);
+    }
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    user.refreshTokenHash = undefined;
+    await user.save();
+    return { message: "Đổi mật khẩu thành công" };
+}
 export async function refreshToken(token) {
     if (!token)
         throw serviceError("Missing refresh token", 401);
@@ -148,7 +202,7 @@ export async function refreshToken(token) {
         throw serviceError("Invalid refresh token", 401);
     }
     const accessToken = signAccessToken(user);
-    return { user: publicUser(user), accessToken };
+    return { user: publicUser(user), accessToken, refreshToken: token };
 }
 export async function logout(userId) {
     await User.findByIdAndUpdate(userId, { $unset: { refreshTokenHash: 1 } });

@@ -26,7 +26,7 @@ export function OtpPage() {
     setError("");
     try {
       const user = await verifyOtp(pendingEmail, code);
-      navigate(user.role === "admin" ? "/admin/dashboard" : user.onboardingCompleted ? "/app/discovery" : "/onboarding");
+      navigate(user.role === "admin" ? "/admin/dashboard" : user.role === "partner" ? "/app/partner/dashboard" : user.onboardingCompleted ? "/app/discovery" : "/onboarding");
     } catch (e: any) {
       setError(e.response?.data?.message ?? "OTP sai hoặc đã hết hạn");
     }

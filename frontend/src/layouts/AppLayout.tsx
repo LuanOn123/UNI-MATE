@@ -270,7 +270,7 @@ function IncomingLikePopup({ notification, onClose, onView, onRespond }: { notif
           <div className="absolute inset-0 bg-gradient-to-t from-cocoa/88 via-cocoa/10 to-transparent" />
           <button type="button" className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/86 text-cocoa" onClick={onClose}><X className="h-5 w-5" /></button>
           <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-caramel">New like</p>
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-caramel">Lượt thích mới</p>
             <h2 className="mt-1 text-3xl font-black">{actor?.displayName ?? "Một người dùng"}, {actor?.age ?? "18+"}</h2>
             <p className="mt-1 font-semibold text-white/78">{actor?.school ?? "Sinh viên"} {actor?.major ? `· ${actor.major}` : ""}</p>
           </div>
@@ -281,9 +281,9 @@ function IncomingLikePopup({ notification, onClose, onView, onRespond }: { notif
             <CoffeeMeter value={actor?.matchMeta?.score ?? 70} size="sm" label="độ hợp gu" />
           </div>
           <div className="mt-5 grid grid-cols-3 gap-2">
-            <Button variant="ghost" onClick={() => onRespond("pass")} icon={<X />}>Nope</Button>
+            <Button variant="ghost" onClick={() => onRespond("pass")} icon={<X />}>Bỏ qua</Button>
             <Button variant="ghost" onClick={() => actor && onView(actor)} icon={<Eye />}>Chi tiết</Button>
-            <Button onClick={() => onRespond("like")} icon={<Heart />}>Like</Button>
+            <Button onClick={() => onRespond("like")} icon={<Heart />}>Thích lại</Button>
           </div>
         </div>
       </div>
@@ -303,7 +303,7 @@ function ProfilePreview({ user, onClose }: { user: Partial<UserType>; onClose: (
           <div className="absolute inset-0 bg-gradient-to-t from-cocoa/88 via-transparent to-transparent" />
           <button type="button" className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/86 text-cocoa" onClick={onClose}><X className="h-5 w-5" /></button>
           <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-            <h2 className="text-4xl font-black">{user.displayName ?? "UNI-MATE user"}, {user.age ?? "18+"}</h2>
+            <h2 className="text-4xl font-black">{user.displayName ?? "Người dùng UNI-MATE"}, {user.age ?? "18+"}</h2>
             <p className="mt-1 font-semibold text-white/78">{user.school ?? "Sinh viên"} {user.major ? `· ${user.major}` : ""}</p>
           </div>
         </div>

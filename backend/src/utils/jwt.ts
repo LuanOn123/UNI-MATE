@@ -14,6 +14,12 @@ export type JwtPayload = {
   role: "user" | "admin" | "partner";
 };
 
+export type PasswordResetPayload = {
+  userId: string;
+  email: string;
+  purpose: "password_reset";
+};
+
 function toPayload(user: JwtUser): JwtPayload {
   const userId = user.id ?? String(user._id);
   return { userId, email: user.email, role: user.role };
@@ -33,4 +39,17 @@ export function verifyAccessToken(token: string) {
 
 export function verifyRefreshToken(token: string) {
   return jwt.verify(token, env.JWT_REFRESH_SECRET) as JwtPayload;
+}
+
+export function signPasswordResetToken(user: JwtUser) {
+  const payload = { ...toPayload(user), purpose: "password_reset" as const };
+  return jwt.sign(payload, env.JWT_ACCESS_SECRET, { expiresIn: "10m" });
+}
+
+export function verifyPasswordResetToken(token: string) {
+  const payload = jwt.verify(token, env.JWT_ACCESS_SECRET) as PasswordResetPayload;
+  if (payload.purpose !== "password_reset") {
+    throw new Error("Invalid password reset token");
+  }
+  return payload;
 }

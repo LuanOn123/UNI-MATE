@@ -3,6 +3,17 @@ import { PlaceCache } from "../models/PlaceCache.js";
 import { Voucher } from "../models/Voucher.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
+function validateOpeningHours(value?: string) {
+  if (!value) return "Giờ mở cửa là bắt buộc.";
+  if (value === "24/7") return "";
+  const match = /^([01]\d|2[0-3]):([0-5]\d)\s*-\s*([01]\d|2[0-3]):([0-5]\d)$/.exec(value.trim());
+  if (!match) return "Giờ mở cửa phải có định dạng HH:mm - HH:mm.";
+  const open = Number(match[1]) * 60 + Number(match[2]);
+  const close = Number(match[3]) * 60 + Number(match[4]);
+  if (open >= close) return "Giờ đóng cửa phải sau giờ mở cửa.";
+  return "";
+}
+
 export const listPlaces = asyncHandler(async (_req: Request, res: Response) => {
   const places = await PlaceCache.find({ status: "active" }).sort({ rating: -1, updatedAt: -1 }).limit(100);
   res.json({ places });
@@ -34,6 +45,8 @@ export const registerPartnerPlace = asyncHandler(async (req: Request, res: Respo
   if (!name?.trim()) return res.status(400).json({ message: "Tên quán là bắt buộc." });
   if (!cafeVibe) return res.status(400).json({ message: "Vui lòng chọn phong cách quán." });
   if (!partnerName?.trim()) return res.status(400).json({ message: "Tên chủ quán là bắt buộc." });
+  const openingHoursError = validateOpeningHours(openingHours);
+  if (openingHoursError) return res.status(400).json({ message: openingHoursError });
 
   const existingApplication = await PlaceCache.findOne({
     partnerId: req.user!.id,

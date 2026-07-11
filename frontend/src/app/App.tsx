@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AdminAuditPage, AdminDashboardPage, AdminMatchesPage, AdminPlacesPage, AdminReportsPage, AdminTagsPage, AdminUserDetailPage, AdminUsersPage } from "../features/admin/AdminPage";
 import { AuthPage } from "../features/auth/AuthPage";
+import { ForgotPasswordPage } from "../features/auth/ForgotPasswordPage";
 import { OtpPage } from "../features/auth/OtpPage";
 import { ChatListPage } from "../features/chat/ChatListPage";
 import { ChatRoomPage } from "../features/chat/ChatRoomPage";
@@ -22,12 +23,24 @@ import { AdminLayout } from "../layouts/AdminLayout";
 import { AppLayout } from "../layouts/AppLayout";
 import { PartnerOnboardingLayout } from "../layouts/PartnerOnboardingLayout";
 import { ProtectedRoute } from "../routes/ProtectedRoute";
+import { useAuthStore } from "../stores/authStore";
+
+function HomeRoute() {
+  const { user, accessToken } = useAuthStore();
+  if (user && accessToken) {
+    if (user.role === "admin") return <Navigate to="/admin/dashboard" replace />;
+    if (user.role === "partner") return <Navigate to="/app/partner/dashboard" replace />;
+    return <Navigate to={user.onboardingCompleted ? "/app/discovery" : "/onboarding"} replace />;
+  }
+  return <LandingPage />;
+}
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<HomeRoute />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/auth/otp" element={<OtpPage />} />
       <Route path="/partner/auth" element={<Navigate to="/app/partner-register" replace />} />
       <Route element={<ProtectedRoute />}>

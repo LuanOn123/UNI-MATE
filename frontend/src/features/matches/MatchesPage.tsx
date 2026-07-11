@@ -110,13 +110,13 @@ export function MatchesPage() {
                 <div className="flex gap-3">
                   <div className="h-16 w-16 shrink-0 rounded-lg bg-cover bg-center" style={{ backgroundImage: `url(${user.avatarUrl || fallbackPhoto})` }} />
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate font-black">{user.displayName || "UNI-MATE user"}, {user.age ?? "18+"}</h3>
+                    <h3 className="truncate font-black">{user.displayName || "Người dùng UNI-MATE"}, {user.age ?? "18+"}</h3>
                     <p className="truncate text-sm text-coffee/60">{user.school || "Sinh viên"} {user.major ? `· ${user.major}` : ""}</p>
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2">
-                  <Button variant="ghost" icon={<X />} onClick={() => respondLike(user, "pass")}>Nope</Button>
-                  <Button icon={<Heart />} onClick={() => respondLike(user, "like")}>Like lại</Button>
+                  <Button variant="ghost" icon={<X />} onClick={() => respondLike(user, "pass")}>Bỏ qua</Button>
+                  <Button icon={<Heart />} onClick={() => respondLike(user, "like")}>Thích lại</Button>
                 </div>
               </div>
             ))}
@@ -136,7 +136,7 @@ export function MatchesPage() {
               <div className="flex gap-4 p-4">
                 <div className="h-20 w-20 shrink-0 rounded-lg bg-cover bg-center" style={{ backgroundImage: `url(${person?.avatarUrl || fallbackPhoto})` }} />
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate text-lg font-black">{person?.displayName || "UNI-MATE user"}</h3>
+                  <h3 className="truncate text-lg font-black">{person?.displayName || "Người dùng UNI-MATE"}</h3>
                   <p className="truncate text-sm text-coffee/62">{person?.school || "Sinh viên"} {person?.major ? `· ${person.major}` : ""}</p>
                   <div className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black ${copy.tone}`}>
                     <Icon className="h-4 w-4" /> {copy.label}

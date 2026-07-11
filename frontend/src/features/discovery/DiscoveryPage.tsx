@@ -110,13 +110,13 @@ export function DiscoveryPage() {
               <div className="relative h-[430px] bg-cover bg-center sm:h-[500px]" style={{ backgroundImage: `url(${gallery[0]})` }}>
                 <div className="absolute inset-0 bg-gradient-to-t from-cocoa/86 via-cocoa/12 to-transparent" />
                 <motion.div style={{ opacity: likeOpacity }} className="absolute right-5 top-5 rotate-6 rounded-lg border-4 border-emerald-300 px-4 py-2 text-2xl font-black text-emerald-200">
-                  LIKE
+                  THÍCH
                 </motion.div>
                 <motion.div style={{ opacity: passOpacity }} className="absolute left-5 top-5 -rotate-6 rounded-lg border-4 border-rose-300 px-4 py-2 text-2xl font-black text-rose-200">
-                  NOPE
+                  BỎ QUA
                 </motion.div>
                 <div className="absolute inset-x-0 bottom-0 p-6 text-white">
-                  <h2 className="text-4xl font-black">{user.displayName || "UNI-MATE user"}, {user.age ?? "18+"}</h2>
+                  <h2 className="text-4xl font-black">{user.displayName || "Người dùng UNI-MATE"}, {user.age ?? "18+"}</h2>
                   <p className="mt-1 font-semibold text-white/82">{user.school || "Sinh viên"} {user.major ? `· ${user.major}` : ""}</p>
                 </div>
               </div>
@@ -151,9 +151,9 @@ export function DiscoveryPage() {
                   </div>
                 ) : null}
                 <div className="mt-6 grid grid-cols-3 gap-3">
-                  <Button variant="ghost" icon={<X />} onClick={() => act("pass")}>Nope</Button>
-                  <Button variant="ghost" icon={<Eye />} onClick={() => setDetailOpen(true)}>Profile</Button>
-                  <Button icon={<Heart />} onClick={() => act("like")} className="bg-caramel hover:bg-coffee">Like</Button>
+                  <Button variant="ghost" icon={<X />} onClick={() => act("pass")}>Bỏ qua</Button>
+                  <Button variant="ghost" icon={<Eye />} onClick={() => setDetailOpen(true)}>Hồ sơ</Button>
+                  <Button icon={<Heart />} onClick={() => act("like")} className="bg-caramel hover:bg-coffee">Thích</Button>
                 </div>
               </div>
             </motion.article>
@@ -215,7 +215,7 @@ export function DiscoveryPage() {
             <div className="min-h-0 overflow-y-auto p-5 md:p-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-3xl font-black">{user.displayName || "UNI-MATE user"}, {user.age ?? "18+"}</h2>
+                  <h2 className="text-3xl font-black">{user.displayName || "Người dùng UNI-MATE"}, {user.age ?? "18+"}</h2>
                   <p className="mt-1 font-semibold text-coffee/68">{user.school || "Sinh viên"} {user.major ? `· ${user.major}` : ""}</p>
                 </div>
                 <button type="button" onClick={() => setDetailOpen(false)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-cream text-coffee"><X /></button>
@@ -247,8 +247,8 @@ export function DiscoveryPage() {
                 ))}
               </ul>
               <div className="sticky bottom-0 mt-6 grid grid-cols-2 gap-3 bg-white pt-3">
-                <Button variant="ghost" icon={<X />} onClick={() => act("pass")}>Nope</Button>
-                <Button icon={<Heart />} onClick={() => act("like")} className="bg-caramel hover:bg-coffee">Like</Button>
+                <Button variant="ghost" icon={<X />} onClick={() => act("pass")}>Bỏ qua</Button>
+                <Button icon={<Heart />} onClick={() => act("like")} className="bg-caramel hover:bg-coffee">Thích</Button>
               </div>
             </div>
           </motion.div>

@@ -11,8 +11,8 @@ const nav = [
 export function PartnerOnboardingLayout() {
   const logout = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/", { replace: true });
   };
 
@@ -25,7 +25,7 @@ export function PartnerOnboardingLayout() {
           </div>
           <div>
             <span className="block text-xl font-black text-cocoa">UNI-MATE</span>
-            <span className="text-xs font-semibold text-coffee/55">Partner Center</span>
+            <span className="text-xs font-semibold text-coffee/55">Khu vực đối tác</span>
           </div>
         </div>
 

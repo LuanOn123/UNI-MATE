@@ -11,6 +11,22 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 async function audit(req, action, targetType, targetId, reason) {
     await AdminAction.create({ admin: req.user.id, action, targetType, targetId, reason });
 }
+function validateOpeningHours(value) {
+    if (value === undefined)
+        return "";
+    if (typeof value !== "string" || !value.trim())
+        return "Giờ mở cửa là bắt buộc.";
+    if (value === "24/7")
+        return "";
+    const match = /^([01]\d|2[0-3]):([0-5]\d)\s*-\s*([01]\d|2[0-3]):([0-5]\d)$/.exec(value.trim());
+    if (!match)
+        return "Giờ mở cửa phải có định dạng HH:mm - HH:mm.";
+    const open = Number(match[1]) * 60 + Number(match[2]);
+    const close = Number(match[3]) * 60 + Number(match[4]);
+    if (open >= close)
+        return "Giờ đóng cửa phải sau giờ mở cửa.";
+    return "";
+}
 export const dashboard = asyncHandler(async (_req, res) => {
     const [users, newUsers, matches, confirmed, reports, places, rooms] = await Promise.all([
         User.countDocuments(),
@@ -175,6 +191,11 @@ export const deletePlace = asyncHandler(async (req, res) => {
     res.json({ success: true, message: "Cafe deleted successfully" });
 });
 export const upsertPlace = asyncHandler(async (req, res) => {
+    if (!req.params.placeId)
+        return res.status(403).json({ message: "Admin không tự tạo quán. Vui lòng duyệt hồ sơ quán từ partner." });
+    const openingHoursError = validateOpeningHours(req.body.openingHours);
+    if (openingHoursError)
+        return res.status(400).json({ message: openingHoursError });
     const place = req.params.placeId
         ? await PlaceCache.findByIdAndUpdate(req.params.placeId, req.body, { new: true, runValidators: true })
         : await PlaceCache.create(req.body);
@@ -185,7 +206,7 @@ export const upsertPlace = asyncHandler(async (req, res) => {
 });
 export const hidePlace = asyncHandler(async (req, res) => {
     const nextStatus = req.body.status ?? "hidden";
-    if (!["active", "hidden", "pending"].includes(nextStatus))
+    if (!["active", "hidden", "pending", "rejected"].includes(nextStatus))
         return res.status(400).json({ message: "Invalid place status" });
     const place = await PlaceCache.findById(req.params.placeId);
     if (!place)
@@ -196,7 +217,7 @@ export const hidePlace = asyncHandler(async (req, res) => {
     if (nextStatus === "active" && place.isPartnerPlace && place.partnerId) {
         await User.findByIdAndUpdate(place.partnerId, { role: "partner" });
     }
-    if (previousStatus !== nextStatus && place.isPartnerPlace && place.partnerId && ["active", "hidden"].includes(nextStatus)) {
+    if (previousStatus !== nextStatus && place.isPartnerPlace && place.partnerId && ["active", "hidden", "rejected"].includes(nextStatus)) {
         const io = req.app.get("io");
         await createAndEmitNotification(io, {
             userId: String(place.partnerId),

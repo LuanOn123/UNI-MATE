@@ -14,6 +14,16 @@ const vibeOptions = [
   { value: "boardgame_lively", label: "Boardgame / Náo nhiệt", desc: "Có boardgame, sôi động, dễ phá băng" }
 ];
 
+const timeOptions = Array.from({ length: 19 }, (_, index) => {
+  const hour = index + 5;
+  return `${String(hour).padStart(2, "0")}:00`;
+});
+
+function minutesOf(time: string) {
+  const [hour, minute] = time.split(":").map(Number);
+  return hour * 60 + minute;
+}
+
 type PartnerPlace = {
   _id: string;
   name: string;
@@ -38,7 +48,8 @@ export function PartnerRegisterPage() {
     district: locationChoices[0].label,
     tags: [] as string[],
     amenities: [] as string[],
-    openingHours: "",
+    openingStart: "07:00",
+    openingEnd: "22:00",
     partnerName: ""
   });
   const [submitted, setSubmitted] = useState(false);
@@ -68,9 +79,11 @@ export function PartnerRegisterPage() {
     if (!form.name.trim()) return setError("Tên quán là bắt buộc.");
     if (!form.cafeVibe) return setError("Vui lòng chọn phong cách quán.");
     if (!form.partnerName.trim()) return setError("Tên chủ quán là bắt buộc.");
+    if (minutesOf(form.openingStart) >= minutesOf(form.openingEnd)) return setError("Giờ đóng cửa phải sau giờ mở cửa.");
 
     setLoading(true);
     setError("");
+    const openingHours = `${form.openingStart} - ${form.openingEnd}`;
     try {
       const { data } = await api.post("/places/partner-register", {
         name: form.name,
@@ -79,7 +92,7 @@ export function PartnerRegisterPage() {
         cafeVibe: form.cafeVibe,
         tags: form.tags,
         amenities: form.amenities,
-        openingHours: form.openingHours,
+        openingHours,
         partnerName: form.partnerName,
         city: form.city,
         district: selectedLocation.district,
@@ -130,7 +143,7 @@ export function PartnerRegisterPage() {
   if (application?.status === "pending" || submitted) {
     const place = application;
     return (
-      <PartnerShell title="Hồ sơ quán đang chờ duyệt" subtitle="Bạn đang ở Partner Center, không phải giao diện match của user." icon={<Clock />}>
+      <PartnerShell title="Hồ sơ quán đang chờ duyệt" subtitle="Bạn đang ở khu vực đối tác, không phải giao diện match của người dùng." icon={<Clock />}>
         <div className="grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
           <section className="rounded-xl border border-amber-100 bg-white p-6 shadow-soft">
             <div className="flex items-start gap-4">
@@ -138,7 +151,7 @@ export function PartnerRegisterPage() {
                 <Clock />
               </div>
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.16em] text-amber-600">Pending approval</p>
+                <p className="text-sm font-black uppercase tracking-[0.16em] text-amber-600">Đang chờ duyệt</p>
                 <h2 className="mt-1 text-2xl font-black text-cocoa">Admin đang kiểm tra hồ sơ quán</h2>
                 <p className="mt-2 text-sm font-semibold leading-relaxed text-coffee/65">
                   Sau khi quán được duyệt, tài khoản của bạn sẽ chuyển sang role partner và mở dashboard quản lý quán/voucher.
@@ -263,8 +276,17 @@ export function PartnerRegisterPage() {
         </Field>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Giờ mở cửa">
-            <Input placeholder="VD: 7:00 - 22:00" value={form.openingHours} onChange={(e) => setForm({ ...form, openingHours: e.target.value })} />
+          <Field label="Giờ mở cửa *">
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+              <select className="w-full rounded-lg border border-coffee/15 bg-white p-3 text-sm outline-none focus:ring-4 focus:ring-caramel/30" value={form.openingStart} onChange={(e) => setForm({ ...form, openingStart: e.target.value })}>
+                {timeOptions.slice(0, -1).map((time) => <option key={time} value={time}>{time}</option>)}
+              </select>
+              <span className="text-sm font-black text-coffee/45">đến</span>
+              <select className="w-full rounded-lg border border-coffee/15 bg-white p-3 text-sm outline-none focus:ring-4 focus:ring-caramel/30" value={form.openingEnd} onChange={(e) => setForm({ ...form, openingEnd: e.target.value })}>
+                {timeOptions.slice(1).map((time) => <option key={time} value={time}>{time}</option>)}
+              </select>
+            </div>
+            <p className="mt-1 text-xs font-semibold text-coffee/55">Đang chọn: {form.openingStart} - {form.openingEnd}</p>
           </Field>
           <Field label="Mô tả ngắn">
             <Input placeholder="Đặc điểm nổi bật..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
@@ -287,7 +309,7 @@ function PartnerShell({ title, subtitle, icon, children }: { title: string; subt
           {icon}
         </div>
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-caramel">Partner Center</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-caramel">Khu vực đối tác</p>
           <h1 className="text-xl font-black text-cocoa">{title}</h1>
           <p className="text-sm text-coffee/60">{subtitle}</p>
         </div>

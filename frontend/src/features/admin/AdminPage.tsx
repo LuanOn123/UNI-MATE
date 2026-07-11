@@ -476,6 +476,7 @@ export function AdminPlacesPage() {
   const [places, setPlaces] = useState<AnyRecord[]>([]);
   const [form, setForm] = useState<AnyRecord>(emptyPlace);
   const [editingId, setEditingId] = useState("");
+  const [selectedPlace, setSelectedPlace] = useState<AnyRecord | null>(null);
   const [message, setMessage] = useState("");
   const [q, setQ] = useState("");
   const [statusVal, setStatusVal] = useState("");
@@ -485,6 +486,7 @@ export function AdminPlacesPage() {
   useEffect(() => { load(); }, []);
 
   const save = async () => {
+    if (!editingId) return;
     const payload = {
       ...form,
       rating: Number(form.rating),
@@ -493,21 +495,28 @@ export function AdminPlacesPage() {
       amenities: String(form.amenities).split(",").map((x) => x.trim()).filter(Boolean),
       location: { type: "Point", coordinates: [Number(form.location.coordinates[0]), Number(form.location.coordinates[1])] }
     };
-    if (editingId) await api.put(`/admin/places/${editingId}`, payload);
-    else await api.post("/admin/places", payload);
-    setMessage(editingId ? "Đã cập nhật quán." : "Đã thêm quán.");
+    const { data } = await api.put(`/admin/places/${editingId}`, payload);
+    setMessage("Đã cập nhật quán.");
     setEditingId("");
     setForm(emptyPlace);
+    setSelectedPlace(data.place);
     load();
   };
 
   const edit = (place: AnyRecord) => {
+    setSelectedPlace(place);
     setEditingId(place._id);
     setForm({ ...emptyPlace, ...place, tags: (place.tags ?? []).join(", "), amenities: (place.amenities ?? []).join(", "), location: place.location ?? emptyPlace.location });
   };
+  const view = (place: AnyRecord) => {
+    setSelectedPlace(place);
+    setEditingId("");
+    setForm(emptyPlace);
+  };
   const status = async (id: string, next: "active" | "hidden" | "pending") => {
-    await api.patch(`/admin/places/${id}/status`, { status: next, reason: `Admin set ${next}` });
+    const { data } = await api.patch(`/admin/places/${id}/status`, { status: next, reason: `Admin set ${next}` });
     setMessage("Đã cập nhật trạng thái quán.");
+    setSelectedPlace(data.place);
     load();
   };
 
@@ -538,15 +547,7 @@ export function AdminPlacesPage() {
         <Button onClick={load}>Lọc</Button>
       </AdminToolbar>
       <Notice message={message} />
-      <div className="grid gap-5 xl:grid-cols-[390px_1fr]">
-        <section className="rounded-lg bg-white p-5 shadow-sm">
-          <h2 className="mb-4 flex items-center gap-2 font-black"><Plus className="h-5 w-5 text-caramel" />{editingId ? "Sửa quán" : "Thêm quán"}</h2>
-          <PlaceForm form={form} setForm={setForm} />
-          <div className="mt-4 flex gap-2">
-            <Button icon={<Save />} onClick={save}>{editingId ? "Lưu sửa" : "Thêm quán"}</Button>
-            {editingId ? <Button variant="ghost" onClick={() => { setEditingId(""); setForm(emptyPlace); }}>Hủy</Button> : null}
-          </div>
-        </section>
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
         <AdminTable>
           <thead><tr><Th>Quán</Th><Th>Partner</Th><Th>Rating</Th><Th>Status</Th><Th>Action</Th></tr></thead>
           <tbody>
@@ -564,6 +565,7 @@ export function AdminPlacesPage() {
                 <Td>{place.rating ?? "N/A"} · {place.priceLevel}</Td>
                 <Td><StatusPill value={place.status} /></Td>
                 <Td><div className="flex flex-wrap gap-2">
+                  <Button variant="ghost" icon={<Eye />} onClick={() => view(place)}>Xem</Button>
                   <Button variant="ghost" onClick={() => edit(place)}>Sửa</Button>
                   <Button variant="ghost" onClick={() => status(place._id, "active")}>{place.status === "pending" ? "Duyệt" : "Show"}</Button>
                   <Button variant="ghost" onClick={() => status(place._id, "hidden")}>{place.status === "pending" ? "Từ chối" : "Hide"}</Button>
@@ -573,6 +575,28 @@ export function AdminPlacesPage() {
             ))}
           </tbody>
         </AdminTable>
+        <section className="rounded-lg bg-white p-5 shadow-sm">
+          {editingId ? (
+            <>
+              <h2 className="mb-4 flex items-center gap-2 font-black"><Save className="h-5 w-5 text-caramel" />Sửa quán</h2>
+              <PlaceForm form={form} setForm={setForm} />
+              <div className="mt-4 flex gap-2">
+                <Button icon={<Save />} onClick={save}>Lưu sửa</Button>
+                <Button variant="ghost" onClick={() => { setEditingId(""); setForm(emptyPlace); }}>Hủy</Button>
+              </div>
+            </>
+          ) : selectedPlace ? (
+            <PlaceDetail place={selectedPlace} onEdit={() => edit(selectedPlace)} onStatus={status} />
+          ) : (
+            <div className="grid min-h-64 place-items-center text-center">
+              <div>
+                <Coffee className="mx-auto h-12 w-12 text-slate-300" />
+                <h2 className="mt-3 font-black text-slate-700">Chọn một quán để xem chi tiết</h2>
+                <p className="mt-1 text-sm font-semibold text-slate-500">Admin chỉ duyệt, xem và chỉnh sửa quán do partner gửi.</p>
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     </AdminPageShell>
   );
@@ -635,6 +659,64 @@ export function AdminMatchesPage() {
   );
 }
 
+function PlaceDetail({ place, onEdit, onStatus }: { place: AnyRecord; onEdit: () => void; onStatus: (id: string, next: "active" | "hidden" | "pending") => void }) {
+  const coords = place.location?.coordinates ?? [];
+  return (
+    <div>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-caramel">Chi tiết quán</p>
+          <h2 className="mt-1 text-xl font-black text-slate-900">{place.name}</h2>
+          <p className="mt-1 text-sm font-semibold text-slate-500">{place.address || "Chưa có địa chỉ"}</p>
+        </div>
+        <StatusPill value={place.status} />
+      </div>
+      <div
+        className="mb-4 grid h-44 place-items-center rounded-lg bg-slate-100 bg-cover bg-center text-sm font-bold text-slate-500"
+        style={{ backgroundImage: place.imageUrl ? `url(${place.imageUrl})` : undefined }}
+      >
+        {!place.imageUrl ? "Chưa có ảnh quán" : ""}
+      </div>
+      <div className="grid gap-3 text-sm text-slate-700">
+        <DetailRow label="Chủ quán" value={place.partnerName || "Không rõ"} />
+        <DetailRow label="Loại hồ sơ" value={place.isPartnerPlace ? "Quán đối tác" : "Dữ liệu hệ thống"} />
+        <DetailRow label="Khu vực" value={[place.district, place.city].filter(Boolean).join(", ") || "Chưa cập nhật"} />
+        <DetailRow label="Giờ mở cửa" value={place.openingHours || "Chưa cập nhật"} />
+        <DetailRow label="Phong cách" value={place.cafeVibe || "Chưa cập nhật"} />
+        <DetailRow label="Đánh giá" value={`${place.rating ?? "N/A"} · ${place.userRatingsTotal ?? 0} lượt`} />
+        <DetailRow label="Mức giá" value={place.priceLevel || "-"} />
+        <DetailRow label="Tọa độ" value={coords.length ? `${coords[1]}, ${coords[0]}` : "Chưa có"} />
+      </div>
+      {place.description ? <p className="mt-4 rounded-lg bg-slate-50 p-3 text-sm font-medium leading-relaxed text-slate-600">{place.description}</p> : null}
+      {place.tags?.length ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {place.tags.map((tag: string) => <span key={tag} className="rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-caramel">#{tag}</span>)}
+        </div>
+      ) : null}
+      {place.amenities?.length ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {place.amenities.map((item: string) => <span key={item} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{item}</span>)}
+        </div>
+      ) : null}
+      <div className="mt-5 flex flex-wrap gap-2">
+        <Button onClick={onEdit}>Sửa quán</Button>
+        <Button variant="ghost" onClick={() => onStatus(place._id, "active")}>{place.status === "pending" ? "Duyệt" : "Hiển thị"}</Button>
+        <Button variant="ghost" onClick={() => onStatus(place._id, "hidden")}>{place.status === "pending" ? "Từ chối" : "Ẩn"}</Button>
+        {place.mapsUrl ? <a href={place.mapsUrl} target="_blank" rel="noreferrer"><Button variant="ghost" icon={<ExternalLink />}>Maps</Button></a> : null}
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <p className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
+      <span className="font-bold text-slate-500">{label}</span>
+      <span className="text-right font-semibold text-slate-800">{value}</span>
+    </p>
+  );
+}
+
 function PlaceForm({ form, setForm }: { form: AnyRecord; setForm: (value: AnyRecord) => void }) {
   const lng = Number(form.location.coordinates[0]) || 106.7009;
   const lat = Number(form.location.coordinates[1]) || 10.7769;
@@ -685,14 +767,13 @@ function PlaceForm({ form, setForm }: { form: AnyRecord; setForm: (value: AnyRec
       <Field label="Tiện ích" hint="Cách nhau bằng dấu phẩy. Ví dụ: wifi, ổ cắm, máy lạnh.">
         <Input placeholder="wifi, ổ cắm, máy lạnh" value={form.amenities} onChange={(e) => setForm({ ...form, amenities: e.target.value })} />
       </Field>
-      <Field label="Thời gian mở cửa" hint="Chọn nhanh khung giờ phổ biến hoặc tự nhập bằng lựa chọn cuối.">
+      <Field label="Thời gian mở cửa" hint="Chọn khung giờ chuẩn để hệ thống dễ kiểm tra và hiển thị.">
         <select className="w-full rounded-lg border border-slate-200 p-3" value={form.openingHours} onChange={(e) => setForm({ ...form, openingHours: e.target.value })}>
           <option value="">Chọn thời gian</option>
           <option value="07:00 - 22:00">07:00 - 22:00</option>
           <option value="08:00 - 22:00">08:00 - 22:00</option>
           <option value="08:00 - 23:00">08:00 - 23:00</option>
           <option value="24/7">24/7</option>
-          <option value="Đang cập nhật">Đang cập nhật</option>
         </select>
       </Field>
       <Field label="Google Maps URL" hint="Mở Google Maps, chọn đúng quán rồi dán link chia sẻ vào đây.">

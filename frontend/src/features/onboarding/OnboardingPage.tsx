@@ -178,6 +178,13 @@ function formatValidationErrors(error: any) {
   return details.length ? details : [error.response?.data?.message ?? "Không lưu được onboarding"];
 }
 
+async function uploadAvatar(file: File) {
+  const formData = new FormData();
+  formData.append("avatar", file);
+  const { data } = await api.post("/users/avatar", formData, { headers: { "Content-Type": "multipart/form-data" } });
+  return data.url as string;
+}
+
 type MateChoiceProps = {
   title: string;
   desc?: string;
@@ -250,6 +257,9 @@ export function OnboardingPage() {
   const [data, setData] = useState(initial);
   const [error, setError] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState("");
+  const [toast, setToast] = useState<{ tone: "success" | "error"; lines: string[] } | null>(null);
   const [customLocationOpen, setCustomLocationOpen] = useState(false);
   const [customLocation, setCustomLocation] = useState({ city: "", district: "" });
   const [locationSuggestions, setLocationSuggestions] = useState<Array<{ lat: number; lng: number; addressLabel: string; source: "manual"; cityMatches?: boolean }>>([]);
@@ -266,10 +276,39 @@ export function OnboardingPage() {
     setData({ ...data, location: manualLocationPayload(choice) });
   };
 
+  const notify = (lines: string[] | string, tone: "success" | "error" = "error") => {
+    const nextToast = { tone, lines: Array.isArray(lines) ? lines : [lines] };
+    setToast(nextToast);
+    window.setTimeout(() => {
+      setToast((current) => (current === nextToast ? null : current));
+    }, 4200);
+  };
+
+  const setStepError = (lines: string[] | string) => {
+    const details = Array.isArray(lines) ? lines : [lines];
+    setError(details);
+    notify(details, "error");
+  };
+
+  const pickAvatar = (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setStepError("Vui lòng chọn đúng file ảnh.");
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setStepError("Ảnh đại diện tối đa 20MB. Vui lòng chọn ảnh nhẹ hơn.");
+      return;
+    }
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    notify("Đã chọn ảnh đại diện. Bạn có thể xem trước ngay bên dưới.", "success");
+  };
+
   const useCustomLocation = async () => {
     setError([]);
     if (customLocation.city.trim().length < 3 || customLocation.district.trim().length < 3) {
-      setError(["Nhập ít nhất 3 ký tự cho thành phố và quận/khu vực."]);
+      setStepError(["Nhập ít nhất 3 ký tự cho thành phố và quận/khu vực."]);
       return;
     }
     setGeocoding(true);
@@ -277,7 +316,7 @@ export function OnboardingPage() {
       const { data: res } = await api.post("/users/location/geocode", customLocation);
       setLocationSuggestions(res.suggestions ?? []);
     } catch (e: any) {
-      setError([e.response?.data?.message ?? "Không tìm được tọa độ khu vực này."]);
+      setStepError([e.response?.data?.message ?? "Không tìm được tọa độ khu vực này."]);
     } finally {
       setGeocoding(false);
     }
@@ -292,21 +331,21 @@ export function OnboardingPage() {
   const next = () => {
     setError([]);
     // Step 0: Disclaimer
-    if (index === 0 && !data.disclaimerAccepted) return setError(["Bạn cần đồng ý với điều khoản để tiếp tục."]);
+    if (index === 0 && !data.disclaimerAccepted) return setStepError(["Bạn cần đồng ý với điều khoản để tiếp tục."]);
     // Step 1: Basic info
-    if (index === 1 && (!data.displayName.trim() || !data.birthDate || age < 18 || age >= 30)) return setError(["Bạn cần nhập tên, ngày sinh hợp lệ, từ 18 đến dưới 30 tuổi."]);
+    if (index === 1 && (!data.displayName.trim() || !data.birthDate || age < 18 || age >= 30)) return setStepError(["Bạn cần nhập tên, ngày sinh hợp lệ, từ 18 đến dưới 30 tuổi."]);
     // Step 2: Purpose (hard filter)
-    if (index === 2 && data.purpose.length < 1) return setError(["Chọn ít nhất 1 mục đích hôm nay của bạn."]);
+    if (index === 2 && data.purpose.length < 1) return setStepError(["Chọn ít nhất 1 mục đích hôm nay của bạn."]);
     // Step 3: Goals
-    if (index === 3 && data.goals.length < 1) return setError(["Chọn ít nhất 1 mục tiêu gặp."]);
+    if (index === 3 && data.goals.length < 1) return setStepError(["Chọn ít nhất 1 mục tiêu gặp."]);
     // Step 4: Cafe styles
-    if (index === 4 && data.cafeStyles.length < 3) return setError(["Chọn ít nhất 3 tags cafe để matching chính xác hơn."]);
+    if (index === 4 && data.cafeStyles.length < 3) return setStepError(["Chọn ít nhất 3 tag cafe để matching chính xác hơn."]);
     // Step 6: Interests
-    if (index === 6 && data.interests.length < 3) return setError(["Chọn ít nhất 3 sở thích."]);
+    if (index === 6 && data.interests.length < 3) return setStepError(["Chọn ít nhất 3 sở thích."]);
     // Step 7: Vibe
-    if (index === 7 && !data.vibePreference) return setError(["Chọn vibe không gian bạn mong muốn."]);
+    if (index === 7 && !data.vibePreference) return setStepError(["Chọn vibe không gian bạn mong muốn."]);
     // Step 8: Mate preference
-    if (index === 8 && (data.preferences.ageRange.min < 18 || data.preferences.ageRange.max > 29 || data.preferences.ageRange.min > data.preferences.ageRange.max)) return setError(["Khoảng tuổi mong muốn phải từ 18 đến dưới 30."]);
+    if (index === 8 && (data.preferences.ageRange.min < 18 || data.preferences.ageRange.max > 29 || data.preferences.ageRange.min > data.preferences.ageRange.max)) return setStepError(["Khoảng tuổi mong muốn phải từ 18 đến dưới 30."]);
     navigate(steps[Math.min(index + 1, steps.length - 1)]);
   };
 
@@ -314,11 +353,15 @@ export function OnboardingPage() {
     setLoading(true);
     setError([]);
     try {
-      const { data: res } = await api.post("/users/onboarding", data);
+      const avatarUrl = avatarFile ? await uploadAvatar(avatarFile) : data.avatarUrl;
+      const { data: res } = await api.post("/users/onboarding", { ...data, avatarUrl });
       updateUser({ ...res.user, id: res.user._id });
+      notify("Hồ sơ đã sẵn sàng. Đang chuyển vào Khám phá.", "success");
       navigate("/app/discovery");
     } catch (e: any) {
-      setError(formatValidationErrors(e));
+      const details = formatValidationErrors(e);
+      setError(details);
+      notify(details, "error");
     } finally {
       setLoading(false);
     }
@@ -423,9 +466,15 @@ export function OnboardingPage() {
                       ))}
                     </select>
                   </div>
-                  <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-coffee/20 bg-cream/60 p-4 font-semibold text-coffee">
-                    <Camera className="text-caramel" /> Avatar optional
-                    <input type="file" className="hidden" />
+                  <label className="flex cursor-pointer items-center gap-4 rounded-lg border border-dashed border-coffee/20 bg-cream/60 p-4 font-semibold text-coffee transition hover:border-caramel hover:bg-latte/50">
+                    <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg bg-white text-caramel">
+                      {avatarPreview ? <img src={avatarPreview} alt="Xem trước ảnh đại diện" className="h-full w-full object-cover" /> : <Camera />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block font-black">Ảnh đại diện tùy chọn</span>
+                      <span className="mt-1 block text-sm font-semibold text-coffee/60">Chọn ảnh để xem trước trước khi tiếp tục.</span>
+                    </span>
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => pickAvatar(e.target.files?.[0])} />
                   </label>
                 </section>
               )}
@@ -910,6 +959,13 @@ export function OnboardingPage() {
           </div>
         </main>
       </div>
+      {toast ? (
+        <div className={`fixed right-4 top-4 z-50 max-w-sm rounded-lg border p-4 text-sm font-semibold shadow-[0_18px_50px_rgba(69,44,30,0.18)] ${
+          toast.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-rose-200 bg-rose-50 text-rose-700"
+        }`}>
+          {toast.lines.map((line) => <p key={line}>{line}</p>)}
+        </div>
+      ) : null}
     </div>
   );
 }

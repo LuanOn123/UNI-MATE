@@ -134,10 +134,10 @@ export function ProfilePage() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-caramel/10 px-3.5 py-1 text-xs font-black uppercase tracking-[0.18em] text-caramel">
             <Sparkles className="h-3.5 w-3.5" />
-            {viewMode === "card" ? "Discovery Preview" : "My Profile"}
+            {viewMode === "card" ? "Xem trước thẻ Khám phá" : "Hồ sơ của tôi"}
           </div>
           <h1 className="mt-2 text-3xl font-black text-coffee md:text-4xl">
-            {viewMode === "card" ? "Mô Phỏng Thẻ Khám Phá" : "Hồ Sơ Cá Nhân"}
+            {viewMode === "card" ? "Mô phỏng thẻ Khám phá" : "Hồ sơ cá nhân"}
           </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
@@ -162,8 +162,8 @@ export function ProfilePage() {
             variant="ghost"
             className="rounded-xl border border-coffee/15 text-rose-600 hover:bg-rose-50 hover:border-rose-200 font-bold"
             icon={<LogOut className="h-4 w-4" />}
-            onClick={() => {
-              logout();
+            onClick={async () => {
+              await logout();
               navigate("/auth", { replace: true });
             }}
           >
@@ -212,7 +212,7 @@ export function ProfilePage() {
             )}
             <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-cocoa/90 via-cocoa/40 to-transparent text-white md:hidden z-10 mt-auto">
               <h2 className="text-3xl font-black">
-                {user?.displayName || "UNI-MATE user"}, {user?.age || user?.onboarding?.preferences?.ageRange?.min || user?.onboarding?.age || "20"}
+                {user?.displayName || "Người dùng UNI-MATE"}, {user?.age || user?.onboarding?.preferences?.ageRange?.min || user?.onboarding?.age || "20"}
               </h2>
               <p className="mt-1 text-sm font-semibold text-white/80">
                 {user?.school || user?.onboarding?.school || "Sinh viên"} {(user?.major || user?.onboarding?.major) ? `· ${user?.major || user?.onboarding?.major}` : ""}
@@ -228,7 +228,7 @@ export function ProfilePage() {
                     <Sparkles className="h-3.5 w-3.5" /> Thẻ Khám Phá Chi Tiết
                   </div>
                   <h2 className="text-3xl font-black text-coffee">
-                    {user?.displayName || "UNI-MATE user"}, {user?.age || user?.onboarding?.preferences?.ageRange?.min || user?.onboarding?.age || "20"}
+                    {user?.displayName || "Người dùng UNI-MATE"}, {user?.age || user?.onboarding?.preferences?.ageRange?.min || user?.onboarding?.age || "20"}
                   </h2>
                   <p className="mt-1.5 text-base font-semibold text-coffee/68">
                     {user?.school || user?.onboarding?.school || "Sinh viên"} {(user?.major || user?.onboarding?.major) ? `· ${user?.major || user?.onboarding?.major}` : ""}
@@ -467,7 +467,7 @@ export function ProfilePage() {
             <div className="mb-6">
               <h3 className="flex items-center gap-2.5 text-xl font-black text-coffee mb-1">
                 <Sliders className="h-6 w-6 text-caramel" />
-                Bản Đồ Tính Cách (Personality Spectrum)
+                Bản đồ tính cách
               </h3>
               <p className="text-xs font-semibold text-coffee/60">
                 Sự hòa hợp về tính cách giúp các buổi gặp gỡ và trò chuyện tại quán tự nhiên hơn

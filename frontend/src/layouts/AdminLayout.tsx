@@ -3,21 +3,21 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/authStore";
 
 const nav = [
-  ["/admin/dashboard", "Dashboard", BarChart3],
-  ["/admin/users", "Users", Users],
-  ["/admin/reports", "Reports", Flag],
-  ["/admin/matches", "Matches", Coffee],
-  ["/admin/places", "Places", Coffee],
-  ["/admin/tags", "Tags", Tags],
-  ["/admin/actions", "Audit", History],
-  ["/admin/settings", "Settings", Settings]
+  ["/admin/dashboard", "Tổng quan", BarChart3],
+  ["/admin/users", "Người dùng", Users],
+  ["/admin/reports", "Báo cáo", Flag],
+  ["/admin/matches", "Ghép đôi", Coffee],
+  ["/admin/places", "Địa điểm", Coffee],
+  ["/admin/tags", "Thẻ", Tags],
+  ["/admin/actions", "Nhật ký", History],
+  ["/admin/settings", "Cài đặt", Settings]
 ] as const;
 
 export function AdminLayout() {
   const logout = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/auth", { replace: true });
   };
 
@@ -31,14 +31,14 @@ export function AdminLayout() {
           </NavLink>
         ))}
         <button type="button" onClick={handleLogout} className="mt-8 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50">
-          <LogOut className="h-5 w-5" /> Logout
+          <LogOut className="h-5 w-5" /> Đăng xuất
         </button>
       </aside>
       <header className="sticky top-0 z-20 border-b bg-white/95 px-4 py-3 backdrop-blur md:hidden">
         <div className="flex items-center justify-between gap-3">
           <h1 className="font-black">UNI-MATE Admin</h1>
           <button type="button" onClick={handleLogout} className="inline-flex items-center gap-2 rounded-lg bg-rose-50 px-3 py-2 text-sm font-bold text-rose-600">
-            <LogOut className="h-4 w-4" /> Logout
+            <LogOut className="h-4 w-4" /> Đăng xuất
           </button>
         </div>
         <nav className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">

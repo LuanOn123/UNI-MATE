@@ -14,7 +14,6 @@ adminRouter.patch("/reports/:reportId", updateReport);
 adminRouter.get("/matches", adminMatches);
 adminRouter.get("/places", adminPlaces);
 adminRouter.get("/places-cache", adminPlaces);
-adminRouter.post("/places", upsertPlace);
 adminRouter.put("/places/:placeId", upsertPlace);
 adminRouter.delete("/places/:placeId", deletePlace);
 adminRouter.patch("/places/:placeId/status", hidePlace);

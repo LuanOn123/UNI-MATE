@@ -147,6 +147,7 @@ export function SettingsPage() {
   const [photos, setPhotos] = useState<PhotoDraft[]>(() => photoDrafts(storedUser));
   const [error, setError] = useState("");
   const [saved, setSaved] = useState("");
+  const [toast, setToast] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -169,6 +170,19 @@ export function SettingsPage() {
   const selectedLocation = findLocation(form.location.addressLabel);
   const districtChoices = districtsFor(selectedLocation.city);
 
+  const notify = (text: string, tone: "success" | "error" = "error") => {
+    const nextToast = { tone, text };
+    setToast(nextToast);
+    window.setTimeout(() => {
+      setToast((current) => (current === nextToast ? null : current));
+    }, 4200);
+  };
+
+  const showError = (text: string) => {
+    setError(text);
+    notify(text, "error");
+  };
+
   const chooseManualLocation = (label: string) => {
     const choice = findLocation(label);
     setForm({ ...form, location: manualLocationPayload(choice) });
@@ -178,16 +192,16 @@ export function SettingsPage() {
     setError("");
     setSaved("");
     if (!form.displayName.trim() || !form.birthDate) {
-      return setError("Tên hiển thị và ngày sinh là bắt buộc.");
+      return showError("Tên hiển thị và ngày sinh là bắt buộc.");
     }
     if (form.cafeStyles.length < 3) {
-      return setError(`Gu style quán cần chọn ít nhất 3 tags (hiện tại ${form.cafeStyles.length}/3).`);
+      return showError(`Gu style quán cần chọn ít nhất 3 tag (hiện tại ${form.cafeStyles.length}/3).`);
     }
     if (form.goals.length < 1) {
-      return setError("Mục tiêu gặp cần chọn ít nhất 1 mục tiêu.");
+      return showError("Mục tiêu gặp cần chọn ít nhất 1 mục tiêu.");
     }
     if (form.interests.length < 3) {
-      return setError(`Sở thích cần chọn ít nhất 3 tags (hiện tại ${form.interests.length}/3).`);
+      return showError(`Sở thích cần chọn ít nhất 3 tag (hiện tại ${form.interests.length}/3).`);
     }
 
     setSaving(true);
@@ -206,6 +220,7 @@ export function SettingsPage() {
       setAvatarPreview(displayUrl(fresh.avatarUrl));
       setPhotos(photoDrafts(fresh));
       setSaved("Đã cập nhật hồ sơ thành công!");
+      notify("Đã cập nhật hồ sơ thành công!", "success");
       setTimeout(() => setSaved(""), 4000);
     } catch (e: any) {
       const issues = e.response?.data?.validationIssues;
@@ -230,9 +245,9 @@ export function SettingsPage() {
           const label = labels[field] ?? field;
           return `${label}: ${iss.message}`;
         }).join(" • ");
-        setError(details);
+        showError(details);
       } else {
-        setError(e.response?.data?.message ?? "Không lưu được hồ sơ");
+        showError(e.response?.data?.message ?? "Không lưu được hồ sơ");
       }
     } finally {
       setSaving(false);
@@ -277,7 +292,7 @@ export function SettingsPage() {
           ...form,
           location: { lat: pos.coords.latitude, lng: pos.coords.longitude, addressLabel: "GPS hiện tại", source: "gps" }
         }),
-      () => setError("Không lấy được GPS. Vui lòng cấp quyền vị trí cho trình duyệt.")
+      () => showError("Không lấy được GPS. Vui lòng cấp quyền vị trí cho trình duyệt.")
     );
   };
 
@@ -493,7 +508,7 @@ export function SettingsPage() {
           </Panel>
 
           {/* Sleek, Compact 2-Column Personality Sliders */}
-          <Panel title="Chỉ số tính cách (Personality Sliders)" icon={<Sliders />}>
+          <Panel title="Chỉ số tính cách" icon={<Sliders />}>
             <p className="text-xs font-semibold text-coffee/60 mb-5">
               Kéo thanh trượt từ 1 đến 5 để phản ánh mức độ phù hợp nhất với con người bạn
             </p>
@@ -841,6 +856,13 @@ export function SettingsPage() {
           </div>
         </div>
       </div>
+      {toast ? (
+        <div className={`fixed right-4 top-4 z-50 max-w-sm rounded-lg border p-4 text-sm font-semibold shadow-[0_18px_50px_rgba(69,44,30,0.18)] ${
+          toast.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-rose-200 bg-rose-50 text-rose-700"
+        }`}>
+          {toast.text}
+        </div>
+      ) : null}
     </div>
   );
 }

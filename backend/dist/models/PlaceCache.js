@@ -8,7 +8,7 @@ const placeCacheSchema = new Schema({
     rating: Number,
     userRatingsTotal: Number,
     priceLevel: { type: String, enum: ["$", "$$", "$$$", "$$$$"], default: "$$" },
-    status: { type: String, enum: ["active", "hidden", "pending"], default: "active", index: true },
+    status: { type: String, enum: ["active", "hidden", "pending", "rejected"], default: "active", index: true },
     tags: [{ type: String }],
     amenities: [{ type: String }],
     openingHours: String,

@@ -198,10 +198,16 @@ export async function getDiscoveryFeed(userId: string) {
   };
   if (prefs?.ageRange) query.age = { $gte: prefs.ageRange.min, $lte: prefs.ageRange.max };
 
-  // --- Hard Filter: Purpose must overlap (at least one in common) ---
+  // --- Hard Filter: Purpose should overlap when candidate has purpose data.
+  // Legacy/seeded profiles may miss onboarding.purpose, so keep them discoverable
+  // and let scoring/ranking handle the weaker match instead of returning an empty feed.
   const myPurpose = me.onboarding?.purpose;
   if (myPurpose && Array.isArray(myPurpose) && myPurpose.length > 0) {
-    query["onboarding.purpose"] = { $in: myPurpose };
+    query.$or = [
+      { "onboarding.purpose": { $in: myPurpose } },
+      { "onboarding.purpose": { $exists: false } },
+      { "onboarding.purpose": { $size: 0 } }
+    ];
   }
 
   let users: any[] = [];

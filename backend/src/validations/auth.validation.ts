@@ -35,3 +35,29 @@ export const verifyOtpSchema = z.object({
     code: z.string().regex(/^\d{6}$/).optional()
   }).refine((body) => body.otp || body.code, { message: "OTP is required", path: ["otp"] })
 });
+
+export const forgotPasswordSendOtpSchema = z.object({
+  body: z.object({
+    email: z.string().email().toLowerCase()
+  })
+});
+
+export const forgotPasswordVerifyOtpSchema = z.object({
+  body: z.object({
+    email: z.string().email().toLowerCase(),
+    otp: z.string().regex(/^\d{6}$/).optional(),
+    code: z.string().regex(/^\d{6}$/).optional()
+  }).refine((body) => body.otp || body.code, { message: "OTP is required", path: ["otp"] })
+});
+
+export const resetPasswordSchema = z.object({
+  body: z.object({
+    resetToken: z.string().min(20),
+    newPassword: passwordSchema,
+    confirmPassword: z.string()
+  })
+    .refine((body) => body.newPassword === body.confirmPassword, {
+      message: "Mật khẩu xác nhận không khớp",
+      path: ["confirmPassword"]
+    })
+});

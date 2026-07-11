@@ -49,7 +49,7 @@ export function ChatListPage() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-black">{partner?.displayName || "UNI-MATE user"}</h3>
+                  <h3 className="truncate font-black">{partner?.displayName || "Người dùng UNI-MATE"}</h3>
                   <p className="truncate text-sm text-coffee/70">{room.lastMessage ?? "Bắt đầu trò chuyện"}</p>
                 </div>
               </Link>
