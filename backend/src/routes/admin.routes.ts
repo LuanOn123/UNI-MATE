@@ -4,6 +4,7 @@ import {
   adminMatches,
   adminPlaces,
   adminReports,
+  adminReportDetail,
   adminTags,
   adminUserDetail,
   adminUsers,
@@ -28,6 +29,7 @@ adminRouter.get("/users/:userId", adminUserDetail);
 adminRouter.put("/users/:userId", updateAdminUser);
 adminRouter.patch("/users/:userId/status", updateUserStatus);
 adminRouter.get("/reports", adminReports);
+adminRouter.get("/reports/:reportId", adminReportDetail);
 adminRouter.patch("/reports/:reportId", updateReport);
 adminRouter.get("/matches", adminMatches);
 adminRouter.get("/places", adminPlaces);

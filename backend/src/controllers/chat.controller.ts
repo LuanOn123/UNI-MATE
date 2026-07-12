@@ -7,8 +7,18 @@ import { createAndEmitNotification } from "../services/notification.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const listRooms = asyncHandler(async (req: Request, res: Response) => {
-  const rooms = await ChatRoom.find({ users: req.user!.id }).populate("users place").sort({ lastMessageAt: -1 });
+  const rooms = await ChatRoom.find({ users: req.user!.id, hiddenBy: { $ne: req.user!.id } }).populate("users place").sort({ lastMessageAt: -1 });
   res.json({ rooms });
+});
+
+export const hideRoom = asyncHandler(async (req: Request, res: Response) => {
+  const room = await ChatRoom.findOneAndUpdate(
+    { _id: req.params.roomId, users: req.user!.id },
+    { $addToSet: { hiddenBy: req.user!.id } },
+    { new: true }
+  );
+  if (!room) return res.status(404).json({ message: "Room not found" });
+  res.json({ message: "Conversation removed from your chat list" });
 });
 
 export const getRoom = asyncHandler(async (req: Request, res: Response) => {
@@ -43,6 +53,7 @@ export const sendMessage = asyncHandler(async (req: Request, res: Response) => {
   });
   room.lastMessage = req.body.type === "image" ? "[Hình ảnh]" : req.body.type === "video" ? "[Video]" : req.body.type === "file" ? "[Tập tin]" : req.body.text;
   room.lastMessageAt = new Date();
+  room.hiddenBy = [];
   await room.save();
   await message.populate("sender", "displayName avatarUrl");
   const plain = message.toObject() as any;

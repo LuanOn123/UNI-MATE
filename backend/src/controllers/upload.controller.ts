@@ -20,3 +20,9 @@ export const uploadChatFile = asyncHandler(async (req: Request, res: Response) =
 
   res.status(201).json({ url, type, fileName });
 });
+
+export const uploadReportEvidence = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.file) return res.status(400).json({ message: "No image uploaded" });
+  if (!req.file.mimetype.startsWith("image/")) return res.status(400).json({ message: "Evidence must be an image" });
+  res.status(201).json({ url: `${env.UPLOAD_BASE_URL}/${req.file.filename}` });
+});
