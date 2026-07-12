@@ -3,6 +3,7 @@ import { z } from "zod";
 import { env } from "../config/env.js";
 import { EmailOtp } from "../models/EmailOtp.js";
 import { User } from "../models/User.js";
+import { restoreExpiredSuspension } from "../utils/accountStatus.js";
 import { signAccessToken, signPasswordResetToken, signRefreshToken, verifyPasswordResetToken, verifyRefreshToken } from "../utils/jwt.js";
 import { canSendRealEmail, sendOtpEmail } from "./email.service.js";
 
@@ -99,6 +100,7 @@ export async function loginWithPassword(emailInput: string, password: string) {
   const email = emailSchema.parse(emailInput);
   const user = await User.findOne({ email });
   if (!user || !user.passwordHash) throw serviceError("Invalid email or password", 401);
+  await restoreExpiredSuspension(user);
   if (user.status === "banned" || user.status === "suspended" || user.isActive === false) {
     throw serviceError("Account is locked", 403);
   }
@@ -137,6 +139,7 @@ export async function verifyEmailOtp(emailInput: string, otpInput: string) {
 
   const user = await User.findOne({ email });
   if (!user) throw serviceError("User not found", 404);
+  await restoreExpiredSuspension(user);
   if (user.status === "banned" || user.status === "suspended" || user.isActive === false) {
     throw serviceError("Account is locked", 403);
   }
@@ -176,6 +179,7 @@ export async function verifyPasswordResetOtp(emailInput: string, otpInput: strin
   if (!user || !user.passwordHash) {
     throw serviceError("Không tìm thấy tài khoản cần đổi mật khẩu", 404);
   }
+  await restoreExpiredSuspension(user);
   if (user.status === "banned" || user.status === "suspended" || user.isActive === false) {
     throw serviceError("Tài khoản đang bị khóa", 403);
   }
@@ -198,6 +202,7 @@ export async function resetPasswordWithToken(resetToken: string, newPassword: st
   if (!user || user.email !== payload.email || !user.passwordHash) {
     throw serviceError("Không tìm thấy tài khoản cần đổi mật khẩu", 404);
   }
+  await restoreExpiredSuspension(user);
   if (user.status === "banned" || user.status === "suspended" || user.isActive === false) {
     throw serviceError("Tài khoản đang bị khóa", 403);
   }
@@ -217,6 +222,7 @@ export async function refreshToken(token: string) {
     throw serviceError("Invalid refresh token", 401);
   }
   const user = await User.findById(payload.userId);
+  await restoreExpiredSuspension(user);
   if (!user || user.status === "banned" || user.status === "suspended" || user.isActive === false) {
     throw serviceError("Invalid user", 403);
   }

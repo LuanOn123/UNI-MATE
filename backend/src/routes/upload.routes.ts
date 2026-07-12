@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import fs from "node:fs";
 import path from "node:path";
-import { uploadChatFile } from "../controllers/upload.controller.js";
+import { uploadChatFile, uploadReportEvidence } from "../controllers/upload.controller.js";
 import { requireAuth } from "../middlewares/auth.js";
 
 export const uploadRouter = Router();
@@ -21,6 +21,12 @@ const storage = multer.diskStorage({
 
 // 20MB limit for chat attachments
 const upload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } });
+const reportImageUpload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => cb(null, file.mimetype.startsWith("image/"))
+});
 
 uploadRouter.use(requireAuth);
 uploadRouter.post("/chat-file", upload.single("file"), uploadChatFile);
+uploadRouter.post("/report-evidence", reportImageUpload.single("file"), uploadReportEvidence);

@@ -6,6 +6,7 @@ const chatRoomSchema = new Schema(
     users: [{ type: Schema.Types.ObjectId, ref: "User", required: true }],
     place: { type: Schema.Types.ObjectId, ref: "PlaceCache" },
     status: { type: String, enum: ["active", "blocked", "archived"], default: "active", index: true },
+    hiddenBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
     lastMessage: String,
     lastMessageAt: Date
   },
