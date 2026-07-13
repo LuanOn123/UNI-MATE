@@ -1,4 +1,4 @@
-import { Ban, Coffee, ExternalLink, Flag, MapPin, Send, Smile, UserCircle, Paperclip, FileText, Play } from "lucide-react";
+import { Ban, Coffee, ExternalLink, Flag, ImagePlus, MapPin, Send, Smile, UserCircle, Paperclip, FileText, Play, X } from "lucide-react";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -46,6 +46,11 @@ export function ChatRoomPage() {
   const [typing, setTyping] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [reason, setReason] = useState("");
+  const [incidentAt, setIncidentAt] = useState("");
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const [evidencePreview, setEvidencePreview] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportError, setReportError] = useState("");
   const [notice, setNotice] = useState("");
   const [composerNote, setComposerNote] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
@@ -108,7 +113,10 @@ export function ChatRoomPage() {
         return { ...message, readBy: [...readBy] };
       }));
     };
-    const onTyping = (event: { typing: boolean }) => setTyping(event.typing);
+    const onTyping = (event: { typing: boolean; userId: string }) => {
+      console.log("Received user_typing event", event);
+      setTyping(event.typing);
+    };
     const onMessageError = (event: { roomId?: string; message?: string }) => {
       if (!event.roomId || event.roomId === roomId) setComposerNote(event.message ?? "Không gửi được tin nhắn.");
     };
@@ -162,6 +170,7 @@ export function ChatRoomPage() {
     setMessages((list) => [...list, temp]);
     const socket = getSocket();
     if (socket.connected) {
+      socket.emit("typing_stop", { roomId });
       socket.emit("send_message", { roomId, text: content });
       return;
     }
@@ -204,10 +213,35 @@ export function ChatRoomPage() {
 
   const report = async () => {
     if (!partnerId || !reason.trim()) return;
-    await api.post("/safety/report", { reportedUser: partnerId, match: typeof room?.match === "string" ? room.match : room?.match?._id, reason });
-    setNotice("Đã gửi report cho admin.");
-    setReportOpen(false);
-    setReason("");
+    setReportSubmitting(true);
+    setReportError("");
+    try {
+      const evidenceUrls: string[] = [];
+      if (evidenceFile) {
+        const formData = new FormData();
+        formData.append("file", evidenceFile);
+        const { data } = await api.post("/upload/report-evidence", formData);
+        evidenceUrls.push(data.url);
+      }
+      await api.post("/safety/report", {
+        reportedUser: partnerId,
+        match: typeof room?.match === "string" ? room.match : room?.match?._id,
+        room: roomId,
+        reason: reason.trim(),
+        incidentAt: incidentAt ? new Date(incidentAt).toISOString() : undefined,
+        evidenceUrls
+      });
+      setNotice("Đã gửi report cho admin.");
+      setReportOpen(false);
+      setReason("");
+      setIncidentAt("");
+      setEvidenceFile(null);
+      setEvidencePreview("");
+    } catch (error: any) {
+      setReportError(error.response?.data?.message ?? "Không thể gửi report. Vui lòng thử lại.");
+    } finally {
+      setReportSubmitting(false);
+    }
   };
 
   const block = async () => {
@@ -295,8 +329,23 @@ export function ChatRoomPage() {
               </motion.div>
             );
           })}
+          {typing && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="mt-3 flex items-end gap-2 justify-start">
+              <div className="w-8 shrink-0">
+                <Avatar user={partner} size="sm" />
+              </div>
+              <div className="flex max-w-[72%] flex-col items-start">
+                <div className="rounded-[1.35rem] rounded-bl-md bg-white px-4 py-3.5 shadow-sm">
+                  <span className="flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-coffee/40" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-coffee/40" style={{ animationDelay: "150ms" }} />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-coffee/40" style={{ animationDelay: "300ms" }} />
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
-        {typing ? <p className="ml-10 mt-2 text-sm font-semibold text-coffee/60">Đang nhập...</p> : null}
         <div ref={scrollRef} />
       </main>
 
@@ -328,7 +377,12 @@ export function ChatRoomPage() {
               onChange={(e) => {
                 setText(e.target.value);
                 setComposerNote("");
-                if (!inputDisabled) getSocket().emit("typing_start", { roomId });
+                const socket = getSocket();
+                if (!inputDisabled) {
+                  socket.emit("typing_start", { roomId });
+                  if ((window as any).typingTimeoutPrivate) clearTimeout((window as any).typingTimeoutPrivate);
+                  (window as any).typingTimeoutPrivate = setTimeout(() => socket.emit("typing_stop", { roomId }), 2000);
+                }
               }}
               onBlur={() => !inputDisabled && getSocket().emit("typing_stop", { roomId })}
               onKeyDown={(e) => e.key === "Enter" && send()}
@@ -338,6 +392,7 @@ export function ChatRoomPage() {
               <div ref={pickerRef} className="absolute bottom-full left-0 z-50 mb-2">
                 <EmojiPicker
                   theme={Theme.LIGHT}
+                  emojiVersion="12.0"
                   onEmojiClick={(e) => setText((t) => t + e.emoji)}
                   lazyLoadEmojis={true}
                   searchDisabled={true}
@@ -355,13 +410,73 @@ export function ChatRoomPage() {
 
       {reportOpen ? (
         <div className="fixed inset-0 z-40 grid place-items-center bg-cocoa/55 p-4 backdrop-blur-sm">
-          <motion.div initial={{ scale: 0.94, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-md rounded-lg bg-white p-6 shadow-soft">
-            <h2 className="text-xl font-black">Report người dùng</h2>
-            <p className="mt-2 text-sm text-coffee/70">Admin sẽ chỉ xử lý thông tin bạn gửi trong report.</p>
-            <Input className="mt-4" placeholder="Lý do report" value={reason} onChange={(e) => setReason(e.target.value)} />
-            <div className="mt-5 flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setReportOpen(false)}>Hủy</Button>
-              <Button variant="danger" onClick={report} disabled={!reason.trim()}>Gửi report</Button>
+          <motion.div initial={{ scale: 0.94, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-soft">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black">Report người dùng</h2>
+                <p className="mt-1 text-sm text-coffee/70">Admin có thể xem hội thoại gốc để xác minh report.</p>
+              </div>
+              <button type="button" className="grid h-10 w-10 place-items-center rounded-lg text-coffee/55 hover:bg-latte" onClick={() => setReportOpen(false)} aria-label="Đóng">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <label className="mt-5 block text-sm font-bold text-cocoa">Lý do <span className="text-rose-600">*</span></label>
+            <textarea
+              className="mt-2 min-h-24 w-full resize-y rounded-lg border border-coffee/15 px-4 py-3 outline-none focus:border-caramel focus:ring-2 focus:ring-caramel/15"
+              placeholder="Mô tả hành vi bạn muốn báo cáo"
+              value={reason}
+              maxLength={1000}
+              onChange={(event) => setReason(event.target.value)}
+            />
+
+            <label className="mt-4 block text-sm font-bold text-cocoa">Thời điểm xảy ra <span className="font-normal text-coffee/50">(không bắt buộc)</span></label>
+            <Input className="mt-2" type="datetime-local" value={incidentAt} onChange={(event) => setIncidentAt(event.target.value)} />
+
+            <label className="mt-4 block text-sm font-bold text-cocoa">Ảnh chứng minh <span className="font-normal text-coffee/50">(không bắt buộc)</span></label>
+            {evidencePreview ? (
+              <div className="relative mt-2 overflow-hidden rounded-lg border border-coffee/10 bg-latte">
+                <img src={evidencePreview} alt="Ảnh chứng minh" className="max-h-56 w-full object-contain" />
+                <button
+                  type="button"
+                  className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-white text-coffee shadow-sm"
+                  aria-label="Bỏ ảnh"
+                  onClick={() => {
+                    URL.revokeObjectURL(evidencePreview);
+                    setEvidenceFile(null);
+                    setEvidencePreview("");
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-caramel/45 bg-latte/45 px-4 py-5 text-sm font-bold text-coffee transition hover:bg-latte">
+                <ImagePlus className="h-5 w-5 text-caramel" />
+                Chọn ảnh từ thiết bị
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) {
+                      setReportError("Ảnh chứng minh tối đa 5MB.");
+                      return;
+                    }
+                    setReportError("");
+                    setEvidenceFile(file);
+                    setEvidencePreview(URL.createObjectURL(file));
+                  }}
+                />
+              </label>
+            )}
+
+            {reportError ? <p className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{reportError}</p> : null}
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="ghost" disabled={reportSubmitting} onClick={() => setReportOpen(false)}>Hủy</Button>
+              <Button variant="danger" onClick={report} disabled={!reason.trim() || reportSubmitting}>{reportSubmitting ? "Đang gửi..." : "Gửi report"}</Button>
             </div>
           </motion.div>
         </div>

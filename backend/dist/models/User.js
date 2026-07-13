@@ -25,7 +25,7 @@ const onboardingSchema = new Schema({
     preferences: {
         preferredGender: { type: String, enum: ["same", "opposite", "all"], default: "all" },
         ageRange: { min: { type: Number, default: 18 }, max: { type: Number, default: 30 } },
-        maxDistanceKm: { type: Number, min: 1, max: 20, default: 10 },
+        maxDistanceKm: { type: Number, min: 1, max: 100, default: 10 },
         priorities: [{ type: String }]
     }
 }, { _id: false });
@@ -36,6 +36,8 @@ const userSchema = new Schema({
     twoFactorEnabled: { type: Boolean, default: false },
     role: { type: String, enum: ["user", "admin", "partner"], default: "user" },
     status: { type: String, enum: ["active", "suspended", "banned"], default: "active" },
+    warningCount: { type: Number, default: 0, min: 0 },
+    suspendedUntil: Date,
     displayName: { type: String, trim: true },
     birthDate: Date,
     age: Number,

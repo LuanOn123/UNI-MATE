@@ -1,15 +1,17 @@
 import { Router } from "express";
-import { loginController, logoutController, meController, refreshController, registerController, registerPartnerController, sendOtpController, verifyOtpController } from "../controllers/auth.controller.js";
+import { forgotPasswordSendOtpController, forgotPasswordVerifyOtpController, loginController, logoutController, meController, refreshController, registerController, resetPasswordController, sendOtpController, verifyOtpController } from "../controllers/auth.controller.js";
 import { requireAuth } from "../middlewares/auth.js";
 import { validate } from "../middlewares/validate.js";
-import { loginSchema, registerPartnerSchema, registerSchema, sendOtpSchema, verifyOtpSchema } from "../validations/auth.validation.js";
+import { forgotPasswordSendOtpSchema, forgotPasswordVerifyOtpSchema, loginSchema, registerSchema, resetPasswordSchema, sendOtpSchema, verifyOtpSchema } from "../validations/auth.validation.js";
 
 export const authRouter = Router();
 authRouter.post("/register", validate(registerSchema), registerController);
-authRouter.post("/register-partner", validate(registerPartnerSchema), registerPartnerController);
 authRouter.post("/login", validate(loginSchema), loginController);
 authRouter.post("/send-otp", validate(sendOtpSchema), sendOtpController);
 authRouter.post("/verify-otp", validate(verifyOtpSchema), verifyOtpController);
+authRouter.post("/forgot-password/send-otp", validate(forgotPasswordSendOtpSchema), forgotPasswordSendOtpController);
+authRouter.post("/forgot-password/verify-otp", validate(forgotPasswordVerifyOtpSchema), forgotPasswordVerifyOtpController);
+authRouter.post("/forgot-password/reset", validate(resetPasswordSchema), resetPasswordController);
 authRouter.post("/refresh", refreshController);
 authRouter.get("/me", requireAuth, meController);
 authRouter.post("/logout", requireAuth, logoutController);

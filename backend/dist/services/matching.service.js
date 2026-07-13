@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import { env } from "../config/env.js";
 import { ChatRoom } from "../models/ChatRoom.js";
+import { env } from "../config/env.js";
 import { Match } from "../models/Match.js";
 import { Notification } from "../models/Notification.js";
 import { Swipe } from "../models/Swipe.js";
@@ -22,6 +22,10 @@ function genderAllowed(preferredGender, actorGender, targetGender) {
 }
 function serviceError(message, statusCode = 400) {
     return Object.assign(new Error(message), { statusCode });
+}
+function selectedPriorities(user) {
+    const priorities = Array.isArray(user.onboarding?.preferences?.priorities) ? user.onboarding.preferences.priorities : [];
+    return new Set(priorities.filter((priority) => priority === "nearby" || priority === "same_interest"));
 }
 function hasUsableLocation(user) {
     const coords = user.location?.coordinates ?? [];
@@ -86,15 +90,18 @@ export function scoreUsers(me, candidate, routeDistance) {
     const styles = overlap(me.onboarding?.cafeStyles, candidate.onboarding?.cafeStyles);
     const goals = overlap(me.onboarding?.goals, candidate.onboarding?.goals);
     const times = overlap(me.onboarding?.preferredTimes, candidate.onboarding?.preferredTimes);
+    const priorities = selectedPriorities(me);
+    const distanceWeight = priorities.has("nearby") ? 0.25 : 0.15;
+    const interestMaxScore = priorities.has("same_interest") ? 15 : 8;
     let score = 0;
     // --- Distance score (0-25): OSRM travel-time score, not bird-flight distance ---
     if (hasUsableLocation(me) && hasUsableLocation(candidate)) {
-        score += Math.round((routeDistance?.distanceScore ?? 0) * 0.25);
+        score += Math.round((routeDistance?.distanceScore ?? 0) * distanceWeight);
     }
     // --- Cafe style overlap (0-20) ---
     score += Math.min(20, styles.length * 7);
     // --- Interest/vibe tag overlap (0-15) ---
-    score += Math.min(15, interests.length * 5);
+    score += Math.min(interestMaxScore, interests.length * 5);
     // --- Goal overlap (0-10) ---
     score += Math.min(10, goals.length * 5);
     // --- Major match & preference (0-10) ---
@@ -170,10 +177,16 @@ export async function getDiscoveryFeed(userId) {
     };
     if (prefs?.ageRange)
         query.age = { $gte: prefs.ageRange.min, $lte: prefs.ageRange.max };
-    // --- Hard Filter: Purpose must overlap (at least one in common) ---
+    // --- Hard Filter: Purpose should overlap when candidate has purpose data.
+    // Legacy/seeded profiles may miss onboarding.purpose, so keep them discoverable
+    // and let scoring/ranking handle the weaker match instead of returning an empty feed.
     const myPurpose = me.onboarding?.purpose;
     if (myPurpose && Array.isArray(myPurpose) && myPurpose.length > 0) {
-        query["onboarding.purpose"] = { $in: myPurpose };
+        query.$or = [
+            { "onboarding.purpose": { $in: myPurpose } },
+            { "onboarding.purpose": { $exists: false } },
+            { "onboarding.purpose": { $size: 0 } }
+        ];
     }
     let users = [];
     if (hasUsableLocation(me)) {
@@ -192,7 +205,7 @@ export async function getDiscoveryFeed(userId) {
     const routeMetaByUserId = await buildRouteDistanceMeta(me, filteredUsers);
     return filteredUsers
         .map((candidate) => ({ ...candidate, matchMeta: scoreUsers(me, candidate, routeMetaByUserId.get(String(candidate._id))) }))
-        .sort((a, b) => b.matchMeta.distanceScore - a.matchMeta.distanceScore || b.matchMeta.score - a.matchMeta.score)
+        .sort((a, b) => b.matchMeta.score - a.matchMeta.score || b.matchMeta.distanceScore - a.matchMeta.distanceScore)
         .slice(0, 10);
 }
 export async function swipe(userId, targetUserId, action) {
@@ -249,6 +262,13 @@ export async function swipe(userId, targetUserId, action) {
         match.chatRoom = room._id;
         await match.save();
     }
+    const room = await ChatRoom.findOneAndUpdate({ match: match._id }, { match: match._id, users: match.users.map((matchUser) => matchUser?._id ?? matchUser), status: "active" }, { upsert: true, new: true, setDefaultsOnInsert: true });
+    if (!match.chatRoom || match.status !== "chat_opened") {
+        match.chatRoom = room._id;
+        match.status = "chat_opened";
+        await match.save();
+    }
+    await match.populate("chatRoom");
     return { matched: true, match };
 }
 export async function getIncomingLikes(userId) {

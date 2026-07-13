@@ -1,6 +1,6 @@
-import { Bell, Coffee, Compass, Eye, Heart, HeartHandshake, MessageCircle, Store, User, Users, X } from "lucide-react";
+import { Bell, Coffee, Compass, Eye, Heart, HeartHandshake, MessageCircle, Store, Ticket, User, Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { CoffeeMeter } from "../components/common/CoffeeMeter";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
@@ -14,7 +14,13 @@ const nav = [
   { to: "/app/chat", label: "Chat", icon: MessageCircle },
   { to: "/app/groups", label: "Nhóm", icon: Users },
   { to: "/app/places", label: "Quán", icon: Store },
+  { to: "/app/vouchers", label: "Ví ưu đãi", icon: Ticket },
   { to: "/app/profile", label: "Hồ sơ", icon: User }
+];
+
+const partnerNav = [
+  { to: "/app/partner/dashboard", label: "Tổng quan", icon: Store },
+  { to: "/app/partner/account", label: "Tài khoản", icon: User }
 ];
 
 const fallbackPhoto = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=900&auto=format&fit=crop";
@@ -25,6 +31,7 @@ function idOf(user?: Partial<UserType> | null) {
 
 export function AppLayout() {
   const user = useAuthStore((s) => s.user);
+  const fetchMe = useAuthStore((s) => s.fetchMe);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [toast, setToast] = useState<NotificationItem | null>(null);
@@ -32,7 +39,22 @@ export function AppLayout() {
   const [detailUser, setDetailUser] = useState<Partial<UserType> | null>(null);
   const [ringing, setRinging] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const unread = useMemo(() => notifications.filter((item) => !item.readAt).length, [notifications]);
+  const isPartner = user?.role === "partner";
+  const visibleNav = isPartner ? partnerNav : nav;
+
+  useEffect(() => {
+    void fetchMe();
+  }, [fetchMe]);
+
+  useEffect(() => {
+    if (!isPartner) return;
+    const allowed = ["/app/partner/dashboard", "/app/partner/account"];
+    if (!allowed.some((path) => location.pathname.startsWith(path))) {
+      navigate("/app/partner/dashboard", { replace: true });
+    }
+  }, [isPartner, location.pathname, navigate]);
 
   useEffect(() => {
     api.get("/notifications").then((res) => setNotifications(res.data.notifications ?? [])).catch(() => undefined);
@@ -74,11 +96,30 @@ export function AppLayout() {
   };
 
   const openNotification = (notification: NotificationItem) => {
+    let relatedUnread: NotificationItem[] = [];
+    if (notification.type === "message" && notification.data?.roomId) {
+      relatedUnread = notifications.filter((n) => !n.readAt && n.type === "message" && n.data?.roomId === notification.data?.roomId);
+    } else if (notification.type === "group_message" && notification.data?.groupId) {
+      relatedUnread = notifications.filter((n) => !n.readAt && n.type === "group_message" && n.data?.groupId === notification.data?.groupId);
+    } else if (notification.type === "incoming_like" && notification.data?.actorId) {
+      relatedUnread = notifications.filter((n) => !n.readAt && n.type === "incoming_like" && n.data?.actorId === notification.data?.actorId);
+    } else {
+      relatedUnread = notifications.filter((n) => !n.readAt && n._id === notification._id);
+    }
+
+    if (relatedUnread.length > 0) {
+      setNotifications((items) =>
+        items.map((item) => (relatedUnread.some((ru) => ru._id === item._id) ? { ...item, readAt: new Date().toISOString() } : item))
+      );
+      Promise.all(relatedUnread.map((ru) => api.patch(`/notifications/${ru._id}/read`).catch(() => undefined)));
+    }
+
     if (notification.type === "incoming_like" && notification.data?.actor) {
       setLikePopup(notification);
       return;
     }
-    if (notification.type === "message") navigate("/app/chat");
+    if (notification.type === "message") navigate(notification.data?.roomId ? `/app/chat/${notification.data.roomId}` : "/app/chat");
+    if (notification.type === "group_message") navigate(notification.data?.groupId ? `/app/groups/${notification.data.groupId}/chat` : "/app/groups");
     if (notification.type.includes("cafe") || notification.type.includes("match")) navigate("/app/matches");
     setDrawerOpen(false);
   };
@@ -106,7 +147,7 @@ export function AppLayout() {
           </span>
           {unread ? <span className="grid min-w-6 place-items-center rounded-full bg-caramel px-2 py-0.5 text-xs text-white">{unread}</span> : null}
         </button>
-        {nav.map(({ to, label, icon: Icon }) => (
+        {visibleNav.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -121,20 +162,7 @@ export function AppLayout() {
             {to === "/app/chat" && unread ? <span className="absolute right-2 top-1 h-2.5 w-2.5 rounded-full bg-caramel md:hidden" /> : null}
           </NavLink>
         ))}
-        {user?.role === "partner" && (
-          <NavLink
-            to="/app/partner/dashboard"
-            className={({ isActive }) =>
-              `relative flex min-w-[62px] flex-col items-center gap-1 rounded-lg px-3 py-2 text-xs font-bold transition md:mb-2 md:min-w-0 md:flex-row md:gap-3 md:py-3 md:text-sm ${
-                isActive ? "bg-caramel text-white shadow-sm" : "text-caramel hover:bg-latte"
-              }`
-            }
-          >
-            <Store className="h-5 w-5" />
-            <span>Quán của tôi</span>
-          </NavLink>
-        )}
-        <NavLink
+        {!isPartner ? <NavLink
           to="/app/safety"
           className={({ isActive }) =>
             `mt-auto hidden items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold md:flex ${
@@ -143,7 +171,7 @@ export function AppLayout() {
           }
         >
           <Compass className="h-5 w-5" /> An toàn
-        </NavLink>
+        </NavLink> : null}
       </aside>
       <main className="safe-bottom md:ml-64 md:min-h-screen md:pb-0">
         <Outlet />
@@ -243,7 +271,7 @@ function IncomingLikePopup({ notification, onClose, onView, onRespond }: { notif
           <div className="absolute inset-0 bg-gradient-to-t from-cocoa/88 via-cocoa/10 to-transparent" />
           <button type="button" className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/86 text-cocoa" onClick={onClose}><X className="h-5 w-5" /></button>
           <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-caramel">New like</p>
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-caramel">Lượt thích mới</p>
             <h2 className="mt-1 text-3xl font-black">{actor?.displayName ?? "Một người dùng"}, {actor?.age ?? "18+"}</h2>
             <p className="mt-1 font-semibold text-white/78">{actor?.school ?? "Sinh viên"} {actor?.major ? `· ${actor.major}` : ""}</p>
           </div>
@@ -254,9 +282,9 @@ function IncomingLikePopup({ notification, onClose, onView, onRespond }: { notif
             <CoffeeMeter value={actor?.matchMeta?.score ?? 70} size="sm" label="độ hợp gu" />
           </div>
           <div className="mt-5 grid grid-cols-3 gap-2">
-            <Button variant="ghost" onClick={() => onRespond("pass")} icon={<X />}>Nope</Button>
+            <Button variant="ghost" onClick={() => onRespond("pass")} icon={<X />}>Bỏ qua</Button>
             <Button variant="ghost" onClick={() => actor && onView(actor)} icon={<Eye />}>Chi tiết</Button>
-            <Button onClick={() => onRespond("like")} icon={<Heart />}>Like</Button>
+            <Button onClick={() => onRespond("like")} icon={<Heart />}>Thích lại</Button>
           </div>
         </div>
       </div>
@@ -276,7 +304,7 @@ function ProfilePreview({ user, onClose }: { user: Partial<UserType>; onClose: (
           <div className="absolute inset-0 bg-gradient-to-t from-cocoa/88 via-transparent to-transparent" />
           <button type="button" className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/86 text-cocoa" onClick={onClose}><X className="h-5 w-5" /></button>
           <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-            <h2 className="text-4xl font-black">{user.displayName ?? "UNI-MATE user"}, {user.age ?? "18+"}</h2>
+            <h2 className="text-4xl font-black">{user.displayName ?? "Người dùng UNI-MATE"}, {user.age ?? "18+"}</h2>
             <p className="mt-1 font-semibold text-white/78">{user.school ?? "Sinh viên"} {user.major ? `· ${user.major}` : ""}</p>
           </div>
         </div>
@@ -299,3 +327,4 @@ function ProfilePreview({ user, onClose }: { user: Partial<UserType>; onClose: (
     </div>
   );
 }
+

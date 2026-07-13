@@ -1,8 +1,7 @@
-import { ChevronLeft, ChevronRight, Eye, Heart, MapPin, RotateCcw, ShieldAlert, Sparkles, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, Heart, MapPin, MessageCircle, RotateCcw, ShieldAlert, Sparkles, X } from "lucide-react";
 import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CoffeeMeter } from "../../components/common/CoffeeMeter";
 import { StateBlock } from "../../components/common/StateBlock";
 import { Button } from "../../components/ui/Button";
 import { api } from "../../lib/api";
@@ -70,9 +69,13 @@ export function DiscoveryPage() {
 
   const user = users[0];
   const meta = user.matchMeta;
+  const matchScore = meta?.score ?? 0;
+  const distanceScore = meta?.distanceScore ?? 0;
+  const isMatchStronger = matchScore >= distanceScore;
   const tags = [...(meta?.commonTags ?? []), ...(meta?.commonCafeStyles ?? [])].slice(0, 7);
   const photos = [user.avatarUrl, ...(user.profilePhotos ?? [])].filter(Boolean) as string[];
   const gallery = photos.length ? photos : ["https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop"];
+  const matchedRoomId = typeof match?.chatRoom === "string" ? match.chatRoom : match?.chatRoom?._id;
 
   return (
     <div className="mx-auto grid max-w-6xl gap-6 p-4 md:grid-cols-[1fr_320px] md:p-8">
@@ -107,25 +110,14 @@ export function DiscoveryPage() {
               <div className="relative h-[430px] bg-cover bg-center sm:h-[500px]" style={{ backgroundImage: `url(${gallery[0]})` }}>
                 <div className="absolute inset-0 bg-gradient-to-t from-cocoa/86 via-cocoa/12 to-transparent" />
                 <motion.div style={{ opacity: likeOpacity }} className="absolute right-5 top-5 rotate-6 rounded-lg border-4 border-emerald-300 px-4 py-2 text-2xl font-black text-emerald-200">
-                  LIKE
+                  THÍCH
                 </motion.div>
                 <motion.div style={{ opacity: passOpacity }} className="absolute left-5 top-5 -rotate-6 rounded-lg border-4 border-rose-300 px-4 py-2 text-2xl font-black text-rose-200">
-                  NOPE
+                  BỎ QUA
                 </motion.div>
                 <div className="absolute inset-x-0 bottom-0 p-6 text-white">
-                  <div className="flex items-end justify-between gap-3">
-                    <div>
-                      <h2 className="text-4xl font-black">{user.displayName || "UNI-MATE user"}, {user.age ?? "18+"}</h2>
-                      <p className="mt-1 font-semibold text-white/82">{user.school || "Sinh viên"} {user.major ? `· ${user.major}` : ""}</p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2 rounded-lg bg-white/92 px-3 py-2 text-cocoa">
-                      <CoffeeMeter value={meta?.score ?? 70} size="sm" />
-                      <div className="leading-tight">
-                        <p className="text-sm font-black">{meta?.score ?? 70}</p>
-                        <p className="text-[10px] font-bold uppercase text-coffee/55">Match</p>
-                      </div>
-                    </div>
-                  </div>
+                  <h2 className="text-4xl font-black">{user.displayName || "Người dùng UNI-MATE"}, {user.age ?? "18+"}</h2>
+                  <p className="mt-1 font-semibold text-white/82">{user.school || "Sinh viên"} {user.major ? `· ${user.major}` : ""}</p>
                 </div>
               </div>
 
@@ -134,10 +126,13 @@ export function DiscoveryPage() {
                   {tags.length ? tags.map((tag) => <span key={tag} className="rounded-full bg-cream px-3 py-1 text-sm font-bold text-coffee">{tag}</span>) : <span className="rounded-full bg-cream px-3 py-1 text-sm font-bold text-coffee">Gu cafe gần bạn</span>}
                 </div>
                 {meta?.durationMinutes !== null && meta?.durationMinutes !== undefined ? (
-                  <div className="mt-3 grid gap-2 rounded-lg bg-latte/60 p-3 text-sm font-bold text-cocoa sm:grid-cols-3">
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-x-8 gap-y-2 rounded-lg bg-latte/60 px-4 py-3 text-sm font-bold text-cocoa">
                     <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-caramel" /> {meta.durationMinutes} phút</span>
                     <span>Đường đi: {formatRoadDistance(meta.distanceMeters)}</span>
-                    <span>Điểm KC: {meta.distanceScore ?? 0}</span>
+                    <span className="grid content-center gap-0.5 leading-tight">
+                      <span className={isMatchStronger ? "font-black" : "font-semibold text-coffee/72"}>% hợp nhau: {matchScore}</span>
+                      <span className={!isMatchStronger ? "font-black" : "font-semibold text-coffee/72"}>Điểm KC: {distanceScore}</span>
+                    </span>
                   </div>
                 ) : null}
                 <ul className="mt-4 space-y-2 text-sm font-medium text-coffee/78">
@@ -156,9 +151,9 @@ export function DiscoveryPage() {
                   </div>
                 ) : null}
                 <div className="mt-6 grid grid-cols-3 gap-3">
-                  <Button variant="ghost" icon={<X />} onClick={() => act("pass")}>Nope</Button>
-                  <Button variant="ghost" icon={<Eye />} onClick={() => setDetailOpen(true)}>Profile</Button>
-                  <Button icon={<Heart />} onClick={() => act("like")} className="bg-caramel hover:bg-coffee">Like</Button>
+                  <Button variant="ghost" icon={<X />} onClick={() => act("pass")}>Bỏ qua</Button>
+                  <Button variant="ghost" icon={<Eye />} onClick={() => setDetailOpen(true)}>Hồ sơ</Button>
+                  <Button icon={<Heart />} onClick={() => act("like")} className="bg-caramel hover:bg-coffee">Thích</Button>
                 </div>
               </div>
             </motion.article>
@@ -220,19 +215,20 @@ export function DiscoveryPage() {
             <div className="min-h-0 overflow-y-auto p-5 md:p-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-3xl font-black">{user.displayName || "UNI-MATE user"}, {user.age ?? "18+"}</h2>
+                  <h2 className="text-3xl font-black">{user.displayName || "Người dùng UNI-MATE"}, {user.age ?? "18+"}</h2>
                   <p className="mt-1 font-semibold text-coffee/68">{user.school || "Sinh viên"} {user.major ? `· ${user.major}` : ""}</p>
                 </div>
                 <button type="button" onClick={() => setDetailOpen(false)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-cream text-coffee"><X /></button>
               </div>
-              <div className="mt-5 flex items-center gap-4 rounded-lg bg-cream p-4">
-                <div className="shrink-0">
-                  <CoffeeMeter value={meta?.score ?? 70} size="lg" />
-                </div>
+              <div className="mt-5 rounded-lg bg-cream p-4">
                 <div className="min-w-0 text-sm font-semibold text-coffee/70">
                   <p className="text-base font-black text-cocoa">Điểm match tổng: {meta?.score ?? 70}</p>
                   {meta?.durationMinutes !== null && meta?.durationMinutes !== undefined ? (
-                    <p className="mt-1">Ước tính: {meta.durationMinutes} phút · {formatRoadDistance(meta.distanceMeters)} · điểm khoảng cách {meta.distanceScore ?? 0}</p>
+                    <p className="mt-1">
+                      Ước tính: {meta.durationMinutes} phút · {formatRoadDistance(meta.distanceMeters)} ·{" "}
+                      <span className={isMatchStronger ? "font-black text-cocoa" : ""}>% hợp nhau {matchScore}</span> ·{" "}
+                      <span className={!isMatchStronger ? "font-black text-cocoa" : ""}>điểm khoảng cách {distanceScore}</span>
+                    </p>
                   ) : (
                     <p className="mt-1">Đang cập nhật điểm khoảng cách.</p>
                   )}
@@ -241,7 +237,6 @@ export function DiscoveryPage() {
               <div className="mt-5 grid gap-3 text-sm font-medium text-coffee/75">
                 <p><b>Cung:</b> {user.zodiac || "Đang cập nhật"}</p>
                 <p><b>Giới tính:</b> {user.gender || "Chưa tiết lộ"}</p>
-                <p><b>Khu vực:</b> {user.location?.addressLabel || "TP.HCM"}</p>
               </div>
               <div className="mt-5 flex flex-wrap gap-2">
                 {tags.map((tag) => <span key={tag} className="rounded-full bg-latte px-3 py-1 text-sm font-bold text-cocoa">{tag}</span>)}
@@ -252,8 +247,8 @@ export function DiscoveryPage() {
                 ))}
               </ul>
               <div className="sticky bottom-0 mt-6 grid grid-cols-2 gap-3 bg-white pt-3">
-                <Button variant="ghost" icon={<X />} onClick={() => act("pass")}>Nope</Button>
-                <Button icon={<Heart />} onClick={() => act("like")} className="bg-caramel hover:bg-coffee">Like</Button>
+                <Button variant="ghost" icon={<X />} onClick={() => act("pass")}>Bỏ qua</Button>
+                <Button icon={<Heart />} onClick={() => act("like")} className="bg-caramel hover:bg-coffee">Thích</Button>
               </div>
             </div>
           </motion.div>

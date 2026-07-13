@@ -1,4 +1,4 @@
-import { Send, Users, Smile, Paperclip, FileText, Play } from "lucide-react";
+import { Send, Users, Smile, Paperclip, FileText, Play, MoreVertical, X, Crown, Flag } from "lucide-react";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -44,6 +44,9 @@ export function GroupChatPage() {
   const [composerNote, setComposerNote] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -161,6 +164,18 @@ export function GroupChatPage() {
     }
   };
 
+  const report = async () => {
+    const creatorId = typeof (group as any)?.creator === "string" ? (group as any).creator : (group as any)?.creator?._id;
+    if (!creatorId || !reportReason.trim()) return;
+    try {
+      await api.post("/safety/report", { reportedUser: creatorId, reason: `[Báo cáo Nhóm: ${group?.name}] ${reportReason}` });
+      setReportOpen(false);
+      setNotice("Đã gửi báo cáo nhóm.");
+    } catch (e: any) {
+      setNotice(e.response?.data?.message || "Không gửi được báo cáo.");
+    }
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -216,6 +231,14 @@ export function GroupChatPage() {
                 <p className="text-xs font-semibold text-coffee/55">{group?.members?.length ?? 0} thành viên</p>
               </div>
             </div>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <button type="button" onClick={() => setReportOpen(true)} className="p-2 text-rose-500/60 hover:text-rose-500 transition rounded-full hover:bg-rose-500/10" title="Báo cáo nhóm">
+              <Flag className="h-6 w-6" />
+            </button>
+            <button type="button" onClick={() => setShowInfo(true)} className="p-2 text-coffee/60 hover:text-coffee transition rounded-full hover:bg-coffee/5" title="Thông tin nhóm">
+              <MoreVertical className="h-6 w-6" />
+            </button>
           </div>
         </div>
       </header>
@@ -328,6 +351,7 @@ export function GroupChatPage() {
                 <div ref={pickerRef} className="absolute bottom-full left-0 z-50 mb-2">
                   <EmojiPicker
                     theme={Theme.LIGHT}
+                    emojiVersion="12.0"
                     onEmojiClick={(e) => setText((t) => t + e.emoji)}
                     lazyLoadEmojis={true}
                     searchDisabled={true}
@@ -347,6 +371,76 @@ export function GroupChatPage() {
           </form>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showInfo && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-cocoa/40 backdrop-blur-sm p-4">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full max-w-md bg-white rounded-2xl shadow-soft overflow-hidden flex flex-col max-h-[85vh]">
+              <div className="p-4 border-b border-coffee/10 flex items-center justify-between bg-cream/40">
+                <h2 className="text-lg font-black text-cocoa">Thông tin nhóm</h2>
+                <button type="button" onClick={() => setShowInfo(false)} className="text-coffee/40 hover:text-coffee transition rounded-full hover:bg-coffee/10 p-1">
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="overflow-y-auto p-4 space-y-4">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="grid h-16 w-16 place-items-center rounded-2xl bg-coffee text-white shadow-soft">
+                    <Users className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-xl font-black text-cocoa text-center">{group?.name}</h3>
+                </div>
+                
+                <div>
+                  <h4 className="font-bold text-coffee mb-2">Thành viên ({group?.members?.length ?? 0})</h4>
+                  <div className="divide-y divide-coffee/6 border border-coffee/10 rounded-xl overflow-hidden bg-cream/20">
+                    {group?.members?.map((member: any) => (
+                      <div key={member._id || member.id} className="flex items-center gap-3 p-3 bg-white">
+                        {member.avatarUrl ? (
+                          <img src={member.avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover shadow-sm" />
+                        ) : (
+                          <div className="grid h-10 w-10 place-items-center rounded-full bg-cream text-sm font-bold text-coffee">
+                            {(member.displayName ?? "?")[0]}
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-semibold text-cocoa flex items-center gap-1.5">
+                            {member.displayName ?? "Ẩn danh"}
+                            {(group as any).creator && String((group as any).creator) === String(member._id) && <Crown className="h-3.5 w-3.5 text-amber-500" />}
+                          </p>
+                          <p className="text-xs text-coffee/50">
+                            {[member.school, member.major, member.age ? `${member.age} tuổi` : ""].filter(Boolean).join(" · ") || "Chưa cập nhật"}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {reportOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-cocoa/40 backdrop-blur-sm p-4">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-soft">
+              <h2 className="text-xl font-black text-cocoa">Báo cáo nhóm</h2>
+              <p className="mt-2 text-sm font-semibold text-coffee/60">Vui lòng mô tả chi tiết vấn đề bạn gặp phải với nhóm này.</p>
+              <textarea
+                className="mt-4 w-full rounded-xl border border-coffee/15 bg-cream/30 p-3 text-[15px] outline-none focus:ring-4 focus:ring-caramel/20"
+                rows={4}
+                placeholder="Lý do báo cáo..."
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+              />
+              <div className="mt-5 flex justify-end gap-3">
+                <Button variant="ghost" onClick={() => setReportOpen(false)}>Hủy</Button>
+                <Button variant="danger" disabled={!reportReason.trim()} onClick={report}>Gửi báo cáo</Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -14,6 +14,16 @@ async function expireMatchIfNeeded(match) {
     }
     return match;
 }
+async function openChatForMatch(match) {
+    if (!match || ["expired", "blocked", "cancelled"].includes(match.status))
+        return match;
+    const users = (match.users ?? []).map((user) => user?._id ?? user);
+    const room = await ChatRoom.findOneAndUpdate({ match: match._id }, { match: match._id, users, status: "active" }, { upsert: true, new: true, setDefaultsOnInsert: true });
+    match.chatRoom = room._id;
+    match.status = "chat_opened";
+    await match.save();
+    return match;
+}
 function matchUserIds(match) {
     return (match.users ?? []).map(String);
 }
@@ -22,14 +32,16 @@ function otherUserId(match, currentUserId) {
 }
 export const listMatches = asyncHandler(async (req, res) => {
     const matches = await Match.find({ users: req.user.id }).populate("users selectedPlace chatRoom").sort({ updatedAt: -1 });
-    await Promise.all(matches.map(expireMatchIfNeeded));
+    await Promise.all(matches.map(async (match) => openChatForMatch(await expireMatchIfNeeded(match))));
+    await Promise.all(matches.map((match) => match.populate("users selectedPlace chatRoom")));
     res.json({ matches });
 });
 export const getMatch = asyncHandler(async (req, res) => {
     const match = await Match.findOne({ _id: req.params.matchId, users: req.user.id }).populate("users selectedPlace chatRoom");
     if (!match)
         return res.status(404).json({ message: "Match not found" });
-    await expireMatchIfNeeded(match);
+    await openChatForMatch(await expireMatchIfNeeded(match));
+    await match.populate("users selectedPlace chatRoom");
     const proposals = await CafeProposal.find({ match: match._id }).populate("cafe proposedBy").sort({ createdAt: -1 });
     res.json({ match, proposals });
 });

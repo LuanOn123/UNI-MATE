@@ -8,8 +8,11 @@ const voucherSchema = new Schema(
     title: { type: String, required: true },
     description: String,
     discountPercent: { type: Number, required: true, min: 1, max: 100 },
+    minOrderValue: { type: Number, default: 0 },
+    terms: String,
     maxUsageCount: { type: Number, default: 0 }, // 0 means unlimited
     currentUsageCount: { type: Number, default: 0 },
+    savedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
     expiresAt: { type: Date, required: true },
     isActive: { type: Boolean, default: true }
   },

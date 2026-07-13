@@ -4,6 +4,7 @@ import {
   adminMatches,
   adminPlaces,
   adminReports,
+  adminReportDetail,
   adminTags,
   adminUserDetail,
   adminUsers,
@@ -29,12 +30,12 @@ adminRouter.get("/users/:userId", adminUserDetail);
 adminRouter.put("/users/:userId", updateAdminUser);
 adminRouter.patch("/users/:userId/status", updateUserStatus);
 adminRouter.get("/reports", adminReports);
+adminRouter.get("/reports/:reportId", adminReportDetail);
 adminRouter.patch("/reports/:reportId", updateReport);
 adminRouter.get("/matches", adminMatches);
 adminRouter.get("/places", adminPlaces);
 adminRouter.get("/places-cache", adminPlaces);
 adminRouter.get("/places/:placeId", adminPlaceDetail);
-adminRouter.post("/places", upsertPlace);
 adminRouter.put("/places/:placeId", upsertPlace);
 adminRouter.delete("/places/:placeId", deletePlace);
 adminRouter.patch("/places/:placeId/status", hidePlace);

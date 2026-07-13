@@ -7,6 +7,7 @@ import { GroupMessage } from "../models/GroupMessage.js";
 import { createAndEmitNotification } from "../services/notification.service.js";
 import { User } from "../models/User.js";
 import { verifyAccessToken } from "../utils/tokens.js";
+import { restoreExpiredSuspension } from "../utils/accountStatus.js";
 
 export function registerSockets(io: Server) {
   io.use(async (socket, next) => {
@@ -14,7 +15,8 @@ export function registerSockets(io: Server) {
       const token = socket.handshake.auth.token as string | undefined;
       if (!token) return next(new Error("Missing token"));
       const payload = verifyAccessToken(token);
-      const user = await User.findById(payload.userId).select("_id status isActive");
+      const user = await User.findById(payload.userId).select("_id status isActive suspendedUntil");
+      await restoreExpiredSuspension(user);
       if (!user) return next(new Error("Invalid user"));
       if (!user.isActive || user.status === "banned" || user.status === "suspended") return next(new Error("Invalid user"));
       socket.data.userId = String(user._id);
@@ -56,6 +58,7 @@ export function registerSockets(io: Server) {
         
         room.lastMessage = data.type === "image" ? "[Hình ảnh]" : data.type === "video" ? "[Video]" : data.type === "file" ? "[Tập tin]" : data.text?.trim() || "";
         room.lastMessageAt = new Date();
+        room.hiddenBy = [];
         await room.save();
         
         const payload: any = await message.populate("sender", "displayName avatarUrl");
@@ -69,7 +72,8 @@ export function registerSockets(io: Server) {
               userId: uId,
               type: "message",
               title: "Tin nhắn mới",
-              body: (data.text || "Đã gửi một tệp tin").trim().slice(0, 120)
+              body: (data.text || "Đã gửi một tệp tin").trim().slice(0, 120),
+              data: { roomId: String(room._id), senderId: userId }
             })
           )
         );

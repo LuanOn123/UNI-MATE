@@ -3,7 +3,7 @@ import { Coffee, Lock, Mail, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -25,7 +25,15 @@ export function AuthPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, accessToken, isLoading, login, register: registerUser } = useAuthStore();
+  const redirectTo = typeof location.state?.from === "string" ? location.state.from : "";
+  const isPartnerRegisterRedirect = redirectTo === "/app/partner-register";
+  const nextUserPath = (nextUser = user) => {
+    if (nextUser?.role === "partner") return redirectTo?.startsWith("/app/partner") ? redirectTo : "/app/partner/dashboard";
+    if (isPartnerRegisterRedirect) return redirectTo;
+    return nextUser?.onboardingCompleted ? redirectTo || "/app/discovery" : "/onboarding";
+  };
 
   const formSchema = mode === "register"
     ? schema.refine((data) => data.password === data.confirmPassword, {
@@ -37,7 +45,7 @@ export function AuthPage() {
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(formSchema) });
 
   if (user && accessToken) {
-    return <Navigate to={user.role === "admin" ? "/admin/dashboard" : user.onboardingCompleted ? "/app/discovery" : "/onboarding"} replace />;
+    return <Navigate to={user.role === "admin" ? "/admin/dashboard" : nextUserPath(user)} replace />;
   }
 
   const onSubmit = async (data: FormData) => {
@@ -45,7 +53,7 @@ export function AuthPage() {
     try {
       if (mode === "register") {
         const created = await registerUser(data.email, data.password);
-        navigate(created.onboardingCompleted ? "/app/discovery" : "/onboarding");
+        navigate(nextUserPath(created));
         return;
       }
       const result = await login(data.email, data.password);
@@ -53,7 +61,7 @@ export function AuthPage() {
         navigate("/auth/otp");
         return;
       }
-      if (result.user) navigate(result.user.role === "admin" ? "/admin/dashboard" : result.user.onboardingCompleted ? "/app/discovery" : "/onboarding");
+      if (result.user) navigate(result.user.role === "admin" ? "/admin/dashboard" : nextUserPath(result.user));
     } catch (e: any) {
       setError(e.response?.data?.message ?? "Không thể xác thực tài khoản");
     }
@@ -92,6 +100,13 @@ export function AuthPage() {
             </p>
           ) : null}
           {errors.password ? <p className="text-sm text-rose-600">{errors.password.message}</p> : null}
+          {mode === "login" ? (
+            <div className="text-right">
+              <Link to="/auth/forgot-password" className="text-sm font-bold text-caramel hover:text-coffee">
+                Quên mật khẩu?
+              </Link>
+            </div>
+          ) : null}
           {mode === "register" && (
             <>
               <Input type="password" placeholder="Xác nhận mật khẩu" autoComplete="new-password" {...register("confirmPassword")} />

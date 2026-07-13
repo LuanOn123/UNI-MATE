@@ -26,7 +26,7 @@ export function LandingPage() {
             </p>
             <h1 className="max-w-3xl text-5xl font-black leading-tight md:text-7xl">Tìm bạn cafe hợp gu quanh bạn</h1>
             <p className="mt-5 max-w-2xl text-lg text-white/90">
-              Like nhau chưa đủ để chat. Hai bạn cùng chốt một quán cafe công cộng trước, rồi phòng chat mới mở để hẹn thời gian.
+              Thích nhau chưa đủ để chat. Hai bạn cùng chốt một quán cafe công cộng trước, rồi phòng chat mới mở để hẹn thời gian.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/auth">
@@ -42,8 +42,8 @@ export function LandingPage() {
             </div>
             <div className="mt-6 flex items-center gap-2 text-sm text-white/80">
               <span>Bạn là chủ quán cafe?</span>
-              <Link to="/partner/auth" className="font-bold text-white underline underline-offset-2 hover:text-caramel">
-                Trở thành đối tác
+              <Link to="/app/partner-register" className="font-bold text-white underline underline-offset-2 hover:text-caramel">
+                Đăng ký quán đối tác
               </Link>
             </div>
           </motion.div>
@@ -74,8 +74,8 @@ export function LandingPage() {
                   ))}
                 </div>
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <Button variant="ghost">Nope</Button>
-                  <Button icon={<HeartHandshake />}>Like</Button>
+                  <Button variant="ghost">Bỏ qua</Button>
+                  <Button icon={<HeartHandshake />}>Thích</Button>
                 </div>
               </div>
             </div>

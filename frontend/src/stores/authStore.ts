@@ -18,7 +18,7 @@ type AuthState = {
   sendOtp: (email: string) => Promise<void>;
   verifyOtp: (email: string, otp: string) => Promise<User>;
   fetchMe: () => Promise<User | null>;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -120,12 +120,14 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: false });
         }
       },
-      logout: () => {
+      logout: async () => {
         const token = useAuthStore.getState().accessToken;
-        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+        if (token) {
+          await import("../features/auth/authApi").then(({ logoutWithToken }) => logoutWithToken(token)).catch(() => undefined);
+        }
+        set({ user: null, accessToken: null, refreshToken: null, pendingEmail: null, isAuthenticated: false });
         localStorage.removeItem("uni-mate-auth");
-        void import("../lib/socket").then(({ resetSocket }) => resetSocket()).catch(() => undefined);
-        if (token) void import("../features/auth/authApi").then(({ logout }) => logout()).catch(() => undefined);
+        await import("../lib/socket").then(({ resetSocket }) => resetSocket()).catch(() => undefined);
       }
     }),
     { name: "uni-mate-auth" }

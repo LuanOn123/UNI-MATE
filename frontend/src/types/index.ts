@@ -18,6 +18,7 @@ export type User = {
   onboardingCompleted: boolean;
   twoFactorEnabled?: boolean;
   onboarding?: Record<string, any>;
+  preferences?: Record<string, any>;
   location?: { coordinates: [number, number]; addressLabel?: string; source?: "gps" | "manual" };
   matchMeta?: {
     score: number;
@@ -42,7 +43,7 @@ export type Place = {
   city?: string;
   district?: string;
   priceLevel?: string;
-  status?: "active" | "hidden";
+  status?: "active" | "hidden" | "pending";
   tags?: string[];
   amenities?: string[];
   openingHours?: string;
@@ -50,6 +51,9 @@ export type Place = {
   imageUrl?: string;
   openNow?: boolean;
   mapsUrl?: string;
+  isPartnerPlace?: boolean;
+  cafeVibe?: string;
+  partnerName?: string;
 };
 
 export type Match = {

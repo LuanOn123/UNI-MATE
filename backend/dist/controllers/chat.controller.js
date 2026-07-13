@@ -4,8 +4,14 @@ import { Message } from "../models/Message.js";
 import { createAndEmitNotification } from "../services/notification.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 export const listRooms = asyncHandler(async (req, res) => {
-    const rooms = await ChatRoom.find({ users: req.user.id }).populate("users place").sort({ lastMessageAt: -1 });
+    const rooms = await ChatRoom.find({ users: req.user.id, hiddenBy: { $ne: req.user.id } }).populate("users place").sort({ lastMessageAt: -1 });
     res.json({ rooms });
+});
+export const hideRoom = asyncHandler(async (req, res) => {
+    const room = await ChatRoom.findOneAndUpdate({ _id: req.params.roomId, users: req.user.id }, { $addToSet: { hiddenBy: req.user.id } }, { new: true });
+    if (!room)
+        return res.status(404).json({ message: "Room not found" });
+    res.json({ message: "Conversation removed from your chat list" });
 });
 export const getRoom = asyncHandler(async (req, res) => {
     const room = await ChatRoom.findOne({ _id: req.params.roomId, users: req.user.id }).populate("users place match");
@@ -44,6 +50,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
     });
     room.lastMessage = req.body.type === "image" ? "[Hình ảnh]" : req.body.type === "video" ? "[Video]" : req.body.type === "file" ? "[Tập tin]" : req.body.text;
     room.lastMessageAt = new Date();
+    room.hiddenBy = [];
     await room.save();
     await message.populate("sender", "displayName avatarUrl");
     const plain = message.toObject();
@@ -57,7 +64,8 @@ export const sendMessage = asyncHandler(async (req, res) => {
         userId,
         type: "message",
         title: "Tin nhắn mới",
-        body: req.body.text.slice(0, 120)
+        body: (req.body.text || "Đã gửi một tệp tin").slice(0, 120),
+        data: { roomId: String(room._id), senderId: req.user.id }
     })));
     res.status(201).json({ message: { ...outgoing, mine: true } });
 });
