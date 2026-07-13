@@ -474,8 +474,6 @@ export function AdminReportsPage() {
 
 export function AdminPlacesPage() {
   const [places, setPlaces] = useState<AnyRecord[]>([]);
-  const [form, setForm] = useState<AnyRecord>(emptyPlace);
-  const [editingId, setEditingId] = useState("");
   const [message, setMessage] = useState("");
   const [q, setQ] = useState("");
   const [statusVal, setStatusVal] = useState("");
@@ -483,28 +481,6 @@ export function AdminPlacesPage() {
 
   const load = () => api.get("/admin/places", { params: { q: q || undefined, status: statusVal || undefined, district: district || undefined } }).then((r) => setPlaces(r.data.places));
   useEffect(() => { load(); }, []);
-
-  const save = async () => {
-    const payload = {
-      ...form,
-      rating: Number(form.rating),
-      userRatingsTotal: Number(form.userRatingsTotal),
-      tags: String(form.tags).split(",").map((x) => x.trim()).filter(Boolean),
-      amenities: String(form.amenities).split(",").map((x) => x.trim()).filter(Boolean),
-      location: { type: "Point", coordinates: [Number(form.location.coordinates[0]), Number(form.location.coordinates[1])] }
-    };
-    if (editingId) await api.put(`/admin/places/${editingId}`, payload);
-    else await api.post("/admin/places", payload);
-    setMessage(editingId ? "Đã cập nhật quán." : "Đã thêm quán.");
-    setEditingId("");
-    setForm(emptyPlace);
-    load();
-  };
-
-  const edit = (place: AnyRecord) => {
-    setEditingId(place._id);
-    setForm({ ...emptyPlace, ...place, tags: (place.tags ?? []).join(", "), amenities: (place.amenities ?? []).join(", "), location: place.location ?? emptyPlace.location });
-  };
 
   const status = async (id: string, next: "active" | "hidden") => {
     await api.patch(`/admin/places/${id}/status`, { status: next, reason: `Admin set ${next}` });
@@ -539,15 +515,7 @@ export function AdminPlacesPage() {
         <Button onClick={load}>Lọc</Button>
       </AdminToolbar>
       <Notice message={message} />
-      <div className="grid gap-5 xl:grid-cols-[390px_1fr]">
-        <section className="rounded-lg bg-white p-5 shadow-sm">
-          <h2 className="mb-4 flex items-center gap-2 font-black"><Plus className="h-5 w-5 text-caramel" />{editingId ? "Sửa quán" : "Thêm quán"}</h2>
-          <PlaceForm form={form} setForm={setForm} />
-          <div className="mt-4 flex gap-2">
-            <Button icon={<Save />} onClick={save}>{editingId ? "Lưu sửa" : "Thêm quán"}</Button>
-            {editingId ? <Button variant="ghost" onClick={() => { setEditingId(""); setForm(emptyPlace); }}>Hủy</Button> : null}
-          </div>
-        </section>
+      <div className="w-full">
         <AdminTable>
           <thead><tr><Th>Quán</Th><Th>Rating</Th><Th>Status</Th><Th>Action</Th></tr></thead>
           <tbody>
@@ -557,7 +525,7 @@ export function AdminPlacesPage() {
                 <Td>{place.rating ?? "N/A"} · {place.priceLevel}</Td>
                 <Td><StatusPill value={place.status} /></Td>
                 <Td><div className="flex flex-wrap gap-2">
-                  <Button variant="ghost" onClick={() => edit(place)}>Sửa</Button>
+                  <Link to={`/admin/places/${place._id}`}><Button variant="ghost" icon={<Eye />}>Xem</Button></Link>
                   <Button variant="ghost" onClick={() => status(place._id, "active")}>Show</Button>
                   <Button variant="ghost" onClick={() => status(place._id, "hidden")}>Hide</Button>
                   <Button variant="danger" onClick={() => handleDelete(place._id)}>Xóa</Button>
@@ -570,6 +538,209 @@ export function AdminPlacesPage() {
     </AdminPageShell>
   );
 }
+
+export function AdminPlaceDetailPage() {
+  const { id } = useParams();
+  const [data, setData] = useState<AnyRecord | null>(null);
+  const [message, setMessage] = useState("");
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState<AnyRecord>(emptyPlace);
+  const [editError, setEditError] = useState("");
+
+  const load = () => {
+    api.get(`/admin/places/${id}`).then((r) => setData(r.data));
+  };
+
+  useEffect(() => {
+    load();
+  }, [id]);
+
+  const updateStatus = async (nextStatus: "active" | "hidden") => {
+    await api.patch(`/admin/places/${id}/status`, { status: nextStatus, reason: `Admin set status ${nextStatus}` });
+    setMessage("Đã cập nhật trạng thái quán.");
+    load();
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa quán cafe này không?")) return;
+    try {
+      await api.delete(`/admin/places/${id}`);
+      setMessage("Đã xóa quán cafe thành công.");
+      setData(null);
+    } catch (err: any) {
+      setMessage(err.response?.data?.message || "Lỗi khi xóa quán");
+    }
+  };
+
+  const openEdit = () => {
+    if (!data?.place) return;
+    const p = data.place;
+    setEditForm({
+      ...emptyPlace,
+      ...p,
+      tags: (p.tags ?? []).join(", "),
+      amenities: (p.amenities ?? []).join(", "),
+      location: p.location ?? emptyPlace.location
+    });
+    setEditError("");
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditError("");
+    try {
+      const payload = {
+        ...editForm,
+        rating: Number(editForm.rating),
+        userRatingsTotal: Number(editForm.userRatingsTotal),
+        tags: String(editForm.tags).split(",").map((x) => x.trim()).filter(Boolean),
+        amenities: String(editForm.amenities).split(",").map((x) => x.trim()).filter(Boolean),
+        location: { type: "Point", coordinates: [Number(editForm.location.coordinates[0]), Number(editForm.location.coordinates[1])] }
+      };
+      await api.put(`/admin/places/${id}`, payload);
+      setMessage("Đã cập nhật thông tin quán thành công.");
+      setShowEditModal(false);
+      load();
+    } catch (err: any) {
+      setEditError(err.response?.data?.message || "Lỗi cập nhật quán");
+    }
+  };
+
+  if (message && !data) {
+    return (
+      <AdminPageShell title="Chi tiết quán cafe">
+        <Notice message={message} />
+        <Link to="/admin/places"><Button>Quay lại danh sách</Button></Link>
+      </AdminPageShell>
+    );
+  }
+
+  if (!data) return <AdminPageShell title="Đang tải thông tin quán" />;
+  const place = data.place;
+
+  return (
+    <AdminPageShell eyebrow="Cafe detail" title={place.name}>
+      <Notice message={message} />
+      <div className="mb-4">
+        <Link to="/admin/places" className="text-sm font-bold text-caramel hover:underline">← Quay lại danh sách</Link>
+      </div>
+      <div className="grid gap-5 xl:grid-cols-[1fr_380px]">
+        <section className="rounded-lg bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-bold text-slate-500">{place.address}</p>
+              <h2 className="mt-1 text-2xl font-black">{place.name}</h2>
+              <p className="mt-2 text-slate-600">
+                Khu vực: {place.district || "Chưa rõ"} · Thành phố: {place.city || "TP.HCM"}
+              </p>
+              <p className="text-slate-600">
+                Đánh giá: {place.rating ?? "N/A"} ⭐ ({place.userRatingsTotal ?? 0} lượt) · Giá: {place.priceLevel}
+              </p>
+              <p className="text-slate-600">Giờ mở cửa: {place.openingHours || "Chưa cập nhật"}</p>
+              {place.mapsUrl && (
+                <p className="mt-1">
+                  <a href={place.mapsUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-bold text-caramel hover:underline">
+                    Xem trên Google Maps <ExternalLink className="h-4 w-4" />
+                  </a>
+                </p>
+              )}
+            </div>
+            <StatusPill value={place.status} />
+          </div>
+
+          <div className="mt-4">
+            <h3 className="text-sm font-black text-slate-700">Mô tả:</h3>
+            <p className="text-slate-600 text-sm mt-1">{place.description || "Chưa có mô tả."}</p>
+          </div>
+
+          <div className="mt-5">
+            <h3 className="text-sm font-black text-slate-700 mb-2">Tags:</h3>
+            <div className="flex flex-wrap gap-2">
+              {(place.tags ?? []).map((tag: string) => (
+                <span key={tag} className="rounded-full bg-orange-50 px-3 py-1 text-sm font-bold text-caramel">
+                  {tag}
+                </span>
+              ))}
+              {!(place.tags ?? []).length && <span className="text-sm text-slate-400">Chưa có tag</span>}
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <h3 className="text-sm font-black text-slate-700 mb-2">Tiện ích (Amenities):</h3>
+            <div className="flex flex-wrap gap-2">
+              {(place.amenities ?? []).map((am: string) => (
+                <span key={am} className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
+                  {am}
+                </span>
+              ))}
+              {!(place.amenities ?? []).length && <span className="text-sm text-slate-400">Chưa có tiện ích</span>}
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-2 border-t pt-5">
+            <Button onClick={openEdit}>Sửa thông tin</Button>
+            <Button variant="ghost" onClick={() => updateStatus("active")}>Hiển thị (Active)</Button>
+            <Button variant="ghost" onClick={() => updateStatus("hidden")}>Ẩn (Hidden)</Button>
+            <Button variant="danger" onClick={handleDelete}>Xóa quán</Button>
+          </div>
+        </section>
+
+        <section className="rounded-lg bg-white p-5 shadow-sm">
+          <h2 className="font-black mb-3">Hình ảnh quán</h2>
+          {place.imageUrl ? (
+            <div className="aspect-video rounded-lg bg-slate-100 bg-cover bg-center" style={{ backgroundImage: `url(${place.imageUrl})` }} />
+          ) : (
+            <div className="aspect-video rounded-lg bg-slate-50 border border-dashed border-slate-300 flex items-center justify-center text-sm text-slate-400 font-medium">
+              Chưa có hình ảnh
+            </div>
+          )}
+          <div className="mt-4 text-xs text-slate-500">
+            <p>Vĩ độ (Latitude): {place.location?.coordinates?.[1] ?? "Chưa rõ"}</p>
+            <p>Kinh độ (Longitude): {place.location?.coordinates?.[0] ?? "Chưa rõ"}</p>
+          </div>
+        </section>
+      </div>
+
+      <section className="mt-5 rounded-lg bg-white p-5 shadow-sm">
+        <h2 className="mb-3 font-black">Các lượt match tại quán</h2>
+        <CompactList
+          items={data.matches ?? []}
+          empty="Chưa có lượt match nào sử dụng quán này"
+          render={(match) => (
+            <div className="flex justify-between items-center">
+              <span>
+                {(match.users ?? []).map((u: any) => u.displayName || u.email).join(" ↔ ")}
+              </span>
+              <span className="text-xs text-slate-500">
+                {match.status} · {formatDate(match.createdAt)}
+              </span>
+            </div>
+          )}
+        />
+      </section>
+
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-black mb-4">Sửa thông tin quán cafe</h2>
+            {editError && <p className="mb-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{editError}</p>}
+            <form onSubmit={handleEditSubmit}>
+              <PlaceForm form={editForm} setForm={setEditForm} />
+              <div className="flex justify-end gap-2 pt-4 border-t mt-4">
+                <Button type="button" variant="ghost" onClick={() => setShowEditModal(false)}>
+                  Hủy
+                </Button>
+                <Button type="submit">Lưu thay đổi</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </AdminPageShell>
+  );
+}
+
 
 export function AdminTagsPage() {
   const [tags, setTags] = useState<AnyRecord[]>([]);

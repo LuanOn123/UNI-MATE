@@ -207,3 +207,11 @@ export const upsertTag = asyncHandler(async (req: Request, res: Response) => {
 export const adminActions = asyncHandler(async (_req: Request, res: Response) => {
   res.json({ actions: await AdminAction.find().populate("admin", "email displayName").sort({ createdAt: -1 }).limit(100) });
 });
+
+export const adminPlaceDetail = asyncHandler(async (req: Request, res: Response) => {
+  const place = await PlaceCache.findById(req.params.placeId);
+  if (!place) return res.status(404).json({ message: "Cafe not found" });
+  const matches = await Match.find({ selectedPlace: place._id }).populate("users").sort({ createdAt: -1 }).limit(50);
+  res.json({ place, matches });
+});
+

@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { AdminAuditPage, AdminDashboardPage, AdminMatchesPage, AdminPlacesPage, AdminReportsPage, AdminTagsPage, AdminUserDetailPage, AdminUsersPage } from "../features/admin/AdminPage";
+import { AdminAuditPage, AdminDashboardPage, AdminMatchesPage, AdminPlacesPage, AdminPlaceDetailPage, AdminReportsPage, AdminTagsPage, AdminUserDetailPage, AdminUsersPage } from "../features/admin/AdminPage";
 import { AuthPage } from "../features/auth/AuthPage";
 import { PartnerAuthPage } from "../features/auth/PartnerAuthPage";
 import { OtpPage } from "../features/auth/OtpPage";
@@ -73,6 +73,7 @@ export default function App() {
           <Route path="reports/:id" element={<AdminReportsPage />} />
           <Route path="matches" element={<AdminMatchesPage />} />
           <Route path="places" element={<AdminPlacesPage />} />
+          <Route path="places/:id" element={<AdminPlaceDetailPage />} />
           <Route path="places-cache" element={<AdminPlacesPage />} />
           <Route path="tags" element={<AdminTagsPage />} />
           <Route path="actions" element={<AdminAuditPage />} />

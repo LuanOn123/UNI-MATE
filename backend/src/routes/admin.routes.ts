@@ -15,7 +15,8 @@ import {
   updateReport,
   updateUserStatus,
   upsertPlace,
-  upsertTag
+  upsertTag,
+  adminPlaceDetail
 } from "../controllers/admin.controller.js";
 import { requireAdmin, requireAuth } from "../middlewares/auth.js";
 
@@ -32,6 +33,7 @@ adminRouter.patch("/reports/:reportId", updateReport);
 adminRouter.get("/matches", adminMatches);
 adminRouter.get("/places", adminPlaces);
 adminRouter.get("/places-cache", adminPlaces);
+adminRouter.get("/places/:placeId", adminPlaceDetail);
 adminRouter.post("/places", upsertPlace);
 adminRouter.put("/places/:placeId", upsertPlace);
 adminRouter.delete("/places/:placeId", deletePlace);
