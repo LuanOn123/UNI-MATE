@@ -178,6 +178,10 @@ export const changePassword = asyncHandler(async (req, res) => {
     if (!ok) {
         return res.status(400).json({ message: "Mật khẩu hiện tại không chính xác." });
     }
+    const sameAsOldPassword = await bcrypt.compare(req.body.newPassword, user.passwordHash);
+    if (sameAsOldPassword) {
+        return res.status(400).json({ message: "Mật khẩu mới không được trùng với mật khẩu cũ." });
+    }
     const passwordHash = await bcrypt.hash(req.body.newPassword, 10);
     user.passwordHash = passwordHash;
     await user.save();

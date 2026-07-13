@@ -2,6 +2,7 @@ import { Coffee, HeartHandshake, MapPin, ShieldCheck, Sparkles } from "lucide-re
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { CoffeeMeter } from "../components/common/CoffeeMeter";
+import { PublicFooter } from "../components/common/PublicFooter";
 import { Button } from "../components/ui/Button";
 
 export function LandingPage() {
@@ -122,6 +123,7 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+      <PublicFooter />
     </div>
   );
 }

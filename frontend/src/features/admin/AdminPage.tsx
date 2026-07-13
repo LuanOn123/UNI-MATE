@@ -1,12 +1,41 @@
-import { Ban, CheckCircle, Coffee, ExternalLink, Eye, Flag, MapPin, Plus, Save, Search, ShieldAlert, Tags, UserRound, Users } from "lucide-react";
+import { Ban, CheckCircle, Coffee, ExternalLink, Eye, Flag, Image, MapPin, MessageSquare, Plus, Save, Search, ShieldAlert, UserRound, Users, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { StateBlock } from "../../components/common/StateBlock";
 import { api } from "../../lib/api";
 
 type AnyRecord = Record<string, any>;
+
+const vibeLabel: Record<string, string> = {
+  quiet_study: "Học tập & làm việc",
+  acoustic_view: "Trò chuyện & chill",
+  boardgame_lively: "Nhóm bạn & boardgame"
+};
+
+const tagLabel: Record<string, string> = {
+  quiet: "Yên tĩnh",
+  study: "Học bài",
+  work_friendly: "Làm việc",
+  chill: "Chill",
+  acoustic: "Nhạc acoustic",
+  view: "View đẹp",
+  photo_spot: "Chụp ảnh",
+  boardgame: "Boardgame",
+  group_friendly: "Đi nhóm",
+  date_friendly: "Hẹn gặp"
+};
+
+const amenityLabel: Record<string, string> = {
+  wifi: "Wifi",
+  power: "Ổ cắm",
+  parking: "Gửi xe",
+  air_con: "Máy lạnh",
+  pet_friendly: "Cho thú cưng",
+  outdoor_seating: "Chỗ ngồi ngoài trời"
+};
 
 const emptyPlace = {
   name: "",
@@ -68,7 +97,7 @@ export function AdminDashboardPage() {
         <div className="mt-3 grid gap-3 text-sm font-medium text-slate-600 md:grid-cols-3">
           <p>1. Theo dõi KPI demo và report mới.</p>
           <p>2. Quản lý user: xem hồ sơ, suspend hoặc ban có lý do.</p>
-          <p>3. Quản lý quán, tags và audit log để bảo đảm dữ liệu sạch.</p>
+          <p>3. Quản lý quán và audit log để bảo đảm dữ liệu sạch.</p>
         </div>
       </section>
     </AdminPageShell>
@@ -427,12 +456,28 @@ export function AdminReportsPage() {
   const [reports, setReports] = useState<AnyRecord[]>([]);
   const [status, setStatus] = useState("");
   const [message, setMessage] = useState("");
+  const [detail, setDetail] = useState<AnyRecord | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const load = () => api.get("/admin/reports", { params: { status: status || undefined } }).then((r) => setReports(r.data.reports));
   useEffect(() => { load(); }, []);
-  const act = async (id: string, action: "dismiss" | "review" | "warn" | "suspend" | "ban") => {
-    await api.patch(`/admin/reports/${id}`, { action, note: `Handled as ${action}` });
-    setMessage("Đã xử lý report.");
+  const openDetail = async (id: string) => {
+    setDetailLoading(true);
+    try {
+      const { data } = await api.get(`/admin/reports/${id}`);
+      setDetail(data);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+  const act = async (id: string, action: "dismiss" | "warn" | "suspend" | "ban", options: AnyRecord = {}) => {
+    const { data } = await api.patch(`/admin/reports/${id}`, { action, note: `Handled as ${action}`, ...options });
+    const moderation = data.moderation;
+    setMessage(moderation?.warningCount ? `Đã xử lý report. User hiện có ${moderation.warningCount} lần cảnh cáo.` : "Đã xử lý report.");
     load();
+    if (detail?.report?._id === id) {
+      const { data } = await api.get(`/admin/reports/${id}`);
+      setDetail(data);
+    }
   };
   return (
     <AdminPageShell eyebrow="Safety" title="Report queue">
@@ -457,17 +502,164 @@ export function AdminReportsPage() {
               <Td>{displayUser(report.reportedUser)}</Td>
               <Td><StatusPill value={report.status} /></Td>
               <Td><div className="flex flex-wrap gap-2">
-                <Button variant="ghost" onClick={() => act(report._id, "review")}>Review</Button>
-                <Button variant="ghost" onClick={() => act(report._id, "dismiss")}>Dismiss</Button>
-                <Button variant="ghost" onClick={() => act(report._id, "warn")}>Warn</Button>
-                <Button variant="ghost" onClick={() => act(report._id, "suspend")}>Suspend</Button>
-                <Button variant="danger" onClick={() => act(report._id, "ban")}>Ban</Button>
+                <Button variant="ghost" icon={<Eye className="h-4 w-4" />} onClick={() => openDetail(report._id)}>Chi tiết</Button>
               </div></Td>
             </tr>
           ))}
         </tbody>
       </AdminTable>
+
+      {detailLoading ? <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 text-sm font-bold text-white">Đang tải chi tiết...</div> : null}
+      {detail ? <ReportDetailModal data={detail} onClose={() => setDetail(null)} onAct={act} /> : null}
     </AdminPageShell>
+  );
+}
+
+function ReportDetailModal({ data, onClose, onAct }: { data: AnyRecord; onClose: () => void; onAct: (id: string, action: "dismiss" | "warn" | "suspend" | "ban", options?: AnyRecord) => Promise<void> }) {
+  const report = data.report;
+  const incidentTime = report.incidentAt ? new Date(report.incidentAt).getTime() : null;
+  const [moderationAction, setModerationAction] = useState<"dismiss" | "warn" | "suspend" | "ban" | null>(null);
+  const [suspendDays, setSuspendDays] = useState(3);
+  const [customSuspendedUntil, setCustomSuspendedUntil] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const warningCount = Number(report.reportedUser?.warningCount ?? 0);
+  const nextWarningCount = warningCount + 1;
+  const warningOutcome = nextWarningCount === 1 ? "User sẽ nhận thông báo cảnh cáo lần 1." : nextWarningCount === 2 ? "User sẽ bị tạm khóa 3 ngày." : nextWarningCount === 3 ? "User sẽ bị tạm khóa 10 ngày." : "User sẽ bị khóa tài khoản vĩnh viễn.";
+  const reportProcessed = Boolean(report.resolutionAction) || ["resolved_valid", "resolved_invalid", "dismissed"].includes(report.status);
+
+  const confirmModeration = async () => {
+    if (!moderationAction) return;
+    setActionLoading(true);
+    setActionError("");
+    try {
+      const options = moderationAction === "suspend"
+        ? customSuspendedUntil
+          ? { suspendedUntil: new Date(customSuspendedUntil).toISOString() }
+          : { suspendDays }
+        : {};
+      await onAct(report._id, moderationAction, options);
+      setModerationAction(null);
+    } catch (error: any) {
+      setActionError(error.response?.data?.message ?? "Không thể xử lý report.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm">
+      <div className="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
+        <div className="flex items-start justify-between border-b border-slate-200 px-6 py-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-600">Report detail</p>
+            <h2 className="mt-1 text-2xl font-black text-slate-900">{report.reason}</h2>
+            <p className="mt-1 text-sm text-slate-500">Gửi lúc {formatDate(report.createdAt)}</p>
+          </div>
+          <button type="button" className="grid h-10 w-10 place-items-center rounded-lg text-slate-500 hover:bg-slate-100" onClick={onClose} aria-label="Đóng"><X className="h-5 w-5" /></button>
+        </div>
+
+        <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[340px_minmax(0,1fr)]">
+          <aside className="border-b border-slate-200 bg-slate-50 p-6 lg:border-b-0 lg:border-r">
+            <div className="space-y-4 text-sm">
+              <div><p className="font-bold text-slate-500">Người báo cáo</p><p className="mt-1 font-semibold text-slate-900">{displayUser(report.reporter)}</p></div>
+              <div><p className="font-bold text-slate-500">Người bị báo cáo</p><p className="mt-1 font-semibold text-slate-900">{displayUser(report.reportedUser)}</p></div>
+              <div><p className="font-bold text-slate-500">Thời điểm sự việc</p><p className="mt-1 font-semibold text-slate-900">{report.incidentAt ? formatDate(report.incidentAt) : "Không cung cấp"}</p></div>
+              <div><p className="font-bold text-slate-500">Trạng thái</p><div className="mt-2"><StatusPill value={report.status} /></div></div>
+            </div>
+
+            <div className="mt-6">
+              <p className="flex items-center gap-2 font-bold text-slate-700"><Image className="h-4 w-4" /> Ảnh chứng minh</p>
+              {report.evidenceUrls?.length ? (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {report.evidenceUrls.map((url: string) => <a key={url} href={url} target="_blank" rel="noreferrer"><img src={url} alt="Bằng chứng report" className="aspect-square w-full rounded-lg border border-slate-200 object-cover" /></a>)}
+                </div>
+              ) : <p className="mt-2 text-sm text-slate-500">Không có ảnh đính kèm.</p>}
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              <Button variant="ghost" disabled={reportProcessed} onClick={() => setModerationAction("dismiss")}>Bỏ qua</Button>
+              <Button variant="ghost" disabled={reportProcessed} onClick={() => setModerationAction("warn")}>Cảnh cáo</Button>
+              <Button variant="ghost" disabled={reportProcessed} onClick={() => setModerationAction("suspend")}>Tạm khóa</Button>
+              <Button variant="danger" disabled={reportProcessed} onClick={() => setModerationAction("ban")}>Khóa tài khoản</Button>
+            </div>
+            {reportProcessed ? <p className="mt-3 text-sm font-semibold text-slate-500">Report này đã được xử lý.</p> : null}
+          </aside>
+
+          <section className="min-h-[420px] bg-[#f8efe5] p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="flex items-center gap-2 text-lg font-black text-slate-900"><MessageSquare className="h-5 w-5" /> Hội thoại gốc</h3>
+              <span className="text-xs font-semibold text-slate-500">{data.messages.length} tin nhắn gần nhất</span>
+            </div>
+            {data.messages.length ? (
+              <div className="space-y-3">
+                {data.messages.map((chatMessage: AnyRecord) => {
+                  const senderId = chatMessage.sender?._id ?? chatMessage.sender;
+                  const reportedId = report.reportedUser?._id ?? report.reportedUser;
+                  const fromReported = String(senderId) === String(reportedId);
+                  const nearIncident = incidentTime !== null && Math.abs(new Date(chatMessage.createdAt).getTime() - incidentTime) <= 30 * 60 * 1000;
+                  return (
+                    <div key={chatMessage._id} className={`flex ${fromReported ? "justify-start" : "justify-end"}`}>
+                      <div className={`max-w-[78%] rounded-lg border px-4 py-3 shadow-sm ${nearIncident ? "border-amber-400 ring-2 ring-amber-200" : "border-slate-200"} ${fromReported ? "bg-white" : "bg-slate-800 text-white"}`}>
+                        <div className="mb-1 flex flex-wrap items-center gap-2 text-xs font-bold opacity-70">
+                          <span>{displayUser(chatMessage.sender)}</span><span>{formatDate(chatMessage.createdAt)}</span>{nearIncident ? <span className="rounded bg-amber-100 px-2 py-0.5 text-amber-800">Gần thời điểm report</span> : null}
+                        </div>
+                        {chatMessage.type === "image" && chatMessage.fileUrl ? <a href={chatMessage.fileUrl} target="_blank" rel="noreferrer"><img src={chatMessage.fileUrl} alt="Ảnh trong chat" className="mb-2 max-h-52 rounded-lg object-contain" /></a> : null}
+                        {chatMessage.fileUrl && chatMessage.type !== "image" ? <a href={chatMessage.fileUrl} target="_blank" rel="noreferrer" className="mb-2 block underline">{chatMessage.fileName || "Xem tệp đính kèm"}</a> : null}
+                        {chatMessage.text ? <p className="whitespace-pre-wrap break-words text-sm">{chatMessage.text}</p> : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : <StateBlock title="Không có hội thoại để đối chiếu" text="Report này không được gửi từ một phòng chat hoặc phòng chưa có tin nhắn." />}
+          </section>
+        </div>
+
+        {moderationAction ? (
+          <div className="absolute inset-0 z-10 grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-rose-600">Xác nhận xử lý</p>
+                  <h3 className="mt-1 text-xl font-black text-slate-900">
+                    {moderationAction === "warn" ? `Cảnh cáo lần ${nextWarningCount}` : moderationAction === "suspend" ? "Tạm khóa tài khoản" : moderationAction === "ban" ? "Khóa tài khoản" : "Bỏ qua report"}
+                  </h3>
+                </div>
+                <button type="button" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100" onClick={() => setModerationAction(null)}><X className="h-5 w-5" /></button>
+              </div>
+
+              {moderationAction === "warn" ? (
+                <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  User hiện có <strong>{warningCount}</strong> lần cảnh cáo. Sau khi xác nhận: <strong>{warningOutcome}</strong>
+                </div>
+              ) : null}
+
+              {moderationAction === "suspend" ? (
+                <div className="mt-5">
+                  <label className="text-sm font-bold text-slate-700">Thời hạn tạm khóa</label>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {[3, 5, 7].map((days) => (
+                      <button key={days} type="button" className={`rounded-lg border px-3 py-2 text-sm font-bold ${!customSuspendedUntil && suspendDays === days ? "border-coffee bg-coffee text-white" : "border-slate-200 bg-white text-slate-700"}`} onClick={() => { setSuspendDays(days); setCustomSuspendedUntil(""); }}>{days} ngày</button>
+                    ))}
+                  </div>
+                  <label className="mt-4 block text-sm font-bold text-slate-700">Hoặc chọn ngày mở khóa</label>
+                  <Input className="mt-2" type="datetime-local" value={customSuspendedUntil} onChange={(event) => setCustomSuspendedUntil(event.target.value)} />
+                </div>
+              ) : null}
+
+              {moderationAction === "ban" ? <p className="mt-4 rounded-lg bg-rose-50 p-4 text-sm font-semibold text-rose-800">User sẽ bị khóa tài khoản vĩnh viễn và đăng xuất khỏi hệ thống.</p> : null}
+              {moderationAction === "dismiss" ? <p className="mt-4 text-sm text-slate-600">Report sẽ được đánh dấu là không cần xử lý và không áp dụng hình phạt cho user.</p> : null}
+              {actionError ? <p className="mt-4 rounded-lg bg-rose-50 p-3 text-sm font-semibold text-rose-700">{actionError}</p> : null}
+
+              <div className="mt-6 flex justify-end gap-2">
+                <Button variant="ghost" disabled={actionLoading} onClick={() => setModerationAction(null)}>Hủy</Button>
+                <Button variant={moderationAction === "ban" ? "danger" : "primary"} disabled={actionLoading} onClick={confirmModeration}>{actionLoading ? "Đang xử lý..." : "Xác nhận"}</Button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -601,37 +793,6 @@ export function AdminPlacesPage() {
   );
 }
 
-export function AdminTagsPage() {
-  const [tags, setTags] = useState<AnyRecord[]>([]);
-  const [name, setName] = useState("");
-  const [type, setType] = useState("cafe");
-  const [message, setMessage] = useState("");
-  const load = () => api.get("/admin/tags").then((r) => setTags(r.data.tags));
-  useEffect(() => { load(); }, []);
-  const save = async () => {
-    await api.post("/admin/tags", { name, type, status: "active" });
-    setName("");
-    setMessage("Đã thêm tag.");
-    load();
-  };
-  return (
-    <AdminPageShell eyebrow="Tags" title="Quản lý tags">
-      <Notice message={message} />
-      <AdminToolbar>
-        <Input placeholder="Tên tag" value={name} onChange={(e) => setName(e.target.value)} />
-        <select className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold" value={type} onChange={(e) => setType(e.target.value)}>
-          <option value="cafe">Cafe</option>
-          <option value="profile">Profile</option>
-        </select>
-        <Button icon={<Tags />} onClick={save} disabled={!name.trim()}>Thêm tag</Button>
-      </AdminToolbar>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {tags.map((tag) => <div key={tag._id} className="rounded-lg bg-white p-4 shadow-sm"><p className="font-black">{tag.name}</p><p className="text-sm text-slate-500">{tag.type} · {tag.status}</p></div>)}
-      </div>
-    </AdminPageShell>
-  );
-}
-
 export function AdminAuditPage() {
   const [actions, setActions] = useState<AnyRecord[]>([]);
   useEffect(() => { api.get("/admin/actions").then((r) => setActions(r.data.actions)); }, []);
@@ -656,19 +817,19 @@ export function AdminMatchesPage() {
       <AdminToolbar>
         <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input className="pl-10" placeholder="Tim user, email, quan hoac ma match" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
+          <Input className="pl-10" placeholder="Tìm user, email, quán hoặc mã match" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
         </div>
         <select className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">Tat ca trang thai</option>
-          <option value="matched">Da match</option>
-          <option value="cafe_proposed">De xuat quan</option>
-          <option value="cafe_confirmed">Da chot quan</option>
-          <option value="chat_opened">Dang chat</option>
-          <option value="expired">Het han</option>
-          <option value="blocked">Da chan</option>
-          <option value="cancelled">Da huy</option>
+          <option value="">Tất cả trạng thái</option>
+          <option value="matched">Đã match</option>
+          <option value="cafe_proposed">Đề xuất quán</option>
+          <option value="cafe_confirmed">Đã chốt quán</option>
+          <option value="chat_opened">Đang chat</option>
+          <option value="expired">Hết hạn</option>
+          <option value="blocked">Đã chặn</option>
+          <option value="cancelled">Đã hủy</option>
         </select>
-        <Button onClick={load}>Loc</Button>
+        <Button onClick={load}>Lọc</Button>
       </AdminToolbar>
       <AdminTable>
         <thead><tr><Th>Users</Th><Th>Status</Th><Th>Quán</Th><Th>Score</Th><Th>Created</Th></tr></thead>
@@ -701,7 +862,7 @@ function PlaceDetail({ place, onEdit, onStatus }: { place: AnyRecord; onEdit: ()
         <DetailRow label="Loại hồ sơ" value={place.isPartnerPlace ? "Quán đối tác" : "Dữ liệu hệ thống"} />
         <DetailRow label="Khu vực" value={[place.district, place.city].filter(Boolean).join(", ") || "Chưa cập nhật"} />
         <DetailRow label="Giờ mở cửa" value={place.openingHours || "Chưa cập nhật"} />
-        <DetailRow label="Phong cách" value={place.cafeVibe || "Chưa cập nhật"} />
+        <DetailRow label="Phong cách" value={vibeLabel[place.cafeVibe] || place.cafeVibe || "Chưa cập nhật"} />
         <DetailRow label="Đánh giá" value={`${place.rating ?? "N/A"} · ${place.userRatingsTotal ?? 0} lượt`} />
         <DetailRow label="Mức giá" value={place.priceLevel || "-"} />
         <DetailRow label="Tọa độ" value={coords.length ? `${coords[1]}, ${coords[0]}` : "Chưa có"} />
@@ -709,12 +870,12 @@ function PlaceDetail({ place, onEdit, onStatus }: { place: AnyRecord; onEdit: ()
       {place.description ? <p className="mt-4 rounded-lg bg-slate-50 p-3 text-sm font-medium leading-relaxed text-slate-600">{place.description}</p> : null}
       {place.tags?.length ? (
         <div className="mt-4 flex flex-wrap gap-2">
-          {place.tags.map((tag: string) => <span key={tag} className="rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-caramel">#{tag}</span>)}
+          {place.tags.map((tag: string) => <span key={tag} className="rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-caramel">#{tagLabel[tag] ?? tag}</span>)}
         </div>
       ) : null}
       {place.amenities?.length ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          {place.amenities.map((item: string) => <span key={item} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{item}</span>)}
+          {place.amenities.map((item: string) => <span key={item} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{amenityLabel[item] ?? item}</span>)}
         </div>
       ) : null}
       <div className="mt-5 flex flex-wrap gap-2">

@@ -77,13 +77,13 @@ export function MatchesPage() {
   };
 
   const cancelMatch = async (match: Match) => {
-    if (!window.confirm("Ban co chac muon huy match nay?")) return;
+    if (!window.confirm("Bạn có chắc muốn hủy match này?")) return;
     try {
       await api.post(`/matches/${match._id}/cancel`);
-      setMessage("Da huy match.");
+      setMessage("Đã hủy match.");
       await load();
     } catch (e: any) {
-      setMessage(e.response?.data?.message ?? "Khong huy duoc match.");
+      setMessage(e.response?.data?.message ?? "Không hủy được match.");
     }
   };
   if (loading) return <div className="p-6"><StateBlock title="Đang tải match" /></div>;

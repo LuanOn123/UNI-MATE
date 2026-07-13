@@ -4,7 +4,7 @@ import {
   adminMatches,
   adminPlaces,
   adminReports,
-  adminTags,
+  adminReportDetail,
   adminUserDetail,
   adminUsers,
   createAdminUser,
@@ -14,8 +14,7 @@ import {
   updateAdminUser,
   updateReport,
   updateUserStatus,
-  upsertPlace,
-  upsertTag
+  upsertPlace
 } from "../controllers/admin.controller.js";
 import { requireAdmin, requireAuth } from "../middlewares/auth.js";
 
@@ -28,6 +27,7 @@ adminRouter.get("/users/:userId", adminUserDetail);
 adminRouter.put("/users/:userId", updateAdminUser);
 adminRouter.patch("/users/:userId/status", updateUserStatus);
 adminRouter.get("/reports", adminReports);
+adminRouter.get("/reports/:reportId", adminReportDetail);
 adminRouter.patch("/reports/:reportId", updateReport);
 adminRouter.get("/matches", adminMatches);
 adminRouter.get("/places", adminPlaces);
@@ -35,9 +35,6 @@ adminRouter.get("/places-cache", adminPlaces);
 adminRouter.put("/places/:placeId", upsertPlace);
 adminRouter.delete("/places/:placeId", deletePlace);
 adminRouter.patch("/places/:placeId/status", hidePlace);
-adminRouter.get("/tags", adminTags);
-adminRouter.post("/tags", upsertTag);
-adminRouter.put("/tags/:tagId", upsertTag);
 adminRouter.get("/actions", adminActions);
 adminRouter.get("/analytics", dashboard);
 adminRouter.get("/settings", (_req, res) => res.json({ settings: { moderation: true, cafeGateRequired: true, admin2faRequired: true } }));

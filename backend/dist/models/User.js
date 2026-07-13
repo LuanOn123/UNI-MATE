@@ -36,6 +36,8 @@ const userSchema = new Schema({
     twoFactorEnabled: { type: Boolean, default: false },
     role: { type: String, enum: ["user", "admin", "partner"], default: "user" },
     status: { type: String, enum: ["active", "suspended", "banned"], default: "active" },
+    warningCount: { type: Number, default: 0, min: 0 },
+    suspendedUntil: Date,
     displayName: { type: String, trim: true },
     birthDate: Date,
     age: Number,

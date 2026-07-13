@@ -3,6 +3,7 @@ import { z } from "zod";
 import { env } from "../config/env.js";
 import { EmailOtp } from "../models/EmailOtp.js";
 import { User } from "../models/User.js";
+import { restoreExpiredSuspension } from "../utils/accountStatus.js";
 import { signAccessToken, signPasswordResetToken, signRefreshToken, verifyPasswordResetToken, verifyRefreshToken } from "../utils/jwt.js";
 import { canSendRealEmail, sendOtpEmail } from "./email.service.js";
 const emailSchema = z.string().email().transform((email) => email.toLowerCase().trim());
@@ -86,6 +87,7 @@ export async function loginWithPassword(emailInput, password) {
     const user = await User.findOne({ email });
     if (!user || !user.passwordHash)
         throw serviceError("Invalid email or password", 401);
+    await restoreExpiredSuspension(user);
     if (user.status === "banned" || user.status === "suspended" || user.isActive === false) {
         throw serviceError("Account is locked", 403);
     }
@@ -121,6 +123,7 @@ export async function verifyEmailOtp(emailInput, otpInput) {
     const user = await User.findOne({ email });
     if (!user)
         throw serviceError("User not found", 404);
+    await restoreExpiredSuspension(user);
     if (user.status === "banned" || user.status === "suspended" || user.isActive === false) {
         throw serviceError("Account is locked", 403);
     }
@@ -157,6 +160,7 @@ export async function verifyPasswordResetOtp(emailInput, otpInput) {
     if (!user || !user.passwordHash) {
         throw serviceError("Không tìm thấy tài khoản cần đổi mật khẩu", 404);
     }
+    await restoreExpiredSuspension(user);
     if (user.status === "banned" || user.status === "suspended" || user.isActive === false) {
         throw serviceError("Tài khoản đang bị khóa", 403);
     }
@@ -176,8 +180,13 @@ export async function resetPasswordWithToken(resetToken, newPassword) {
     if (!user || user.email !== payload.email || !user.passwordHash) {
         throw serviceError("Không tìm thấy tài khoản cần đổi mật khẩu", 404);
     }
+    await restoreExpiredSuspension(user);
     if (user.status === "banned" || user.status === "suspended" || user.isActive === false) {
         throw serviceError("Tài khoản đang bị khóa", 403);
+    }
+    const sameAsOldPassword = await bcrypt.compare(newPassword, user.passwordHash);
+    if (sameAsOldPassword) {
+        throw serviceError("Mật khẩu mới không được trùng với mật khẩu cũ.", 400);
     }
     user.passwordHash = await bcrypt.hash(newPassword, 10);
     user.refreshTokenHash = undefined;
@@ -195,6 +204,7 @@ export async function refreshToken(token) {
         throw serviceError("Invalid refresh token", 401);
     }
     const user = await User.findById(payload.userId);
+    await restoreExpiredSuspension(user);
     if (!user || user.status === "banned" || user.status === "suspended" || user.isActive === false) {
         throw serviceError("Invalid user", 403);
     }

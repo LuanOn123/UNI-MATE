@@ -1,4 +1,4 @@
-import { Bell, Coffee, Compass, Eye, Heart, HeartHandshake, MessageCircle, Store, User, Users, X } from "lucide-react";
+import { Bell, Coffee, Compass, Eye, Heart, HeartHandshake, LogOut, MessageCircle, Store, Ticket, User, Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { CoffeeMeter } from "../components/common/CoffeeMeter";
@@ -14,6 +14,7 @@ const nav = [
   { to: "/app/chat", label: "Chat", icon: MessageCircle },
   { to: "/app/groups", label: "Nhóm", icon: Users },
   { to: "/app/places", label: "Quán", icon: Store },
+  { to: "/app/vouchers", label: "Ví ưu đãi", icon: Ticket },
   { to: "/app/profile", label: "Hồ sơ", icon: User }
 ];
 
@@ -31,6 +32,7 @@ function idOf(user?: Partial<UserType> | null) {
 export function AppLayout() {
   const user = useAuthStore((s) => s.user);
   const fetchMe = useAuthStore((s) => s.fetchMe);
+  const logout = useAuthStore((s) => s.logout);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [toast, setToast] = useState<NotificationItem | null>(null);
@@ -74,6 +76,11 @@ export function AppLayout() {
       socket.off("notification:new", onNotification);
     };
   }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/auth", { replace: true });
+  };
 
   const markAllRead = async () => {
     setNotifications((items) => items.map((item) => ({ ...item, readAt: item.readAt ?? new Date().toISOString() })));
@@ -171,6 +178,11 @@ export function AppLayout() {
         >
           <Compass className="h-5 w-5" /> An toàn
         </NavLink> : null}
+        {isPartner ? (
+          <button type="button" onClick={handleLogout} className="mt-auto hidden items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50 md:flex">
+            <LogOut className="h-5 w-5" /> Đăng xuất
+          </button>
+        ) : null}
       </aside>
       <main className="safe-bottom md:ml-64 md:min-h-screen md:pb-0">
         <Outlet />
@@ -185,6 +197,15 @@ export function AppLayout() {
         {unread ? <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-caramel px-1 text-xs font-black text-white">{unread}</span> : null}
       </button>
 
+      {isPartner ? (
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="fixed left-4 top-4 z-40 inline-flex h-12 items-center gap-2 rounded-full bg-white px-4 text-sm font-black text-rose-600 shadow-soft md:hidden"
+        >
+          <LogOut className="h-5 w-5" /> Đăng xuất
+        </button>
+      ) : null}
       {drawerOpen ? (
         <div className="fixed inset-0 z-50 bg-cocoa/35 backdrop-blur-sm" onClick={() => setDrawerOpen(false)}>
           <aside className="ml-auto flex h-full w-full max-w-md flex-col bg-white shadow-soft" onClick={(event) => event.stopPropagation()}>

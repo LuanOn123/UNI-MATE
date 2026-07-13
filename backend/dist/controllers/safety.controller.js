@@ -4,13 +4,21 @@ import { Report } from "../models/Report.js";
 import { User } from "../models/User.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 export const reportUser = asyncHandler(async (req, res) => {
+    if (req.body.room) {
+        const room = await ChatRoom.findOne({ _id: req.body.room, users: { $all: [req.user.id, req.body.reportedUser] } });
+        if (!room)
+            return res.status(400).json({ message: "Invalid chat room for this report" });
+    }
     const report = await Report.create({
         reporter: req.user.id,
         reportedUser: req.body.reportedUser,
         match: req.body.match,
+        room: req.body.room,
         message: req.body.message,
         reason: req.body.reason,
-        details: req.body.details
+        details: req.body.details,
+        incidentAt: req.body.incidentAt ? new Date(req.body.incidentAt) : undefined,
+        evidenceUrls: req.body.evidenceUrls ?? []
     });
     const uniqueReporters = await Report.distinct("reporter", { reportedUser: req.body.reportedUser });
     if (uniqueReporters.length >= 3) {
