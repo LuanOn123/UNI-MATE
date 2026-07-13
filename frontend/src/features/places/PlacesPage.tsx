@@ -9,6 +9,35 @@ import type { Place } from "../../types";
 
 type VibeFilter = "ALL" | "quiet_study" | "acoustic_view" | "boardgame_lively";
 
+const tagLabels: Record<string, string> = {
+  quiet: "Yên tĩnh",
+  study: "Học bài",
+  work_friendly: "Làm việc",
+  chill: "Chill",
+  acoustic: "Nhạc acoustic",
+  view: "View đẹp",
+  photo_spot: "Chụp ảnh",
+  boardgame: "Boardgame",
+  group_friendly: "Đi nhóm",
+  date_friendly: "Hẹn gặp"
+};
+
+const amenityLabels: Record<string, string> = {
+  wifi: "Wifi",
+  power: "Ổ cắm",
+  parking: "Gửi xe",
+  air_con: "Máy lạnh",
+  pet_friendly: "Cho thú cưng",
+  outdoor_seating: "Chỗ ngồi ngoài trời"
+};
+
+const priceLabels: Record<string, string> = {
+  $: "Dưới 30k",
+  $$: "30k - 60k",
+  $$$: "60k - 100k",
+  $$$$: "Trên 100k"
+};
+
 export function PlacesPage() {
   const [places, setPlaces] = useState<Place[]>([]);
   const [query, setQuery] = useState("");
@@ -37,7 +66,10 @@ export function PlacesPage() {
         place.district,
         place.cafeVibe,
         place.partnerName,
-        ...(place.tags ?? [])
+        ...(place.tags ?? []),
+        ...(place.tags ?? []).map((tag) => tagLabels[tag]),
+        ...(place.amenities ?? []),
+        ...(place.amenities ?? []).map((item) => amenityLabels[item])
       ]
         .filter(Boolean)
         .join(" ")
@@ -62,11 +94,11 @@ export function PlacesPage() {
   const getVibeLabel = (vibe?: string) => {
     switch (vibe) {
       case "quiet_study":
-        return "Yên tĩnh học bài";
+        return "Học tập & làm việc";
       case "acoustic_view":
-        return "Acoustic & View chill";
+        return "Trò chuyện & chill";
       case "boardgame_lively":
-        return "Boardgame & Nhóm";
+        return "Nhóm bạn & boardgame";
       default:
         return "Quán cà phê";
     }
@@ -145,7 +177,7 @@ export function PlacesPage() {
           }`}
         >
           <BookOpen className="h-4 w-4" />
-          Yên tĩnh học bài
+          Học tập & làm việc
         </button>
         <button
           onClick={() => setActiveVibe("acoustic_view")}
@@ -156,7 +188,7 @@ export function PlacesPage() {
           }`}
         >
           <Music className="h-4 w-4" />
-          Acoustic & View chill
+          Trò chuyện & chill
         </button>
         <button
           onClick={() => setActiveVibe("boardgame_lively")}
@@ -167,7 +199,7 @@ export function PlacesPage() {
           }`}
         >
           <Gamepad2 className="h-4 w-4" />
-          Boardgame & Nhóm
+          Nhóm bạn & boardgame
         </button>
       </div>
 
@@ -240,7 +272,7 @@ export function PlacesPage() {
                       </h3>
                       {place.priceLevel && (
                         <span className="shrink-0 font-black text-sm text-caramel/90 bg-cream px-2 py-0.5 rounded-md">
-                          {place.priceLevel}
+                          {priceLabels[place.priceLevel] ?? place.priceLevel}
                         </span>
                       )}
                     </div>
@@ -266,7 +298,7 @@ export function PlacesPage() {
                           key={tag}
                           className="rounded-lg bg-cream px-2.5 py-1 text-xs font-bold text-coffee/80"
                         >
-                          {tag}
+                          {tagLabels[tag] ?? tag}
                         </span>
                       ))}
                       {place.tags.length > 3 && (

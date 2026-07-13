@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { adminActions, adminMatches, adminPlaces, adminReports, adminTags, adminUserDetail, adminUsers, createAdminUser, dashboard, deletePlace, hidePlace, updateAdminUser, updateReport, updateUserStatus, upsertPlace, upsertTag } from "../controllers/admin.controller.js";
+import { adminActions, adminMatches, adminPlaces, adminReports, adminReportDetail, adminTags, adminUserDetail, adminUsers, createAdminUser, dashboard, deletePlace, hidePlace, updateAdminUser, updateReport, updateUserStatus, upsertPlace, upsertTag } from "../controllers/admin.controller.js";
 import { requireAdmin, requireAuth } from "../middlewares/auth.js";
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireAdmin);
@@ -10,6 +10,7 @@ adminRouter.get("/users/:userId", adminUserDetail);
 adminRouter.put("/users/:userId", updateAdminUser);
 adminRouter.patch("/users/:userId/status", updateUserStatus);
 adminRouter.get("/reports", adminReports);
+adminRouter.get("/reports/:reportId", adminReportDetail);
 adminRouter.patch("/reports/:reportId", updateReport);
 adminRouter.get("/matches", adminMatches);
 adminRouter.get("/places", adminPlaces);

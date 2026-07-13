@@ -1,11 +1,14 @@
 import { Router } from "express";
-import { getMyPartnerRegistration, getPlace, getPlaceVouchers, listPlaces, registerPartnerPlace } from "../controllers/places.controller.js";
+import { getMyPartnerRegistration, getPlace, getPlaceVouchers, getSavedVouchers, listPlaces, registerPartnerPlace, saveVoucher } from "../controllers/places.controller.js";
 import { requireAuth } from "../middlewares/auth.js";
 
 export const placesRouter = Router();
 placesRouter.use(requireAuth);
 placesRouter.get("/", listPlaces);
 placesRouter.get("/my-partner-registration", getMyPartnerRegistration);
+placesRouter.get("/saved-vouchers", getSavedVouchers);
 placesRouter.post("/partner-register", registerPartnerPlace);
+placesRouter.patch("/:placeId/vouchers/:voucherId/save", saveVoucher);
+placesRouter.post("/:placeId/vouchers/:voucherId/save", saveVoucher);
 placesRouter.get("/:placeId", getPlace);
 placesRouter.get("/:placeId/vouchers", getPlaceVouchers);

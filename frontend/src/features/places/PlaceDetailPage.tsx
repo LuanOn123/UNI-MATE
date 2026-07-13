@@ -24,11 +24,42 @@ import { Button } from "../../components/ui/Button";
 import { api } from "../../lib/api";
 import type { Place } from "../../types";
 
+const tagLabels: Record<string, string> = {
+  quiet: "Yên tĩnh",
+  study: "Học bài",
+  work_friendly: "Làm việc",
+  chill: "Chill",
+  acoustic: "Nhạc acoustic",
+  view: "View đẹp",
+  photo_spot: "Chụp ảnh",
+  boardgame: "Boardgame",
+  group_friendly: "Đi nhóm",
+  date_friendly: "Hẹn gặp"
+};
+
+const amenityLabels: Record<string, string> = {
+  wifi: "Wifi",
+  power: "Ổ cắm",
+  parking: "Gửi xe",
+  air_con: "Máy lạnh",
+  pet_friendly: "Cho thú cưng",
+  outdoor_seating: "Chỗ ngồi ngoài trời"
+};
+
+const priceLabels: Record<string, string> = {
+  $: "Dưới 30k/người",
+  $$: "30k - 60k/người",
+  $$$: "60k - 100k/người",
+  $$$$: "Trên 100k/người"
+};
+
 export function PlaceDetailPage() {
   const { placeId } = useParams();
   const [place, setPlace] = useState<Place | null>(null);
   const [vouchers, setVouchers] = useState<any[]>([]);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [savingVoucherId, setSavingVoucherId] = useState<string | null>(null);
+  const [voucherError, setVoucherError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,10 +71,21 @@ export function PlaceDetailPage() {
     ]).finally(() => setLoading(false));
   }, [placeId]);
 
-  const handleCopyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(null), 2500);
+  const handleSaveVoucher = async (voucher: any) => {
+    if (!place?._id || !voucher?._id) return;
+    setSavingVoucherId(voucher._id);
+    setVoucherError("");
+    try {
+      await api.post(`/places/${place._id}/vouchers/${voucher._id}/save`);
+      await navigator.clipboard.writeText(voucher.code);
+      setCopiedCode(voucher.code);
+      setVouchers((items) => items.map((item) => item._id === voucher._id ? { ...item, savedByMe: true, currentUsageCount: (item.currentUsageCount ?? 0) + 1 } : item));
+      setTimeout(() => setCopiedCode(null), 2500);
+    } catch (e: any) {
+      setVoucherError(e.response?.data?.message ?? "Không lưu được voucher. Vui lòng thử lại.");
+    } finally {
+      setSavingVoucherId(null);
+    }
   };
 
   const getAmenityIcon = (name: string) => {
@@ -155,7 +197,7 @@ export function PlaceDetailPage() {
               </div>
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-coffee/50">Mức giá trung bình</p>
-                <p className="mt-0.5 text-base font-bold text-coffee">{place.priceLevel ?? "$$"}</p>
+                <p className="mt-0.5 text-base font-bold text-coffee">{priceLabels[place.priceLevel ?? "$$"] ?? "30k - 60k/người"}</p>
               </div>
             </div>
 
@@ -167,11 +209,11 @@ export function PlaceDetailPage() {
                 <p className="text-xs font-bold uppercase tracking-wider text-coffee/50">Phong cách không gian</p>
                 <p className="mt-0.5 text-base font-bold text-coffee">
                   {place.cafeVibe === "quiet_study"
-                    ? "Yên tĩnh học bài"
+                    ? "Học tập & làm việc"
                     : place.cafeVibe === "acoustic_view"
-                    ? "Acoustic & View chill"
+                    ? "Trò chuyện & chill"
                     : place.cafeVibe === "boardgame_lively"
-                    ? "Boardgame & Nhóm"
+                    ? "Nhóm bạn & boardgame"
                     : "Quán cà phê"}
                 </p>
               </div>
@@ -192,7 +234,7 @@ export function PlaceDetailPage() {
                     className="inline-flex items-center gap-2 rounded-xl border border-coffee/10 bg-cream/80 px-4 py-2 text-sm font-bold text-coffee"
                   >
                     {getAmenityIcon(item)}
-                    <span>{item}</span>
+                    <span>{amenityLabels[item] ?? item}</span>
                   </span>
                 ))}
               </div>
@@ -209,7 +251,7 @@ export function PlaceDetailPage() {
                     key={tag}
                     className="rounded-xl bg-latte/60 border border-caramel/20 px-3.5 py-1.5 text-sm font-bold text-cocoa"
                   >
-                    #{tag}
+                    #{tagLabels[tag] ?? tag}
                   </span>
                 ))}
               </div>
@@ -226,14 +268,17 @@ export function PlaceDetailPage() {
                   </div>
                   <div>
                     <h2 className="text-xl font-black text-coffee">Ưu đãi độc quyền cho sinh viên UNI-MATE</h2>
-                    <p className="text-xs font-semibold text-coffee/65">Xuất trình mã giảm giá này tại quầy thu ngân</p>
+                    <p className="text-xs font-semibold text-coffee/65">Lưu mã vào ví và xuất trình tại quầy thu ngân</p>
                   </div>
                 </div>
               </div>
+              {voucherError ? <p className="mb-4 rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{voucherError}</p> : null}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 {vouchers.map((v) => {
                   const isCopied = copiedCode === v.code;
+                  const isSaved = Boolean(v.savedByMe);
+                  const isSaving = savingVoucherId === v._id;
                   return (
                     <div
                       key={v._id}
@@ -259,22 +304,25 @@ export function PlaceDetailPage() {
                           {v.code}
                         </div>
                         <button
-                          onClick={() => handleCopyCode(v.code)}
+                          onClick={() => handleSaveVoucher(v)}
+                          disabled={isSaving}
                           className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition ${
-                            isCopied
+                            isSaved || isCopied
                               ? "bg-emerald-600 text-white shadow-sm"
                               : "bg-coffee text-white hover:bg-caramel"
                           }`}
                         >
-                          {isCopied ? (
+                          {isSaving ? (
+                            "Đang lưu..."
+                          ) : isSaved || isCopied ? (
                             <>
                               <Check className="h-3.5 w-3.5" />
-                              Đã chép mã
+                              Đã lưu
                             </>
                           ) : (
                             <>
                               <Copy className="h-3.5 w-3.5" />
-                              Copy mã
+                              Lưu mã
                             </>
                           )}
                         </button>

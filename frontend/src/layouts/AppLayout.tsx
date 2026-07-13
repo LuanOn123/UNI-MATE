@@ -1,4 +1,4 @@
-import { Bell, Coffee, Compass, Eye, Heart, HeartHandshake, MessageCircle, Store, User, Users, X } from "lucide-react";
+import { Bell, Coffee, Compass, Eye, Heart, HeartHandshake, MessageCircle, Store, Ticket, User, Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { CoffeeMeter } from "../components/common/CoffeeMeter";
@@ -14,6 +14,7 @@ const nav = [
   { to: "/app/chat", label: "Chat", icon: MessageCircle },
   { to: "/app/groups", label: "Nhóm", icon: Users },
   { to: "/app/places", label: "Quán", icon: Store },
+  { to: "/app/vouchers", label: "Ví ưu đãi", icon: Ticket },
   { to: "/app/profile", label: "Hồ sơ", icon: User }
 ];
 
