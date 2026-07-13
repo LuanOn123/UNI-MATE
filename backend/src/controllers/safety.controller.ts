@@ -33,3 +33,21 @@ export const blockUser = asyncHandler(async (req: Request, res: Response) => {
   await ChatRoom.updateMany({ match: { $in: matchIds } }, { status: "blocked" });
   res.json({ message: "User blocked" });
 });
+
+export const unblockUser = asyncHandler(async (req: Request, res: Response) => {
+  const currentUserId = req.user!.id;
+  const targetUserId = req.body.targetUserId;
+  await User.findByIdAndUpdate(currentUserId, { $pull: { blockedUsers: targetUserId } });
+
+  const target = await User.findById(targetUserId).select("blockedUsers");
+  const targetStillBlocksMe = (target?.blockedUsers ?? []).map(String).includes(currentUserId);
+  const matches = await Match.find({ users: { $all: [currentUserId, targetUserId] } });
+  const matchIds = matches.map((match) => match._id);
+
+  if (!targetStillBlocksMe && matchIds.length) {
+    await Match.updateMany({ _id: { $in: matchIds }, status: "blocked" }, { status: "chat_opened" });
+    await ChatRoom.updateMany({ match: { $in: matchIds }, status: "blocked" }, { status: "active" });
+  }
+
+  res.json({ message: targetStillBlocksMe ? "Đã bỏ chặn, nhưng người kia vẫn đang chặn bạn." : "Đã bỏ chặn người dùng." });
+});

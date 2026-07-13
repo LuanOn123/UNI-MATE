@@ -76,6 +76,16 @@ export function MatchesPage() {
     }
   };
 
+  const cancelMatch = async (match: Match) => {
+    if (!window.confirm("Ban co chac muon huy match nay?")) return;
+    try {
+      await api.post(`/matches/${match._id}/cancel`);
+      setMessage("Da huy match.");
+      await load();
+    } catch (e: any) {
+      setMessage(e.response?.data?.message ?? "Khong huy duoc match.");
+    }
+  };
   if (loading) return <div className="p-6"><StateBlock title="Đang tải match" /></div>;
   if (!matches.length && !incomingLikes.length) return <div className="p-6"><StateBlock title="Chưa có match" text="Bật GPS thật và like người hợp gu ở Discovery để bắt đầu chat." /></div>;
 
@@ -150,6 +160,11 @@ export function MatchesPage() {
                     {opened ? "Vào chat" : "Mở danh sách chat"}
                   </Button>
                 </Link>
+                {!['cancelled', 'blocked', 'expired'].includes(match.status) ? (
+                  <Button className="mt-2 w-full" variant="ghost" icon={<X />} onClick={() => cancelMatch(match)}>
+                    Huy match
+                  </Button>
+                ) : null}
               </div>
             </motion.div>
           );

@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import { AdminAction } from "../models/AdminAction.js";
-import { ChatRoom } from "../models/ChatRoom.js";
 import { Match } from "../models/Match.js";
 import { PlaceCache } from "../models/PlaceCache.js";
 import { Report } from "../models/Report.js";
@@ -27,17 +27,19 @@ function validateOpeningHours(value) {
         return "Giờ đóng cửa phải sau giờ mở cửa.";
     return "";
 }
+function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 export const dashboard = asyncHandler(async (_req, res) => {
-    const [users, newUsers, matches, confirmed, reports, places, rooms] = await Promise.all([
+    const [users, newUsers, matches, confirmed, reports, places] = await Promise.all([
         User.countDocuments(),
         User.countDocuments({ createdAt: { $gte: new Date(Date.now() - 7 * 24 * 3600 * 1000) } }),
         Match.countDocuments(),
         Match.countDocuments({ status: { $in: ["cafe_confirmed", "chat_opened"] } }),
         Report.countDocuments({ status: "new" }),
-        PlaceCache.countDocuments({ status: "active" }),
-        ChatRoom.countDocuments({ status: "active" })
+        PlaceCache.countDocuments({ status: "active" })
     ]);
-    res.json({ stats: { users, newUsers, matches, confirmed, newReports: reports, activePlaces: places, activeRooms: rooms } });
+    res.json({ stats: { users, newUsers, matches, confirmed, newReports: reports, activePlaces: places } });
 });
 export const adminUsers = asyncHandler(async (req, res) => {
     const query = {};
@@ -166,8 +168,28 @@ export const updateReport = asyncHandler(async (req, res) => {
     await audit(req, `report_${action}`, "report", req.params.reportId, reason ?? note);
     res.json({ report });
 });
-export const adminMatches = asyncHandler(async (_req, res) => {
-    res.json({ matches: await Match.find().populate("users selectedPlace chatRoom").sort({ createdAt: -1 }).limit(100) });
+export const adminMatches = asyncHandler(async (req, res) => {
+    const query = {};
+    if (req.query.status)
+        query.status = req.query.status;
+    if (req.query.q) {
+        const q = String(req.query.q).trim();
+        const regex = new RegExp(escapeRegex(q), "i");
+        const [users, places] = await Promise.all([
+            User.find({ $or: [{ email: regex }, { displayName: regex }] }).select("_id"),
+            PlaceCache.find({ $or: [{ name: regex }, { address: regex }] }).select("_id")
+        ]);
+        const or = [
+            { users: { $in: users.map((user) => user._id) } },
+            { selectedPlace: { $in: places.map((place) => place._id) } }
+        ];
+        if (mongoose.Types.ObjectId.isValid(q))
+            or.push({ _id: new mongoose.Types.ObjectId(q) });
+        if (["matched", "cafe_proposed", "cafe_confirmed", "chat_opened", "expired", "blocked", "cancelled"].includes(q))
+            or.push({ status: q });
+        query.$or = or;
+    }
+    res.json({ matches: await Match.find(query).populate("users selectedPlace chatRoom").sort({ createdAt: -1 }).limit(100) });
 });
 export const adminPlaces = asyncHandler(async (req, res) => {
     const query = {};

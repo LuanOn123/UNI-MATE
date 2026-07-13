@@ -1,4 +1,4 @@
-import { Ban, CheckCircle, Coffee, ExternalLink, Eye, Flag, History, MapPin, Plus, Save, Search, ShieldAlert, Tags, UserRound, Users } from "lucide-react";
+import { Ban, CheckCircle, Coffee, ExternalLink, Eye, Flag, MapPin, Plus, Save, Search, ShieldAlert, Tags, UserRound, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -46,7 +46,6 @@ export function AdminDashboardPage() {
     ["confirmed", "Đã chốt quán", CheckCircle],
     ["newReports", "Report mới", Flag],
     ["activePlaces", "Quán active", Coffee],
-    ["activeRooms", "Chat active", History]
   ];
   return (
     <AdminPageShell eyebrow="Overview" title="Dashboard vận hành">
@@ -648,9 +647,29 @@ export function AdminAuditPage() {
 
 export function AdminMatchesPage() {
   const [matches, setMatches] = useState<AnyRecord[]>([]);
-  useEffect(() => { api.get("/admin/matches").then((r) => setMatches(r.data.matches)); }, []);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("");
+  const load = () => api.get("/admin/matches", { params: { q: q || undefined, status: status || undefined } }).then((r) => setMatches(r.data.matches));
+  useEffect(() => { load(); }, []);
   return (
     <AdminPageShell eyebrow="Matches" title="Theo dõi matches">
+      <AdminToolbar>
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input className="pl-10" placeholder="Tim user, email, quan hoac ma match" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
+        </div>
+        <select className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="">Tat ca trang thai</option>
+          <option value="matched">Da match</option>
+          <option value="cafe_proposed">De xuat quan</option>
+          <option value="cafe_confirmed">Da chot quan</option>
+          <option value="chat_opened">Dang chat</option>
+          <option value="expired">Het han</option>
+          <option value="blocked">Da chan</option>
+          <option value="cancelled">Da huy</option>
+        </select>
+        <Button onClick={load}>Loc</Button>
+      </AdminToolbar>
       <AdminTable>
         <thead><tr><Th>Users</Th><Th>Status</Th><Th>Quán</Th><Th>Score</Th><Th>Created</Th></tr></thead>
         <tbody>{matches.map((m) => <tr key={m._id} className="border-t"><Td>{(m.users ?? []).map(displayUser).join(" ↔ ")}</Td><Td><StatusPill value={m.status} /></Td><Td>{m.selectedPlace?.name ?? "Chưa chọn"}</Td><Td>{m.score ?? 0}</Td><Td>{formatDate(m.createdAt)}</Td></tr>)}</tbody>

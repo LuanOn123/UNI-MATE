@@ -1,4 +1,4 @@
-import { Ban, Coffee, ExternalLink, Flag, MapPin, Send, Smile, UserCircle, Paperclip, FileText, Play } from "lucide-react";
+import { Ban, Coffee, ExternalLink, Flag, MapPin, Send, Smile, UserCircle, Paperclip, FileText, Unlock } from "lucide-react";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -71,7 +71,7 @@ export function ChatRoomPage() {
   const blockedByMe = blockState.blockedByMe;
   const blockedByOther = blockState.blockedByOther;
   const generallyBlocked = room?.status === "blocked" && !blockedByMe && !blockedByOther;
-  const inputDisabled = blockedByMe || generallyBlocked;
+  const inputDisabled = blockedByMe || blockedByOther || generallyBlocked;
 
   useEffect(() => {
     let mounted = true;
@@ -222,6 +222,15 @@ export function ChatRoomPage() {
     setComposerNote("");
   };
 
+  const unblock = async () => {
+    if (!partnerId) return;
+    const { data } = await api.post("/safety/unblock", { targetUserId: partnerId });
+    setBlockState((state) => ({ ...state, blockedByMe: false }));
+    if (!blockedByOther) setRoom((value) => value ? { ...value, status: "active" } : value);
+    setComposerNote("");
+    setNotice(data.message ?? "Đã bỏ chặn người dùng.");
+  };
+
   return (
     <div className="flex h-screen flex-col bg-[#f8efe5]">
       <header className="border-b border-coffee/10 bg-white/95 p-4 backdrop-blur">
@@ -247,7 +256,11 @@ export function ChatRoomPage() {
           </div>
           <div className="flex shrink-0 gap-2">
             <Button variant="ghost" icon={<Flag />} onClick={() => setReportOpen(true)} />
-            <Button variant="danger" icon={<Ban />} onClick={block} />
+            {blockedByMe ? (
+              <Button variant="ghost" icon={<Unlock />} onClick={unblock}>Bỏ chặn</Button>
+            ) : (
+              <Button variant="danger" icon={<Ban />} onClick={block} />
+            )}
           </div>
         </div>
       </header>
@@ -255,8 +268,11 @@ export function ChatRoomPage() {
       {notice ? <p className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-5xl rounded-lg bg-mint p-3 text-sm font-bold text-cocoa">{notice}</p> : null}
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-1 overflow-y-auto p-4">
         {blockedByMe ? (
-          <div className="my-3 flex justify-center">
+          <div className="my-3 flex justify-center gap-2">
             <span className="rounded-full bg-coffee/10 px-4 py-2 text-sm font-bold text-coffee">Bạn đã chặn người dùng này.</span>
+            <button type="button" onClick={unblock} className="rounded-full bg-white px-4 py-2 text-sm font-black text-caramel shadow-sm">
+              Bỏ chặn
+            </button>
           </div>
         ) : null}
         {generallyBlocked ? (
@@ -343,7 +359,7 @@ export function ChatRoomPage() {
               type="text"
               value={text}
               disabled={inputDisabled || uploading}
-              placeholder={uploading ? "Đang tải lên..." : blockedByMe ? "Bạn đã chặn người dùng này" : generallyBlocked ? "Chat đã khóa" : "Nhắn tin để chốt thời gian cafe"}
+              placeholder={uploading ? "Đang tải lên..." : blockedByMe ? "Bạn đã chặn người dùng này" : blockedByOther ? "Bạn đã bị chặn" : generallyBlocked ? "Chat đã khóa" : "Nhắn tin để chốt thời gian cafe"}
               onChange={(e) => {
                 setText(e.target.value);
                 setComposerNote("");
