@@ -11,6 +11,7 @@ import { MatchesPage } from "../features/matches/MatchesPage";
 import { OnboardingPage } from "../features/onboarding/OnboardingPage";
 import { PlaceDetailPage } from "../features/places/PlaceDetailPage";
 import { PlacesPage } from "../features/places/PlacesPage";
+import { SavedVouchersPage } from "../features/places/SavedVouchersPage";
 import { ProfilePage } from "../features/profile/ProfilePage";
 import { SettingsPage } from "../features/profile/SettingsPage";
 import { SafetyPage } from "../features/safety/SafetyPage";
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="chat/:roomId" element={<ChatRoomPage />} />
           <Route path="places" element={<PlacesPage />} />
           <Route path="places/:placeId" element={<PlaceDetailPage />} />
+          <Route path="vouchers" element={<SavedVouchersPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="safety" element={<SafetyPage />} />

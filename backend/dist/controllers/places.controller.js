@@ -29,9 +29,63 @@ export const getPlaceVouchers = asyncHandler(async (req, res) => {
     const vouchers = await Voucher.find({
         placeId: req.params.placeId,
         isActive: true,
-        expiresAt: { $gt: new Date() }
+        expiresAt: { $gt: new Date() },
+        $or: [
+            { maxUsageCount: 0 },
+            { $expr: { $lt: ["$currentUsageCount", "$maxUsageCount"] } }
+        ]
     }).sort({ discountPercent: -1 });
-    res.json({ vouchers });
+    const userId = req.user.id;
+    res.json({
+        vouchers: vouchers.map((voucher) => {
+            const data = voucher.toObject();
+            return {
+                ...data,
+                savedByMe: (data.savedBy ?? []).some((id) => String(id) === userId),
+                savedBy: undefined
+            };
+        })
+    });
+});
+export const getSavedVouchers = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const vouchers = await Voucher.find({ savedBy: userId })
+        .populate("placeId", "name address district city imageUrl status")
+        .sort({ updatedAt: -1 });
+    res.json({
+        vouchers: vouchers.map((voucher) => {
+            const data = voucher.toObject();
+            return {
+                ...data,
+                savedByMe: true,
+                savedBy: undefined
+            };
+        })
+    });
+});
+export const saveVoucher = asyncHandler(async (req, res) => {
+    const { placeId, voucherId } = req.params;
+    const userId = req.user.id;
+    const alreadySaved = await Voucher.findOne({ _id: voucherId, placeId, savedBy: userId });
+    if (alreadySaved)
+        return res.json({ voucher: alreadySaved, saved: true, alreadySaved: true });
+    const voucher = await Voucher.findOneAndUpdate({
+        _id: voucherId,
+        placeId,
+        isActive: true,
+        expiresAt: { $gt: new Date() },
+        savedBy: { $ne: userId },
+        $or: [
+            { maxUsageCount: 0 },
+            { $expr: { $lt: ["$currentUsageCount", "$maxUsageCount"] } }
+        ]
+    }, {
+        $addToSet: { savedBy: userId },
+        $inc: { currentUsageCount: 1 }
+    }, { new: true });
+    if (!voucher)
+        return res.status(400).json({ message: "Voucher đã hết lượt hoặc không còn khả dụng." });
+    res.json({ voucher, saved: true, alreadySaved: false });
 });
 /** POST /api/places/partner-register — Register a partner cafe */
 export const getMyPartnerRegistration = asyncHandler(async (req, res) => {
@@ -39,7 +93,7 @@ export const getMyPartnerRegistration = asyncHandler(async (req, res) => {
     res.json({ place });
 });
 export const registerPartnerPlace = asyncHandler(async (req, res) => {
-    const { name, address, description, cafeVibe, tags, amenities, openingHours, partnerName, city, district, lat, lng } = req.body;
+    const { name, address, streetAddress, ward, addressNote, mapPinNote, description, cafeVibe, priceLevel, tags, amenities, openingHours, partnerName, city, district, lat, lng } = req.body;
     if (!name?.trim())
         return res.status(400).json({ message: "Tên quán là bắt buộc." });
     if (!cafeVibe)
@@ -60,9 +114,14 @@ export const registerPartnerPlace = asyncHandler(async (req, res) => {
     const place = await PlaceCache.create({
         name: name.trim(),
         address,
+        streetAddress,
+        ward,
+        addressNote,
+        mapPinNote,
         description,
         city: city ?? "TP.HCM",
         district,
+        priceLevel: priceLevel ?? "$$",
         tags: tags ?? [],
         amenities: amenities ?? [],
         openingHours,
