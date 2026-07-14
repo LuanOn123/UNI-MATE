@@ -1,4 +1,4 @@
-import { Bell, Coffee, Compass, Eye, Heart, HeartHandshake, MessageCircle, Store, User, Users, X } from "lucide-react";
+import { Bell, Coffee, Compass, Eye, Heart, HeartHandshake, LogOut, MessageCircle, Store, User, Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { CoffeeMeter } from "../components/common/CoffeeMeter";
@@ -31,6 +31,7 @@ function idOf(user?: Partial<UserType> | null) {
 export function AppLayout() {
   const user = useAuthStore((s) => s.user);
   const fetchMe = useAuthStore((s) => s.fetchMe);
+  const logout = useAuthStore((s) => s.logout);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [toast, setToast] = useState<NotificationItem | null>(null);
@@ -171,19 +172,46 @@ export function AppLayout() {
         >
           <Compass className="h-5 w-5" /> An toàn
         </NavLink> : null}
+        {isPartner ? (
+          <button
+            type="button"
+            onClick={async () => {
+              await logout();
+              navigate("/auth", { replace: true });
+            }}
+            className="mt-auto hidden items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 md:flex"
+          >
+            <LogOut className="h-5 w-5" /> Đăng xuất
+          </button>
+        ) : null}
       </aside>
       <main className="safe-bottom md:ml-64 md:min-h-screen md:pb-0">
         <Outlet />
       </main>
 
-      <button
-        type="button"
-        onClick={() => setDrawerOpen(true)}
-        className="fixed right-4 top-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-white text-coffee shadow-soft md:hidden"
-      >
-        <Bell className={`h-5 w-5 ${ringing ? "bell-ring text-caramel" : ""}`} />
-        {unread ? <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-caramel px-1 text-xs font-black text-white">{unread}</span> : null}
-      </button>
+      <div className="fixed right-4 top-4 z-40 flex items-center gap-2 md:hidden">
+        {isPartner ? (
+          <button
+            type="button"
+            onClick={async () => {
+              await logout();
+              navigate("/auth", { replace: true });
+            }}
+            className="grid h-12 w-12 place-items-center rounded-full bg-white text-rose-600 shadow-soft"
+            title="Đăng xuất"
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          className="grid h-12 w-12 place-items-center rounded-full bg-white text-coffee shadow-soft"
+        >
+          <Bell className={`h-5 w-5 ${ringing ? "bell-ring text-caramel" : ""}`} />
+          {unread ? <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-caramel px-1 text-xs font-black text-white">{unread}</span> : null}
+        </button>
+      </div>
 
       {drawerOpen ? (
         <div className="fixed inset-0 z-50 bg-cocoa/35 backdrop-blur-sm" onClick={() => setDrawerOpen(false)}>

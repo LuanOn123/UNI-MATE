@@ -20,7 +20,14 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config;
-    if (error.response?.status === 401 && original && !original._retry && !original.url?.includes("/auth/refresh")) {
+    if (
+      error.response?.status === 401 &&
+      original &&
+      !original._retry &&
+      !original.url?.includes("/auth/refresh") &&
+      !original.url?.includes("/auth/login") &&
+      !original.url?.includes("/auth/register")
+    ) {
       original._retry = true;
       const refreshToken = useAuthStore.getState().refreshToken ?? undefined;
       try {

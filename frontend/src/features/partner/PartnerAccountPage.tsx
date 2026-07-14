@@ -1,10 +1,11 @@
-import { ArrowLeft, Building2, ImagePlus, RotateCcw, Save, Store } from "lucide-react";
+import { ArrowLeft, Building2, ImagePlus, LogOut, RotateCcw, Save, Store } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { api } from "../../lib/api";
+import { useAuthStore } from "../../stores/authStore";
 
 type PartnerPlace = {
   _id: string;
@@ -46,6 +47,7 @@ function placePayload(place: PartnerPlace) {
 
 export function PartnerAccountPage() {
   const navigate = useNavigate();
+  const logout = useAuthStore((s) => s.logout);
   const [places, setPlaces] = useState<PartnerPlace[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [form, setForm] = useState<PartnerPlace | null>(null);
@@ -154,6 +156,18 @@ export function PartnerAccountPage() {
           <Store className="mx-auto h-14 w-14 text-coffee/25" />
           <h1 className="mt-4 text-2xl font-black text-cocoa">Chưa có hồ sơ quán</h1>
           <p className="mt-2 text-sm font-semibold text-coffee/60">Bạn cần có quán được admin duyệt trước khi chỉnh hồ sơ đối tác.</p>
+          <div className="mt-6 flex justify-center">
+            <Button
+              variant="ghost"
+              onClick={async () => {
+                await logout();
+                navigate("/auth", { replace: true });
+              }}
+              icon={<LogOut className="h-4 w-4 text-rose-600" />}
+            >
+              <span className="text-rose-600 font-bold">Đăng xuất</span>
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -173,6 +187,16 @@ export function PartnerAccountPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            variant="ghost"
+            onClick={async () => {
+              await logout();
+              navigate("/auth", { replace: true });
+            }}
+            icon={<LogOut className="h-4 w-4 text-rose-600" />}
+          >
+            <span className="text-rose-600 font-bold">Đăng xuất</span>
+          </Button>
           <Button variant="ghost" onClick={() => navigate("/app/partner/dashboard")} icon={<ArrowLeft className="h-4 w-4" />}>
             Thoát
           </Button>

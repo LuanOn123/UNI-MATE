@@ -10,7 +10,13 @@ import { Input } from "../../components/ui/Input";
 import { useAuthStore } from "../../stores/authStore";
 import { AuthShell } from "./AuthShell";
 
-const schema = z.object({
+const baseSchema = z.object({
+  email: z.string().email("Email không hợp lệ"),
+  password: z.string().min(1, "Vui lòng nhập mật khẩu"),
+  confirmPassword: z.string().optional()
+});
+
+const registerSchema = z.object({
   email: z.string().email("Email không hợp lệ"),
   password: z.string()
     .min(8, "Mật khẩu tối thiểu 8 ký tự")
@@ -18,8 +24,16 @@ const schema = z.object({
     .regex(/[A-Z]/, "Mật khẩu cần có ít nhất 1 chữ hoa")
     .regex(/[0-9]/, "Mật khẩu cần có ít nhất 1 số"),
   confirmPassword: z.string().optional()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Mật khẩu xác nhận không khớp",
+  path: ["confirmPassword"]
 });
-type FormData = z.infer<typeof schema>;
+
+type FormData = {
+  email: string;
+  password: string;
+  confirmPassword?: string;
+};
 
 export function AuthPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -35,12 +49,7 @@ export function AuthPage() {
     return nextUser?.onboardingCompleted ? redirectTo || "/app/discovery" : "/onboarding";
   };
 
-  const formSchema = mode === "register"
-    ? schema.refine((data) => data.password === data.confirmPassword, {
-        message: "Mật khẩu xác nhận không khớp",
-        path: ["confirmPassword"]
-      })
-    : schema;
+  const formSchema = mode === "register" ? registerSchema : baseSchema;
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(formSchema) });
 

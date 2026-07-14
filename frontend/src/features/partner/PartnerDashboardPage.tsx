@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, Check, Clock, ImageIcon, MapPin, Plus, Store, Ticket, Trash2, X, XCircle } from "lucide-react";
+import { AlertTriangle, Check, Clock, ImageIcon, LogOut, MapPin, Plus, Store, Ticket, Trash2, X, XCircle } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { api } from "../../lib/api";
@@ -43,6 +44,8 @@ const vibeLabel: Record<string, string> = {
 };
 
 export function PartnerDashboardPage() {
+  const navigate = useNavigate();
+  const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
   const [place, setPlace] = useState<Place | null>(null);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -167,6 +170,18 @@ export function PartnerDashboardPage() {
           <Store className="mx-auto h-14 w-14 text-coffee/25" />
           <h1 className="mt-4 text-2xl font-black text-cocoa">Chưa có hồ sơ quán</h1>
           <p className="mt-2 text-sm font-semibold text-coffee/60">Dashboard sẽ mở sau khi quán được admin duyệt.</p>
+          <div className="mt-6 flex justify-center">
+            <Button
+              variant="ghost"
+              onClick={async () => {
+                await logout();
+                navigate("/auth", { replace: true });
+              }}
+              icon={<LogOut className="h-4 w-4 text-rose-600" />}
+            >
+              <span className="text-rose-600 font-bold">Đăng xuất</span>
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -174,10 +189,22 @@ export function PartnerDashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 pb-24 md:p-6">
-      <div className="flex flex-col gap-2">
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-caramel">Partner Dashboard</p>
-        <h1 className="text-3xl font-black text-cocoa">{place.name}</h1>
-        <p className="text-sm font-semibold text-coffee/60">Quản lý hồ sơ quán và ưu đãi hiển thị cho người dùng UNI-MATE.</p>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-caramel">Partner Dashboard</p>
+          <h1 className="text-3xl font-black text-cocoa">{place.name}</h1>
+          <p className="text-sm font-semibold text-coffee/60">Quản lý hồ sơ quán và ưu đãi hiển thị cho người dùng UNI-MATE.</p>
+        </div>
+        <Button
+          variant="ghost"
+          onClick={async () => {
+            await logout();
+            navigate("/auth", { replace: true });
+          }}
+          icon={<LogOut className="h-4 w-4 text-rose-600" />}
+        >
+          <span className="text-rose-600 font-bold">Đăng xuất</span>
+        </Button>
       </div>
 
       {error ? <p className="rounded-lg bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</p> : null}
