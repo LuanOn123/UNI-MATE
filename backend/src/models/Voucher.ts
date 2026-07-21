@@ -12,6 +12,7 @@ const voucherSchema = new Schema(
     terms: String,
     maxUsageCount: { type: Number, default: 0 }, // 0 means unlimited
     currentUsageCount: { type: Number, default: 0 },
+    savedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
     expiresAt: { type: Date, required: true },
     isActive: { type: Boolean, default: true }
   },

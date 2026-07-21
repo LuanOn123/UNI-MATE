@@ -1,4 +1,4 @@
-import { BarChart3, Coffee, Flag, History, LogOut, Settings, Tags, Users } from "lucide-react";
+import { BarChart3, Coffee, Flag, History, LogOut, Settings, Users } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/authStore";
 
@@ -8,7 +8,6 @@ const nav = [
   ["/admin/reports", "Báo cáo", Flag],
   ["/admin/matches", "Ghép đôi", Coffee],
   ["/admin/places", "Địa điểm", Coffee],
-  ["/admin/tags", "Thẻ", Tags],
   ["/admin/actions", "Nhật ký", History],
   ["/admin/settings", "Cài đặt", Settings]
 ] as const;

@@ -1,20 +1,37 @@
 import { ChatRoom } from "../models/ChatRoom.js";
 import { Match } from "../models/Match.js";
 import { Message } from "../models/Message.js";
+import { User } from "../models/User.js";
 import { createAndEmitNotification } from "../services/notification.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 export const listRooms = asyncHandler(async (req, res) => {
-    const rooms = await ChatRoom.find({ users: req.user.id }).populate("users place").sort({ lastMessageAt: -1 });
+    const rooms = await ChatRoom.find({ users: req.user.id, hiddenBy: { $ne: req.user.id } }).populate("users place").sort({ lastMessageAt: -1 });
     res.json({ rooms });
+});
+export const hideRoom = asyncHandler(async (req, res) => {
+    const room = await ChatRoom.findOneAndUpdate({ _id: req.params.roomId, users: req.user.id }, { $addToSet: { hiddenBy: req.user.id } }, { new: true });
+    if (!room)
+        return res.status(404).json({ message: "Room not found" });
+    res.json({ message: "Conversation removed from your chat list" });
 });
 export const getRoom = asyncHandler(async (req, res) => {
     const room = await ChatRoom.findOne({ _id: req.params.roomId, users: req.user.id }).populate("users place match");
     if (!room)
         return res.status(404).json({ message: "Room not found" });
     const match = await Match.findById(room.match);
-    if (match?.status !== "chat_opened")
+    const roomUserIds = room.users.map((user) => String(user?._id ?? user));
+    const partnerId = roomUserIds.find((userId) => userId !== req.user.id);
+    const [me, partner] = await Promise.all([
+        User.findById(req.user.id).select("blockedUsers"),
+        partnerId ? User.findById(partnerId).select("blockedUsers") : null
+    ]);
+    const blockState = {
+        blockedByMe: Boolean(partnerId && (me?.blockedUsers ?? []).map(String).includes(partnerId)),
+        blockedByOther: Boolean(partner && (partner.blockedUsers ?? []).map(String).includes(req.user.id))
+    };
+    if (match?.status !== "chat_opened" && match?.status !== "blocked")
         return res.status(403).json({ message: "Chat is locked until cafe is confirmed" });
-    if (room.status !== "active")
+    if (room.status !== "active" && room.status !== "blocked")
         return res.status(403).json({ message: "Chat is not active" });
     const messages = await Message.find({ room: room._id }).sort({ createdAt: 1 }).limit(100).populate("sender", "displayName avatarUrl");
     const normalizedMessages = messages.map((message) => {
@@ -22,7 +39,7 @@ export const getRoom = asyncHandler(async (req, res) => {
         const senderId = String(message.sender?._id ?? message.sender);
         return { ...plain, senderId, mine: senderId === req.user.id };
     });
-    res.json({ room, messages: normalizedMessages, currentUserId: req.user.id });
+    res.json({ room, messages: normalizedMessages, currentUserId: req.user.id, blockState });
 });
 export const sendMessage = asyncHandler(async (req, res) => {
     const room = await ChatRoom.findOne({ _id: req.params.roomId, users: req.user.id });
@@ -44,6 +61,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
     });
     room.lastMessage = req.body.type === "image" ? "[Hình ảnh]" : req.body.type === "video" ? "[Video]" : req.body.type === "file" ? "[Tập tin]" : req.body.text;
     room.lastMessageAt = new Date();
+    room.hiddenBy = [];
     await room.save();
     await message.populate("sender", "displayName avatarUrl");
     const plain = message.toObject();

@@ -207,6 +207,11 @@ export async function resetPasswordWithToken(resetToken: string, newPassword: st
     throw serviceError("Tài khoản đang bị khóa", 403);
   }
 
+  const sameAsOldPassword = await bcrypt.compare(newPassword, user.passwordHash);
+  if (sameAsOldPassword) {
+    throw serviceError("Mật khẩu mới không được trùng với mật khẩu cũ.", 400);
+  }
+
   user.passwordHash = await bcrypt.hash(newPassword, 10);
   user.refreshTokenHash = undefined;
   await user.save();

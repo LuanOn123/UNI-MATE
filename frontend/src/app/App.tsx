@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { AdminAuditPage, AdminDashboardPage, AdminMatchesPage, AdminPlacesPage, AdminReportsPage, AdminTagsPage, AdminUserDetailPage, AdminUsersPage } from "../features/admin/AdminPage";
+import { AdminAuditPage, AdminDashboardPage, AdminMatchesPage, AdminPlacesPage, AdminReportsPage, AdminUserDetailPage, AdminUsersPage } from "../features/admin/AdminPage";
 import { AuthPage } from "../features/auth/AuthPage";
 import { ForgotPasswordPage } from "../features/auth/ForgotPasswordPage";
 import { OtpPage } from "../features/auth/OtpPage";
@@ -11,6 +11,7 @@ import { MatchesPage } from "../features/matches/MatchesPage";
 import { OnboardingPage } from "../features/onboarding/OnboardingPage";
 import { PlaceDetailPage } from "../features/places/PlaceDetailPage";
 import { PlacesPage } from "../features/places/PlacesPage";
+import { SavedVouchersPage } from "../features/places/SavedVouchersPage";
 import { ProfilePage } from "../features/profile/ProfilePage";
 import { SettingsPage } from "../features/profile/SettingsPage";
 import { SafetyPage } from "../features/safety/SafetyPage";
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="chat/:roomId" element={<ChatRoomPage />} />
           <Route path="places" element={<PlacesPage />} />
           <Route path="places/:placeId" element={<PlaceDetailPage />} />
+          <Route path="vouchers" element={<SavedVouchersPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="safety" element={<SafetyPage />} />
@@ -88,7 +90,6 @@ export default function App() {
           <Route path="matches" element={<AdminMatchesPage />} />
           <Route path="places" element={<AdminPlacesPage />} />
           <Route path="places-cache" element={<AdminPlacesPage />} />
-          <Route path="tags" element={<AdminTagsPage />} />
           <Route path="actions" element={<AdminAuditPage />} />
           <Route path="analytics" element={<AdminDashboardPage />} />
           <Route path="settings" element={<AdminDashboardPage />} />

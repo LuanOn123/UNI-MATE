@@ -38,9 +38,22 @@ type Voucher = {
 };
 
 const vibeLabel: Record<string, string> = {
-  quiet_study: "Yên tĩnh học bài",
-  acoustic_view: "Acoustic / View đẹp",
-  boardgame_lively: "Boardgame / Náo nhiệt"
+  quiet_study: "Học tập & làm việc",
+  acoustic_view: "Trò chuyện & chill",
+  boardgame_lively: "Nhóm bạn & boardgame"
+};
+
+const tagLabel: Record<string, string> = {
+  quiet: "Yên tĩnh",
+  study: "Học bài",
+  work_friendly: "Làm việc",
+  chill: "Chill",
+  acoustic: "Nhạc acoustic",
+  view: "View đẹp",
+  photo_spot: "Chụp ảnh",
+  boardgame: "Boardgame",
+  group_friendly: "Đi nhóm",
+  date_friendly: "Hẹn gặp"
 };
 
 export function PartnerDashboardPage() {
@@ -58,9 +71,7 @@ export function PartnerDashboardPage() {
     title: "",
     description: "",
     discountPercent: 10,
-    minOrderValue: 0,
     maxUsageCount: 0,
-    terms: "",
     expiresAt: ""
   });
 
@@ -111,9 +122,13 @@ export function PartnerDashboardPage() {
     setActionLoading(true);
     setError("");
     try {
-      await api.post(`/partner/places/${place._id}/vouchers`, vForm);
+      await api.post(`/partner/places/${place._id}/vouchers`, {
+        ...vForm,
+        minOrderValue: 0,
+        terms: ""
+      });
       setShowVoucherModal(false);
-      setVForm({ code: "", title: "", description: "", discountPercent: 10, minOrderValue: 0, maxUsageCount: 0, terms: "", expiresAt: "" });
+      setVForm({ code: "", title: "", description: "", discountPercent: 10, maxUsageCount: 0, expiresAt: "" });
       await fetchVouchers(place._id);
     } catch (e: any) {
       setError(e.response?.data?.message ?? "Không tạo được voucher.");
@@ -250,7 +265,7 @@ export function PartnerDashboardPage() {
           </div>
           {place.description ? <p className="mt-5 rounded-lg bg-cream p-4 text-sm font-semibold leading-relaxed text-coffee/70">{place.description}</p> : null}
           <div className="mt-5 flex flex-wrap gap-2">
-            {(place.tags ?? []).map((tag) => <span key={tag} className="rounded-full bg-latte px-3 py-1 text-xs font-black text-cocoa">#{tag}</span>)}
+            {(place.tags ?? []).map((tag) => <span key={tag} className="rounded-full bg-latte px-3 py-1 text-xs font-black text-cocoa">#{tagLabel[tag] ?? tag}</span>)}
           </div>
         </section>
 
@@ -337,17 +352,9 @@ export function PartnerDashboardPage() {
                   <Field label="Giới hạn lượt">
                     <Input type="number" min="0" value={vForm.maxUsageCount} onChange={(e) => setVForm({ ...vForm, maxUsageCount: Number(e.target.value) })} />
                   </Field>
-                  <Field label="Đơn tối thiểu">
-                    <Input type="number" min="0" placeholder="0 = không yêu cầu" value={vForm.minOrderValue} onChange={(e) => setVForm({ ...vForm, minOrderValue: Number(e.target.value) })} />
-                  </Field>
                   <div className="md:col-span-2">
                     <Field label="Mô tả">
-                      <Input placeholder="Áp dụng cho hóa đơn từ 100k..." value={vForm.description} onChange={(e) => setVForm({ ...vForm, description: e.target.value })} />
-                    </Field>
-                  </div>
-                  <div className="md:col-span-2">
-                    <Field label="Điều kiện sử dụng">
-                      <Input placeholder="Ví dụ: Chỉ áp dụng khi đi theo match UNI-MATE" value={vForm.terms} onChange={(e) => setVForm({ ...vForm, terms: e.target.value })} />
+                      <Input placeholder="Ví dụ: Áp dụng cho sinh viên UNI-MATE khi đến quán." value={vForm.description} onChange={(e) => setVForm({ ...vForm, description: e.target.value })} />
                     </Field>
                   </div>
                 </div>

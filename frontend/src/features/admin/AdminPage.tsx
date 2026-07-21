@@ -1,4 +1,4 @@
-import { Ban, CheckCircle, Coffee, ExternalLink, Eye, Flag, History, Image, MapPin, MessageSquare, Plus, Save, Search, ShieldAlert, Tags, UserRound, Users, X } from "lucide-react";
+import { Ban, CheckCircle, Coffee, ExternalLink, Eye, Flag, Image, MapPin, MessageSquare, Plus, Save, Search, ShieldAlert, UserRound, Users, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -8,6 +8,34 @@ import { StateBlock } from "../../components/common/StateBlock";
 import { api } from "../../lib/api";
 
 type AnyRecord = Record<string, any>;
+
+const vibeLabel: Record<string, string> = {
+  quiet_study: "Học tập & làm việc",
+  acoustic_view: "Trò chuyện & chill",
+  boardgame_lively: "Nhóm bạn & boardgame"
+};
+
+const tagLabel: Record<string, string> = {
+  quiet: "Yên tĩnh",
+  study: "Học bài",
+  work_friendly: "Làm việc",
+  chill: "Chill",
+  acoustic: "Nhạc acoustic",
+  view: "View đẹp",
+  photo_spot: "Chụp ảnh",
+  boardgame: "Boardgame",
+  group_friendly: "Đi nhóm",
+  date_friendly: "Hẹn gặp"
+};
+
+const amenityLabel: Record<string, string> = {
+  wifi: "Wifi",
+  power: "Ổ cắm",
+  parking: "Gửi xe",
+  air_con: "Máy lạnh",
+  pet_friendly: "Cho thú cưng",
+  outdoor_seating: "Chỗ ngồi ngoài trời"
+};
 
 const emptyPlace = {
   name: "",
@@ -47,7 +75,6 @@ export function AdminDashboardPage() {
     ["confirmed", "Đã chốt quán", CheckCircle],
     ["newReports", "Report mới", Flag],
     ["activePlaces", "Quán active", Coffee],
-    ["activeRooms", "Chat active", History]
   ];
   return (
     <AdminPageShell eyebrow="Overview" title="Dashboard vận hành">
@@ -70,7 +97,7 @@ export function AdminDashboardPage() {
         <div className="mt-3 grid gap-3 text-sm font-medium text-slate-600 md:grid-cols-3">
           <p>1. Theo dõi KPI demo và report mới.</p>
           <p>2. Quản lý user: xem hồ sơ, suspend hoặc ban có lý do.</p>
-          <p>3. Quản lý quán, tags và audit log để bảo đảm dữ liệu sạch.</p>
+          <p>3. Quản lý quán và audit log để bảo đảm dữ liệu sạch.</p>
         </div>
       </section>
     </AdminPageShell>
@@ -766,37 +793,6 @@ export function AdminPlacesPage() {
   );
 }
 
-export function AdminTagsPage() {
-  const [tags, setTags] = useState<AnyRecord[]>([]);
-  const [name, setName] = useState("");
-  const [type, setType] = useState("cafe");
-  const [message, setMessage] = useState("");
-  const load = () => api.get("/admin/tags").then((r) => setTags(r.data.tags));
-  useEffect(() => { load(); }, []);
-  const save = async () => {
-    await api.post("/admin/tags", { name, type, status: "active" });
-    setName("");
-    setMessage("Đã thêm tag.");
-    load();
-  };
-  return (
-    <AdminPageShell eyebrow="Tags" title="Quản lý tags">
-      <Notice message={message} />
-      <AdminToolbar>
-        <Input placeholder="Tên tag" value={name} onChange={(e) => setName(e.target.value)} />
-        <select className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold" value={type} onChange={(e) => setType(e.target.value)}>
-          <option value="cafe">Cafe</option>
-          <option value="profile">Profile</option>
-        </select>
-        <Button icon={<Tags />} onClick={save} disabled={!name.trim()}>Thêm tag</Button>
-      </AdminToolbar>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {tags.map((tag) => <div key={tag._id} className="rounded-lg bg-white p-4 shadow-sm"><p className="font-black">{tag.name}</p><p className="text-sm text-slate-500">{tag.type} · {tag.status}</p></div>)}
-      </div>
-    </AdminPageShell>
-  );
-}
-
 export function AdminAuditPage() {
   const [actions, setActions] = useState<AnyRecord[]>([]);
   useEffect(() => { api.get("/admin/actions").then((r) => setActions(r.data.actions)); }, []);
@@ -812,9 +808,29 @@ export function AdminAuditPage() {
 
 export function AdminMatchesPage() {
   const [matches, setMatches] = useState<AnyRecord[]>([]);
-  useEffect(() => { api.get("/admin/matches").then((r) => setMatches(r.data.matches)); }, []);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("");
+  const load = () => api.get("/admin/matches", { params: { q: q || undefined, status: status || undefined } }).then((r) => setMatches(r.data.matches));
+  useEffect(() => { load(); }, []);
   return (
     <AdminPageShell eyebrow="Matches" title="Theo dõi matches">
+      <AdminToolbar>
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input className="pl-10" placeholder="Tìm user, email, quán hoặc mã match" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
+        </div>
+        <select className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="">Tất cả trạng thái</option>
+          <option value="matched">Đã match</option>
+          <option value="cafe_proposed">Đề xuất quán</option>
+          <option value="cafe_confirmed">Đã chốt quán</option>
+          <option value="chat_opened">Đang chat</option>
+          <option value="expired">Hết hạn</option>
+          <option value="blocked">Đã chặn</option>
+          <option value="cancelled">Đã hủy</option>
+        </select>
+        <Button onClick={load}>Lọc</Button>
+      </AdminToolbar>
       <AdminTable>
         <thead><tr><Th>Users</Th><Th>Status</Th><Th>Quán</Th><Th>Score</Th><Th>Created</Th></tr></thead>
         <tbody>{matches.map((m) => <tr key={m._id} className="border-t"><Td>{(m.users ?? []).map(displayUser).join(" ↔ ")}</Td><Td><StatusPill value={m.status} /></Td><Td>{m.selectedPlace?.name ?? "Chưa chọn"}</Td><Td>{m.score ?? 0}</Td><Td>{formatDate(m.createdAt)}</Td></tr>)}</tbody>
@@ -846,7 +862,7 @@ function PlaceDetail({ place, onEdit, onStatus }: { place: AnyRecord; onEdit: ()
         <DetailRow label="Loại hồ sơ" value={place.isPartnerPlace ? "Quán đối tác" : "Dữ liệu hệ thống"} />
         <DetailRow label="Khu vực" value={[place.district, place.city].filter(Boolean).join(", ") || "Chưa cập nhật"} />
         <DetailRow label="Giờ mở cửa" value={place.openingHours || "Chưa cập nhật"} />
-        <DetailRow label="Phong cách" value={place.cafeVibe || "Chưa cập nhật"} />
+        <DetailRow label="Phong cách" value={vibeLabel[place.cafeVibe] || place.cafeVibe || "Chưa cập nhật"} />
         <DetailRow label="Đánh giá" value={`${place.rating ?? "N/A"} · ${place.userRatingsTotal ?? 0} lượt`} />
         <DetailRow label="Mức giá" value={place.priceLevel || "-"} />
         <DetailRow label="Tọa độ" value={coords.length ? `${coords[1]}, ${coords[0]}` : "Chưa có"} />
@@ -854,12 +870,12 @@ function PlaceDetail({ place, onEdit, onStatus }: { place: AnyRecord; onEdit: ()
       {place.description ? <p className="mt-4 rounded-lg bg-slate-50 p-3 text-sm font-medium leading-relaxed text-slate-600">{place.description}</p> : null}
       {place.tags?.length ? (
         <div className="mt-4 flex flex-wrap gap-2">
-          {place.tags.map((tag: string) => <span key={tag} className="rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-caramel">#{tag}</span>)}
+          {place.tags.map((tag: string) => <span key={tag} className="rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-caramel">#{tagLabel[tag] ?? tag}</span>)}
         </div>
       ) : null}
       {place.amenities?.length ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          {place.amenities.map((item: string) => <span key={item} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{item}</span>)}
+          {place.amenities.map((item: string) => <span key={item} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{amenityLabel[item] ?? item}</span>)}
         </div>
       ) : null}
       <div className="mt-5 flex flex-wrap gap-2">
