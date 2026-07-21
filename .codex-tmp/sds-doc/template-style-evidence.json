@@ -1,0 +1,150 @@
+{
+  "input": "C:\\Users\\ontri\\Downloads\\Template3_SDS Document.docx",
+  "fonts_by_char_count": {
+    "Calibri": 76
+  },
+  "direct_run_formatting_runs": 152,
+  "direct_paragraph_formatting_paragraphs": 60,
+  "heading_like_paragraphs_not_heading_style": [
+    {
+      "para_index": 10,
+      "text": "<<Project name>>",
+      "style": "Normal"
+    },
+    {
+      "para_index": 11,
+      "text": "Software Design Specification",
+      "style": "Normal"
+    },
+    {
+      "para_index": 30,
+      "text": "Package descriptions",
+      "style": "Normal"
+    },
+    {
+      "para_index": 50,
+      "text": "Class Methods",
+      "style": "Normal"
+    },
+    {
+      "para_index": 118,
+      "text": "No",
+      "style": "Normal"
+    },
+    {
+      "para_index": 119,
+      "text": "Package",
+      "style": "Normal"
+    },
+    {
+      "para_index": 120,
+      "text": "Description",
+      "style": "Normal"
+    },
+    {
+      "para_index": 142,
+      "text": "No",
+      "style": "Normal"
+    },
+    {
+      "para_index": 143,
+      "text": "Table",
+      "style": "Normal"
+    },
+    {
+      "para_index": 144,
+      "text": "Description",
+      "style": "Normal"
+    },
+    {
+      "para_index": 148,
+      "text": "No",
+      "style": "Normal"
+    },
+    {
+      "para_index": 149,
+      "text": "Method",
+      "style": "Normal"
+    },
+    {
+      "para_index": 150,
+      "text": "Description",
+      "style": "Normal"
+    },
+    {
+      "para_index": 157,
+      "text": "No",
+      "style": "Normal"
+    },
+    {
+      "para_index": 158,
+      "text": "Method",
+      "style": "Normal"
+    },
+    {
+      "para_index": 159,
+      "text": "Description",
+      "style": "Normal"
+    }
+  ],
+  "examples": {
+    "direct_run_formatting": [
+      {
+        "para_index": 10,
+        "run_text": "<<Project name>>",
+        "style": "Normal"
+      },
+      {
+        "para_index": 11,
+        "run_text": "Software Design ",
+        "style": "Normal"
+      },
+      {
+        "para_index": 11,
+        "run_text": "Specification",
+        "style": "Normal"
+      },
+      {
+        "para_index": 19,
+        "run_text": "\u2013 Hanoi, August 20",
+        "style": "Normal"
+      },
+      {
+        "para_index": 19,
+        "run_text": "22",
+        "style": "Normal"
+      }
+    ],
+    "direct_paragraph_formatting": [
+      {
+        "para_index": 19,
+        "text": "\u2013 Hanoi, August 2022 \u2013",
+        "style": "Normal"
+      },
+      {
+        "para_index": 20,
+        "text": "",
+        "style": "Normal"
+      },
+      {
+        "para_index": 23,
+        "text": "",
+        "style": "Normal"
+      },
+      {
+        "para_index": 30,
+        "text": "Package descriptions",
+        "style": "Normal"
+      },
+      {
+        "para_index": 31,
+        "text": "",
+        "style": "Normal"
+      }
+    ]
+  },
+  "notes": [
+    "Direct formatting is not always wrong, but it often causes inconsistent output when templates change.",
+    "Heading-like paragraphs not using Heading styles can break TOC and accessibility."
+  ]
+}

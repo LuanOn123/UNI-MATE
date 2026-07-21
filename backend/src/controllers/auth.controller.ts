@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { env } from "../config/env.js";
 import { User } from "../models/User.js";
-import { loginWithPassword, logout, refreshToken, registerWithPassword, resetPasswordWithToken, sendEmailOtp, sendPasswordResetOtp, verifyEmailOtp, verifyPasswordResetOtp } from "../services/auth.service.js";
+import { loginWithPassword, logout, refreshToken, registerWithPassword, resetPasswordWithToken, sendPasswordResetOtp, verifyPasswordResetOtp } from "../services/auth.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 function publicUser(user: any) {
@@ -20,7 +20,6 @@ function publicUser(user: any) {
     avatarUrl: user.avatarUrl,
     profilePhotos: user.profilePhotos ?? [],
     onboardingCompleted: user.onboardingCompleted,
-    twoFactorEnabled: user.twoFactorEnabled,
     onboarding: user.onboarding,
     location: user.location
   };
@@ -38,20 +37,8 @@ export const registerController = asyncHandler(async (req: Request, res: Respons
 
 export const loginController = asyncHandler(async (req: Request, res: Response) => {
   const result = await loginWithPassword(req.body.email, req.body.password);
-  if (!("refreshToken" in result)) return res.json({ success: true, data: result });
   setRefreshCookie(res, result.refreshToken);
   res.json({ success: true, data: result });
-});
-
-export const sendOtpController = asyncHandler(async (req: Request, res: Response) => {
-  await sendEmailOtp(req.body.email);
-  res.json({ success: true, message: "OTP sent" });
-});
-
-export const verifyOtpController = asyncHandler(async (req: Request, res: Response) => {
-  const { user, accessToken, refreshToken } = await verifyEmailOtp(req.body.email, req.body.otp ?? req.body.code);
-  setRefreshCookie(res, refreshToken);
-  res.json({ success: true, message: "Login successful", data: { user, accessToken, refreshToken } });
 });
 
 export const forgotPasswordSendOtpController = asyncHandler(async (req: Request, res: Response) => {

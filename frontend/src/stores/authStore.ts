@@ -6,17 +6,13 @@ type AuthState = {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
-  pendingEmail: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  setPendingEmail: (email: string) => void;
   setSession: (payload: { user: User; accessToken: string; refreshToken?: string }) => void;
   clearSession: () => void;
   updateUser: (user: User) => void;
   register: (email: string, password: string) => Promise<User>;
-  login: (email: string, password: string) => Promise<{ user?: User; requiresTwoFactor?: boolean }>;
-  sendOtp: (email: string) => Promise<void>;
-  verifyOtp: (email: string, otp: string) => Promise<User>;
+  login: (email: string, password: string) => Promise<User>;
   fetchMe: () => Promise<User | null>;
   logout: () => Promise<void>;
 };
@@ -27,10 +23,8 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       refreshToken: null,
-      pendingEmail: null,
       isAuthenticated: false,
       isLoading: false,
-      setPendingEmail: (email) => set({ pendingEmail: email }),
       setSession: ({ user, accessToken, refreshToken }) => set((state) => ({
         user,
         accessToken,
@@ -48,8 +42,7 @@ export const useAuthStore = create<AuthState>()(
             user: payload.user,
             accessToken: payload.accessToken,
             refreshToken: payload.refreshToken,
-            isAuthenticated: true,
-            pendingEmail: null
+            isAuthenticated: true
           });
           return payload.user;
         } finally {
@@ -61,43 +54,11 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { login } = await import("../features/auth/authApi");
           const payload = await login(email, password);
-          if (!("accessToken" in payload)) {
-            set({ pendingEmail: payload.email });
-            return { requiresTwoFactor: true };
-          }
           set({
             user: payload.user,
             accessToken: payload.accessToken,
             refreshToken: payload.refreshToken,
-            isAuthenticated: true,
-            pendingEmail: null
-          });
-          return { user: payload.user };
-        } finally {
-          set({ isLoading: false });
-        }
-      },
-      sendOtp: async (email) => {
-        set({ isLoading: true });
-        try {
-          const { sendOtp } = await import("../features/auth/authApi");
-          await sendOtp(email);
-          set({ pendingEmail: email });
-        } finally {
-          set({ isLoading: false });
-        }
-      },
-      verifyOtp: async (email, otp) => {
-        set({ isLoading: true });
-        try {
-          const { verifyOtp } = await import("../features/auth/authApi");
-          const payload = await verifyOtp(email, otp);
-          set({
-            user: payload.user,
-            accessToken: payload.accessToken,
-            refreshToken: payload.refreshToken,
-            isAuthenticated: true,
-            pendingEmail: null
+            isAuthenticated: true
           });
           return payload.user;
         } finally {
@@ -125,7 +86,7 @@ export const useAuthStore = create<AuthState>()(
         if (token) {
           await import("../features/auth/authApi").then(({ logoutWithToken }) => logoutWithToken(token)).catch(() => undefined);
         }
-        set({ user: null, accessToken: null, refreshToken: null, pendingEmail: null, isAuthenticated: false });
+        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
         localStorage.removeItem("uni-mate-auth");
         await import("../lib/socket").then(({ resetSocket }) => resetSocket()).catch(() => undefined);
       }

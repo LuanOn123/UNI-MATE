@@ -1,0 +1,3108 @@
+{
+  "source": "docs\\UNI-MATE_Software_Design_Specification.docx",
+  "paragraph_count": 221,
+  "table_count": 30,
+  "inline_shape_count": 21,
+  "section_count": 1,
+  "records": [
+    {
+      "block": 0,
+      "kind": "paragraph",
+      "paragraph": 0,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 1,
+      "kind": "paragraph",
+      "paragraph": 1,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 2,
+      "kind": "paragraph",
+      "paragraph": 2,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 3,
+      "kind": "paragraph",
+      "paragraph": 3,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 4,
+      "kind": "paragraph",
+      "paragraph": 4,
+      "style": "Normal",
+      "text": "UNI-MATE",
+      "has_drawing": false
+    },
+    {
+      "block": 5,
+      "kind": "paragraph",
+      "paragraph": 5,
+      "style": "Normal",
+      "text": "Software Design Specification",
+      "has_drawing": false
+    },
+    {
+      "block": 6,
+      "kind": "paragraph",
+      "paragraph": 6,
+      "style": "Normal",
+      "text": "– Ho Chi Minh City, July 2026 –",
+      "has_drawing": false
+    },
+    {
+      "block": 7,
+      "kind": "paragraph",
+      "paragraph": 7,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 8,
+      "kind": "paragraph",
+      "paragraph": 8,
+      "style": "Normal",
+      "text": "RECORD OF CHANGES",
+      "has_drawing": false
+    },
+    {
+      "block": 9,
+      "kind": "table",
+      "table": 0,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Date",
+          "A*, M, D",
+          "In charge",
+          "Change Description"
+        ],
+        [
+          "14/07/2026",
+          "A",
+          "UNI-MATE Team",
+          "Initial SDS baseline derived from the current React/Express/MongoDB implementation."
+        ],
+        [
+          "",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "",
+          "",
+          ""
+        ]
+      ]
+    },
+    {
+      "block": 10,
+      "kind": "paragraph",
+      "paragraph": 9,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 11,
+      "kind": "paragraph",
+      "paragraph": 10,
+      "style": "Normal",
+      "text": "* A - Added; M - Modified; D - Deleted",
+      "has_drawing": false
+    },
+    {
+      "block": 12,
+      "kind": "paragraph",
+      "paragraph": 11,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 13,
+      "kind": "paragraph",
+      "paragraph": 12,
+      "style": "Normal",
+      "text": "Table of Contents",
+      "has_drawing": false
+    },
+    {
+      "block": 14,
+      "kind": "paragraph",
+      "paragraph": 13,
+      "style": "toc 1",
+      "text": "I. Overview\t4",
+      "has_drawing": false
+    },
+    {
+      "block": 15,
+      "kind": "paragraph",
+      "paragraph": 14,
+      "style": "toc 2",
+      "text": "1. System Architecture and Code Packages\t4",
+      "has_drawing": false
+    },
+    {
+      "block": 16,
+      "kind": "paragraph",
+      "paragraph": 15,
+      "style": "toc 2",
+      "text": "2. Design Conventions\t5",
+      "has_drawing": false
+    },
+    {
+      "block": 17,
+      "kind": "paragraph",
+      "paragraph": 16,
+      "style": "toc 2",
+      "text": "3. Database Design\t6",
+      "has_drawing": false
+    },
+    {
+      "block": 18,
+      "kind": "paragraph",
+      "paragraph": 17,
+      "style": "toc 1",
+      "text": "II. Code Designs\t9",
+      "has_drawing": false
+    },
+    {
+      "block": 19,
+      "kind": "paragraph",
+      "paragraph": 18,
+      "style": "toc 2",
+      "text": "1. Authentication, Account, and Onboarding\t10",
+      "has_drawing": false
+    },
+    {
+      "block": 20,
+      "kind": "paragraph",
+      "paragraph": 19,
+      "style": "toc 2",
+      "text": "2. Discovery and Mutual Matching\t12",
+      "has_drawing": false
+    },
+    {
+      "block": 21,
+      "kind": "paragraph",
+      "paragraph": 20,
+      "style": "toc 2",
+      "text": "3. Cafe Proposal and Match Lifecycle\t14",
+      "has_drawing": false
+    },
+    {
+      "block": 22,
+      "kind": "paragraph",
+      "paragraph": 21,
+      "style": "toc 2",
+      "text": "4. Private Chat and Notifications\t16",
+      "has_drawing": false
+    },
+    {
+      "block": 23,
+      "kind": "paragraph",
+      "paragraph": 22,
+      "style": "toc 2",
+      "text": "5. Groups and Group Chat\t18",
+      "has_drawing": false
+    },
+    {
+      "block": 24,
+      "kind": "paragraph",
+      "paragraph": 23,
+      "style": "toc 2",
+      "text": "6. Places, Partner Registration, and Vouchers\t20",
+      "has_drawing": false
+    },
+    {
+      "block": 25,
+      "kind": "paragraph",
+      "paragraph": 24,
+      "style": "toc 2",
+      "text": "7. Safety, Blocking, Reporting, and Moderation\t22",
+      "has_drawing": false
+    },
+    {
+      "block": 26,
+      "kind": "paragraph",
+      "paragraph": 25,
+      "style": "toc 2",
+      "text": "8. Administration and Operational Oversight\t24",
+      "has_drawing": false
+    },
+    {
+      "block": 27,
+      "kind": "paragraph",
+      "paragraph": 26,
+      "style": "toc 1",
+      "text": "III. Cross-Cutting Design\t26",
+      "has_drawing": false
+    },
+    {
+      "block": 28,
+      "kind": "paragraph",
+      "paragraph": 27,
+      "style": "toc 2",
+      "text": "1. Security and Authorization\t26",
+      "has_drawing": false
+    },
+    {
+      "block": 29,
+      "kind": "paragraph",
+      "paragraph": 28,
+      "style": "toc 2",
+      "text": "2. Realtime Design\t26",
+      "has_drawing": false
+    },
+    {
+      "block": 30,
+      "kind": "paragraph",
+      "paragraph": 29,
+      "style": "toc 2",
+      "text": "3. State Models\t27",
+      "has_drawing": false
+    },
+    {
+      "block": 31,
+      "kind": "paragraph",
+      "paragraph": 30,
+      "style": "toc 2",
+      "text": "4. External Services and Failure Handling\t27",
+      "has_drawing": false
+    },
+    {
+      "block": 32,
+      "kind": "paragraph",
+      "paragraph": 31,
+      "style": "toc 1",
+      "text": "Appendix A. REST API Inventory\t28",
+      "has_drawing": false
+    },
+    {
+      "block": 33,
+      "kind": "paragraph",
+      "paragraph": 32,
+      "style": "toc 1",
+      "text": "Appendix B. Configuration and Deployment\t30",
+      "has_drawing": false
+    },
+    {
+      "block": 34,
+      "kind": "paragraph",
+      "paragraph": 33,
+      "style": "toc 2",
+      "text": "1. Runtime Stack\t30",
+      "has_drawing": false
+    },
+    {
+      "block": 35,
+      "kind": "paragraph",
+      "paragraph": 34,
+      "style": "toc 2",
+      "text": "2. Required Configuration Categories\t30",
+      "has_drawing": false
+    },
+    {
+      "block": 36,
+      "kind": "paragraph",
+      "paragraph": 35,
+      "style": "toc 2",
+      "text": "3. Build and Run\t30",
+      "has_drawing": false
+    },
+    {
+      "block": 37,
+      "kind": "paragraph",
+      "paragraph": 36,
+      "style": "toc 1",
+      "text": "Appendix C. Known Implementation Discrepancies and Risks\t31",
+      "has_drawing": false
+    },
+    {
+      "block": 38,
+      "kind": "paragraph",
+      "paragraph": 37,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 39,
+      "kind": "paragraph",
+      "paragraph": 38,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 40,
+      "kind": "paragraph",
+      "paragraph": 39,
+      "style": "Heading 1",
+      "text": "I. Overview",
+      "has_drawing": false
+    },
+    {
+      "block": 41,
+      "kind": "paragraph",
+      "paragraph": 40,
+      "style": "Normal",
+      "text": "UNI-MATE is a full-stack web application for students aged 18 to under 30 to discover compatible people, form mutual matches, communicate, create small groups, choose cafes, and use partner vouchers. The reviewed baseline consists of a React/Vite client, an Express/TypeScript API, MongoDB persistence through Mongoose, and Socket.IO realtime messaging.",
+      "has_drawing": false
+    },
+    {
+      "block": 42,
+      "kind": "table",
+      "table": 1,
+      "style": "Normal Table",
+      "rows": [
+        [
+          "Implementation baseline: This SDS documents the code present in the repository on 14 July 2026. It describes actual behavior, including the current mutual-like chat behavior and the remaining cafe proposal workflow."
+        ]
+      ]
+    },
+    {
+      "block": 43,
+      "kind": "paragraph",
+      "paragraph": 41,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 44,
+      "kind": "paragraph",
+      "paragraph": 42,
+      "style": "Heading 2",
+      "text": "1. System Architecture and Code Packages",
+      "has_drawing": false
+    },
+    {
+      "block": 45,
+      "kind": "paragraph",
+      "paragraph": 43,
+      "style": "Heading 3",
+      "text": "a. Architectural View",
+      "has_drawing": false
+    },
+    {
+      "block": 46,
+      "kind": "paragraph",
+      "paragraph": 44,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 47,
+      "kind": "paragraph",
+      "paragraph": 45,
+      "style": "Normal",
+      "text": "Figure 1. UNI-MATE logical architecture and external integrations",
+      "has_drawing": false
+    },
+    {
+      "block": 48,
+      "kind": "paragraph",
+      "paragraph": 46,
+      "style": "Normal",
+      "text": "The client uses REST for transactional operations and Socket.IO for realtime chat, typing indicators, read receipts, match updates, and notifications. The backend applies JWT authentication, role checks, Zod validation, rate limiting, and centralized error handling before invoking controllers and services.",
+      "has_drawing": false
+    },
+    {
+      "block": 49,
+      "kind": "paragraph",
+      "paragraph": 47,
+      "style": "Heading 3",
+      "text": "b. Package Dependency Diagram",
+      "has_drawing": false
+    },
+    {
+      "block": 50,
+      "kind": "paragraph",
+      "paragraph": 48,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 51,
+      "kind": "paragraph",
+      "paragraph": 49,
+      "style": "Normal",
+      "text": "Figure 2. Frontend and backend package dependencies",
+      "has_drawing": false
+    },
+    {
+      "block": 52,
+      "kind": "paragraph",
+      "paragraph": 50,
+      "style": "Heading 3",
+      "text": "c. Package Descriptions",
+      "has_drawing": false
+    },
+    {
+      "block": 53,
+      "kind": "table",
+      "table": 2,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "No",
+          "Package",
+          "Description"
+        ],
+        [
+          "01",
+          "frontend/src/app",
+          "Top-level React route composition and application bootstrap."
+        ],
+        [
+          "02",
+          "frontend/src/features",
+          "Feature screens for authentication, onboarding, discovery, match, chat, group, places, safety, partner, and admin."
+        ],
+        [
+          "03",
+          "frontend/src/services + lib",
+          "Axios REST client, access-token refresh interceptor, and Socket.IO client."
+        ],
+        [
+          "04",
+          "frontend/src/stores",
+          "Zustand authentication/session state and pending OTP context."
+        ],
+        [
+          "05",
+          "backend/src/routes",
+          "HTTP endpoint declarations and composition of authentication/validation middleware."
+        ],
+        [
+          "06",
+          "backend/src/controllers",
+          "Request orchestration, authorization-sensitive checks, response mapping, and socket emission."
+        ],
+        [
+          "07",
+          "backend/src/services",
+          "Authentication, compatibility scoring, distance routing, place suggestion, email, and notification logic."
+        ],
+        [
+          "08",
+          "backend/src/models",
+          "Mongoose schemas, constraints, references, indexes, and lifecycle fields."
+        ],
+        [
+          "09",
+          "backend/src/sockets",
+          "Authenticated private/group realtime messaging and read/typing events."
+        ],
+        [
+          "10",
+          "backend/src/middlewares",
+          "JWT authentication, admin authorization, validation, not-found, and error handling."
+        ],
+        [
+          "11",
+          "backend/src/validations",
+          "Zod request contracts for authentication, users, matching, messages, and safety."
+        ],
+        [
+          "12",
+          "backend/src/utils + config",
+          "Environment configuration, token helpers, zodiac calculation, seeding, and utility functions."
+        ]
+      ]
+    },
+    {
+      "block": 54,
+      "kind": "paragraph",
+      "paragraph": 51,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 55,
+      "kind": "paragraph",
+      "paragraph": 52,
+      "style": "Heading 2",
+      "text": "2. Design Conventions",
+      "has_drawing": false
+    },
+    {
+      "block": 56,
+      "kind": "paragraph",
+      "paragraph": 53,
+      "style": "Normal",
+      "text": "HTTP routes use resource-oriented paths under /api and JSON request/response bodies.",
+      "has_drawing": false
+    },
+    {
+      "block": 57,
+      "kind": "paragraph",
+      "paragraph": 54,
+      "style": "Normal",
+      "text": "Protected routes use Bearer access tokens; refresh tokens are also stored in an HTTP-only cookie.",
+      "has_drawing": false
+    },
+    {
+      "block": 58,
+      "kind": "paragraph",
+      "paragraph": 55,
+      "style": "Normal",
+      "text": "Mongoose ObjectId references model cross-collection relationships; selected aggregates embed arrays and value objects for read efficiency.",
+      "has_drawing": false
+    },
+    {
+      "block": 59,
+      "kind": "paragraph",
+      "paragraph": 56,
+      "style": "Normal",
+      "text": "Dates use server-side Date values and Mongoose timestamps. Geospatial coordinates use GeoJSON [longitude, latitude].",
+      "has_drawing": false
+    },
+    {
+      "block": 60,
+      "kind": "paragraph",
+      "paragraph": 57,
+      "style": "Normal",
+      "text": "Realtime rooms are named with either the ChatRoom id, group:<groupId>, or user:<userId>.",
+      "has_drawing": false
+    },
+    {
+      "block": 61,
+      "kind": "paragraph",
+      "paragraph": 58,
+      "style": "Normal",
+      "text": "Status fields implement lifecycle state rather than physical deletion for matches, rooms, groups, places, reports, and vouchers.",
+      "has_drawing": false
+    },
+    {
+      "block": 62,
+      "kind": "paragraph",
+      "paragraph": 59,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 63,
+      "kind": "paragraph",
+      "paragraph": 60,
+      "style": "Heading 2",
+      "text": "3. Database Design",
+      "has_drawing": false
+    },
+    {
+      "block": 64,
+      "kind": "paragraph",
+      "paragraph": 61,
+      "style": "Normal",
+      "text": "MongoDB is the system of record. Mongoose schemas enforce required fields, enumerated statuses, selected uniqueness constraints, TTL behavior for OTP records, and 2dsphere indexes for user and cafe locations.",
+      "has_drawing": false
+    },
+    {
+      "block": 65,
+      "kind": "paragraph",
+      "paragraph": 62,
+      "style": "Heading 3",
+      "text": "a. Core Matching and Chat Schema",
+      "has_drawing": false
+    },
+    {
+      "block": 66,
+      "kind": "paragraph",
+      "paragraph": 63,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 67,
+      "kind": "paragraph",
+      "paragraph": 64,
+      "style": "Normal",
+      "text": "Figure 3. Core user discovery, match, cafe proposal, and private chat collections",
+      "has_drawing": false
+    },
+    {
+      "block": 68,
+      "kind": "paragraph",
+      "paragraph": 65,
+      "style": "Heading 3",
+      "text": "b. Extended Social, Partner, and Moderation Schema",
+      "has_drawing": false
+    },
+    {
+      "block": 69,
+      "kind": "paragraph",
+      "paragraph": 66,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 70,
+      "kind": "paragraph",
+      "paragraph": 67,
+      "style": "Normal",
+      "text": "Figure 4. Group, report, partner, voucher, tag, and OTP relationships",
+      "has_drawing": false
+    },
+    {
+      "block": 71,
+      "kind": "paragraph",
+      "paragraph": 68,
+      "style": "Heading 3",
+      "text": "c. Collection Descriptions",
+      "has_drawing": false
+    },
+    {
+      "block": 72,
+      "kind": "table",
+      "table": 3,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "No",
+          "Collection",
+          "Purpose"
+        ],
+        [
+          "01",
+          "User",
+          "Identity, role/status, profile, onboarding survey, location, preferences, block list, and token metadata."
+        ],
+        [
+          "02",
+          "EmailOtp",
+          "Hashed email OTP with expiry, attempt count, resend count, consumed flag, and TTL cleanup."
+        ],
+        [
+          "03",
+          "Otp",
+          "Legacy/simple hashed OTP record keyed by email with TTL expiry."
+        ],
+        [
+          "04",
+          "Swipe",
+          "Unique directed like/pass decision from one user to another."
+        ],
+        [
+          "05",
+          "Match",
+          "Two participants, compatibility score, lifecycle state, selected cafe, confirmations, room, and expiry."
+        ],
+        [
+          "06",
+          "CafeProposal",
+          "Cafe proposed for a match, proposer, cafe reference, and active/accepted/rejected history."
+        ],
+        [
+          "07",
+          "ChatRoom",
+          "One-to-one match room, participants, cafe, activity state, hide list, and last-message summary."
+        ],
+        [
+          "08",
+          "Message",
+          "Private-room text or file message, sender, type, attachment metadata, and readBy list."
+        ],
+        [
+          "09",
+          "Notification",
+          "Per-user notification with type, title/body, flexible data payload, and read timestamp."
+        ],
+        [
+          "10",
+          "Group",
+          "Owner-created group, member list, purpose, capacity, and active/dissolved state."
+        ],
+        [
+          "11",
+          "GroupMessage",
+          "Group text/file message with sender and readBy list."
+        ],
+        [
+          "12",
+          "PlaceCache",
+          "Cafe/place profile, address, geolocation, operational fields, tags, amenities, and partner ownership."
+        ],
+        [
+          "13",
+          "Voucher",
+          "Partner-issued cafe voucher, quota, usage count, saved users, expiry, and activation state."
+        ],
+        [
+          "14",
+          "Report",
+          "Reporter, reported user, optional match/room/message context, evidence, priority, and moderation result."
+        ],
+        [
+          "15",
+          "AdminAction",
+          "Append-only audit event with admin, action, polymorphic target type/id, and reason."
+        ],
+        [
+          "16",
+          "Tag",
+          "Admin-managed cafe/profile tag catalogue; places currently persist tag names as strings."
+        ]
+      ]
+    },
+    {
+      "block": 73,
+      "kind": "paragraph",
+      "paragraph": 69,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 74,
+      "kind": "paragraph",
+      "paragraph": 70,
+      "style": "Heading 3",
+      "text": "d. Important Indexes and Constraints",
+      "has_drawing": false
+    },
+    {
+      "block": 75,
+      "kind": "table",
+      "table": 4,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Collection",
+          "Index / constraint",
+          "Rationale"
+        ],
+        [
+          "User",
+          "email unique; role/status/isActive; location 2dsphere",
+          "Authentication, admin filtering, and discovery radius queries."
+        ],
+        [
+          "Swipe",
+          "fromUser + toUser unique",
+          "One current directed decision per user pair."
+        ],
+        [
+          "Match",
+          "users; status",
+          "Participant lookup and lifecycle filtering."
+        ],
+        [
+          "ChatRoom",
+          "match unique",
+          "At most one room per match."
+        ],
+        [
+          "CafeProposal",
+          "match + status",
+          "Efficient retrieval/replacement of active proposal."
+        ],
+        [
+          "PlaceCache",
+          "googlePlaceId unique sparse; location 2dsphere",
+          "Cache identity and nearby cafe search."
+        ],
+        [
+          "Voucher",
+          "code + placeId unique",
+          "Prevents duplicate code within a cafe."
+        ],
+        [
+          "Report",
+          "status + createdAt",
+          "Moderation queue ordering."
+        ],
+        [
+          "EmailOtp",
+          "email + createdAt; expiresAt TTL",
+          "Latest challenge lookup and automatic expiry."
+        ]
+      ]
+    },
+    {
+      "block": 76,
+      "kind": "paragraph",
+      "paragraph": 71,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 77,
+      "kind": "paragraph",
+      "paragraph": 72,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 78,
+      "kind": "paragraph",
+      "paragraph": 73,
+      "style": "Heading 1",
+      "text": "II. Code Designs",
+      "has_drawing": false
+    },
+    {
+      "block": 79,
+      "kind": "paragraph",
+      "paragraph": 74,
+      "style": "Normal",
+      "text": "This section groups classes and runtime interactions by user-visible function. Boundary objects are React pages, control objects are controllers/services/socket handlers, and entity objects are Mongoose models.",
+      "has_drawing": false
+    },
+    {
+      "block": 80,
+      "kind": "paragraph",
+      "paragraph": 75,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 81,
+      "kind": "paragraph",
+      "paragraph": 76,
+      "style": "Heading 2",
+      "text": "1. Authentication, Account, and Onboarding",
+      "has_drawing": false
+    },
+    {
+      "block": 82,
+      "kind": "paragraph",
+      "paragraph": 77,
+      "style": "Normal",
+      "text": "This subsystem creates accounts, validates credentials, optionally performs email OTP two-factor authentication, refreshes sessions, resets passwords, and collects the profile/preferences/location required for discovery.",
+      "has_drawing": false
+    },
+    {
+      "block": 83,
+      "kind": "paragraph",
+      "paragraph": 78,
+      "style": "Heading 3",
+      "text": "a. Class/Component Diagram",
+      "has_drawing": false
+    },
+    {
+      "block": 84,
+      "kind": "paragraph",
+      "paragraph": 79,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 85,
+      "kind": "paragraph",
+      "paragraph": 80,
+      "style": "Normal",
+      "text": "Figure 5. Authentication and profile component relationships",
+      "has_drawing": false
+    },
+    {
+      "block": 86,
+      "kind": "paragraph",
+      "paragraph": 81,
+      "style": "Heading 3",
+      "text": "b. Class and Method Specifications",
+      "has_drawing": false
+    },
+    {
+      "block": 87,
+      "kind": "table",
+      "table": 5,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Component",
+          "Method",
+          "Inputs / outputs and internal processing"
+        ],
+        [
+          "AuthController",
+          "registerController",
+          "email, password -> user/tokens; delegates validation and registration, then sets refresh cookie."
+        ],
+        [
+          "AuthController",
+          "loginController",
+          "credentials -> tokens or requiresTwoFactor; sets refresh cookie only after full authentication."
+        ],
+        [
+          "AuthService",
+          "registerWithPassword",
+          "Normalizes email, rejects duplicate, hashes password, creates verified user, and issues tokens."
+        ],
+        [
+          "AuthService",
+          "loginWithPassword",
+          "Restores expired suspension, checks account state/password, and branches to OTP or token issue."
+        ],
+        [
+          "AuthService",
+          "sendEmailOtp",
+          "Generates six-digit OTP, stores bcrypt hash and expiry, enforces resend metadata, and sends email."
+        ],
+        [
+          "AuthService",
+          "verifyEmailOtp",
+          "Validates newest unconsumed OTP, increments failed attempts, consumes success, and issues tokens."
+        ],
+        [
+          "UserController",
+          "completeOnboarding",
+          "Profile/survey/location -> updated User; enforces age 18 to under 30 and computes zodiac."
+        ],
+        [
+          "UserController",
+          "geocodeLocation",
+          "city/district -> filtered Vietnam coordinates via Nominatim."
+        ],
+        [
+          "UserController",
+          "updateProfile",
+          "Whitelisted profile/preferences values -> persisted user."
+        ]
+      ]
+    },
+    {
+      "block": 88,
+      "kind": "paragraph",
+      "paragraph": 82,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 89,
+      "kind": "paragraph",
+      "paragraph": 83,
+      "style": "Heading 3",
+      "text": "c. Sequence Diagram(s)",
+      "has_drawing": false
+    },
+    {
+      "block": 90,
+      "kind": "paragraph",
+      "paragraph": 84,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 91,
+      "kind": "paragraph",
+      "paragraph": 85,
+      "style": "Normal",
+      "text": "Figure 6. Password login with optional email OTP two-factor authentication",
+      "has_drawing": false
+    },
+    {
+      "block": 92,
+      "kind": "paragraph",
+      "paragraph": 86,
+      "style": "Heading 3",
+      "text": "d. Database Queries / Persistence Operations",
+      "has_drawing": false
+    },
+    {
+      "block": 93,
+      "kind": "paragraph",
+      "paragraph": 87,
+      "style": "Normal",
+      "text": "Representative operations used by the implementation are shown below. Mongoose translates these operations to MongoDB queries.",
+      "has_drawing": false
+    },
+    {
+      "block": 94,
+      "kind": "table",
+      "table": 6,
+      "style": "Normal Table",
+      "rows": [
+        [
+          "const user = await User.findOne({ email });\nawait EmailOtp.create({ email, otpHash, expiresAt });\nconst otp = await EmailOtp.findOne({ email, consumed: false, expiresAt: { $gt: new Date() } })\n  .sort({ createdAt: -1 });\nawait User.findByIdAndUpdate(userId, { onboardingCompleted: true, onboarding, location });"
+        ]
+      ]
+    },
+    {
+      "block": 95,
+      "kind": "paragraph",
+      "paragraph": 88,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 96,
+      "kind": "paragraph",
+      "paragraph": 89,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 97,
+      "kind": "paragraph",
+      "paragraph": 90,
+      "style": "Heading 2",
+      "text": "2. Discovery and Mutual Matching",
+      "has_drawing": false
+    },
+    {
+      "block": 98,
+      "kind": "paragraph",
+      "paragraph": 91,
+      "style": "Normal",
+      "text": "Discovery excludes prior swipes, both directions of blocking, inactive/non-user accounts, incomplete onboarding, invalid locations, incompatible age/purpose/gender filters, and users outside the configured radius. Candidates are ranked with route-time distance, cafe style, interests, goals, major preference, vibe, age, recency, and time overlap.",
+      "has_drawing": false
+    },
+    {
+      "block": 99,
+      "kind": "paragraph",
+      "paragraph": 92,
+      "style": "Heading 3",
+      "text": "a. Class/Component Diagram",
+      "has_drawing": false
+    },
+    {
+      "block": 100,
+      "kind": "paragraph",
+      "paragraph": 93,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 101,
+      "kind": "paragraph",
+      "paragraph": 94,
+      "style": "Normal",
+      "text": "Figure 7. Discovery, match, cafe proposal, and chat control/entity relationships",
+      "has_drawing": false
+    },
+    {
+      "block": 102,
+      "kind": "paragraph",
+      "paragraph": 95,
+      "style": "Heading 3",
+      "text": "b. Class and Method Specifications",
+      "has_drawing": false
+    },
+    {
+      "block": 103,
+      "kind": "table",
+      "table": 7,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Component",
+          "Method",
+          "Inputs / outputs and internal processing"
+        ],
+        [
+          "DiscoveryController",
+          "feedController",
+          "Authenticated user -> ranked candidate list."
+        ],
+        [
+          "DiscoveryController",
+          "likeController",
+          "targetUserId -> like result; emits incoming-like notification when not mutual."
+        ],
+        [
+          "MatchingService",
+          "getDiscoveryFeed",
+          "Loads exclusion/filter sets, geospatial candidates, OSRM route metadata, scores, sorts, and limits to 10."
+        ],
+        [
+          "MatchingService",
+          "scoreUsers",
+          "Two profiles and route metadata -> score, reasons, common tags/styles, distance diagnostics."
+        ],
+        [
+          "MatchingService",
+          "swipe",
+          "Upserts directed action; on mutual like creates/upserts Match and active ChatRoom."
+        ],
+        [
+          "MatchingService",
+          "getIncomingLikes",
+          "Returns users who liked the current user and have not received a response swipe."
+        ]
+      ]
+    },
+    {
+      "block": 104,
+      "kind": "paragraph",
+      "paragraph": 96,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 105,
+      "kind": "paragraph",
+      "paragraph": 97,
+      "style": "Heading 3",
+      "text": "c. Sequence Diagram(s)",
+      "has_drawing": false
+    },
+    {
+      "block": 106,
+      "kind": "paragraph",
+      "paragraph": 98,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 107,
+      "kind": "paragraph",
+      "paragraph": 99,
+      "style": "Normal",
+      "text": "Figure 8. Discovery like/pass decision and actual mutual-match behavior",
+      "has_drawing": false
+    },
+    {
+      "block": 108,
+      "kind": "paragraph",
+      "paragraph": 100,
+      "style": "Heading 3",
+      "text": "d. Database Queries / Persistence Operations",
+      "has_drawing": false
+    },
+    {
+      "block": 109,
+      "kind": "paragraph",
+      "paragraph": 101,
+      "style": "Normal",
+      "text": "Representative operations used by the implementation are shown below. Mongoose translates these operations to MongoDB queries.",
+      "has_drawing": false
+    },
+    {
+      "block": 110,
+      "kind": "table",
+      "table": 8,
+      "style": "Normal Table",
+      "rows": [
+        [
+          "const swiped = await Swipe.find({ fromUser: userId }).distinct(\"toUser\");\nconst users = await User.find({ _id: { $nin: excluded }, role: \"user\", status: \"active\", location: geoFilter });\nawait Swipe.findOneAndUpdate({ fromUser, toUser }, { action }, { upsert: true, new: true });\nconst reciprocal = await Swipe.findOne({ fromUser: target, toUser: actor, action: \"like\" });\nawait Match.create({ users: [actor, target], status: \"chat_opened\", expiresAt });"
+        ]
+      ]
+    },
+    {
+      "block": 111,
+      "kind": "paragraph",
+      "paragraph": 102,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 112,
+      "kind": "table",
+      "table": 9,
+      "style": "Normal Table",
+      "rows": [
+        [
+          "Actual behavior: Mutual like currently creates an active ChatRoom immediately. This conflicts with the README rule that chat should remain locked until both users confirm the same cafe."
+        ]
+      ]
+    },
+    {
+      "block": 113,
+      "kind": "paragraph",
+      "paragraph": 103,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 114,
+      "kind": "paragraph",
+      "paragraph": 104,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 115,
+      "kind": "paragraph",
+      "paragraph": 105,
+      "style": "Heading 2",
+      "text": "3. Cafe Proposal and Match Lifecycle",
+      "has_drawing": false
+    },
+    {
+      "block": 116,
+      "kind": "paragraph",
+      "paragraph": 106,
+      "style": "Normal",
+      "text": "A participant can retrieve suggested cafes, replace the active proposal, and notify the other participant. The proposal creator is automatically recorded as the first confirmer. Only the other participant can confirm or reject. Confirmation upserts an active room; rejection clears the selection; cancellation archives an existing room.",
+      "has_drawing": false
+    },
+    {
+      "block": 117,
+      "kind": "paragraph",
+      "paragraph": 107,
+      "style": "Heading 3",
+      "text": "a. Class/Component Diagram",
+      "has_drawing": false
+    },
+    {
+      "block": 118,
+      "kind": "paragraph",
+      "paragraph": 108,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 119,
+      "kind": "paragraph",
+      "paragraph": 109,
+      "style": "Normal",
+      "text": "Figure 9. MatchController relationships to Match, CafeProposal, PlaceCache, and ChatRoom",
+      "has_drawing": false
+    },
+    {
+      "block": 120,
+      "kind": "paragraph",
+      "paragraph": 110,
+      "style": "Heading 3",
+      "text": "b. Class and Method Specifications",
+      "has_drawing": false
+    },
+    {
+      "block": 121,
+      "kind": "table",
+      "table": 10,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Component",
+          "Method",
+          "Inputs / outputs and internal processing"
+        ],
+        [
+          "MatchController",
+          "placeSuggestions",
+          "matchId -> suggested active cafes; rejects missing/expired match."
+        ],
+        [
+          "MatchController",
+          "selectPlace",
+          "matchId/placeId -> proposal; replaces active proposal and sets cafe_proposed."
+        ],
+        [
+          "MatchController",
+          "confirmPlace",
+          "Adds non-proposer to confirmedBy, accepts proposal, upserts room, and sets chat_opened."
+        ],
+        [
+          "MatchController",
+          "rejectPlace",
+          "Non-proposer rejects; clears selection/confirmations and returns match to matched."
+        ],
+        [
+          "MatchController",
+          "cancelMatch",
+          "Sets cancelled, rejects active proposals, archives room, and notifies peer."
+        ],
+        [
+          "PlacesService",
+          "suggestCafePlaces",
+          "Uses participant locations and cached/seeded places to return cafe candidates."
+        ]
+      ]
+    },
+    {
+      "block": 122,
+      "kind": "paragraph",
+      "paragraph": 111,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 123,
+      "kind": "paragraph",
+      "paragraph": 112,
+      "style": "Heading 3",
+      "text": "c. Sequence Diagram(s)",
+      "has_drawing": false
+    },
+    {
+      "block": 124,
+      "kind": "paragraph",
+      "paragraph": 113,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 125,
+      "kind": "paragraph",
+      "paragraph": 114,
+      "style": "Normal",
+      "text": "Figure 10. Cafe selection, confirmation, rejection, and realtime match update",
+      "has_drawing": false
+    },
+    {
+      "block": 126,
+      "kind": "paragraph",
+      "paragraph": 115,
+      "style": "Heading 3",
+      "text": "d. Database Queries / Persistence Operations",
+      "has_drawing": false
+    },
+    {
+      "block": 127,
+      "kind": "paragraph",
+      "paragraph": 116,
+      "style": "Normal",
+      "text": "Representative operations used by the implementation are shown below. Mongoose translates these operations to MongoDB queries.",
+      "has_drawing": false
+    },
+    {
+      "block": 128,
+      "kind": "table",
+      "table": 11,
+      "style": "Normal Table",
+      "rows": [
+        [
+          "await CafeProposal.updateMany({ match: match._id, status: \"active\" }, { status: \"replaced\" });\nawait CafeProposal.create({ match: match._id, proposedBy: userId, cafe: placeId, status: \"active\" });\nawait Match.findOneAndUpdate({ _id: matchId }, { $addToSet: { confirmedBy: userId } }, { new: true });\nawait ChatRoom.findOneAndUpdate({ match: matchId }, roomData, { upsert: true, new: true });"
+        ]
+      ]
+    },
+    {
+      "block": 129,
+      "kind": "paragraph",
+      "paragraph": 117,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 130,
+      "kind": "paragraph",
+      "paragraph": 118,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 131,
+      "kind": "paragraph",
+      "paragraph": 119,
+      "style": "Heading 2",
+      "text": "4. Private Chat and Notifications",
+      "has_drawing": false
+    },
+    {
+      "block": 132,
+      "kind": "paragraph",
+      "paragraph": 120,
+      "style": "Normal",
+      "text": "Private chat supports room listing/hiding, chat history, text and file messages, typing indicators, delivery broadcasts, read receipts, and per-recipient notifications. Both HTTP and Socket.IO message submission paths enforce active room and chat_opened match state.",
+      "has_drawing": false
+    },
+    {
+      "block": 133,
+      "kind": "paragraph",
+      "paragraph": 121,
+      "style": "Heading 3",
+      "text": "a. Class/Component Diagram",
+      "has_drawing": false
+    },
+    {
+      "block": 134,
+      "kind": "paragraph",
+      "paragraph": 122,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 135,
+      "kind": "paragraph",
+      "paragraph": 123,
+      "style": "Normal",
+      "text": "Figure 11. ChatController and SocketHandler relationships to room and message entities",
+      "has_drawing": false
+    },
+    {
+      "block": 136,
+      "kind": "paragraph",
+      "paragraph": 124,
+      "style": "Heading 3",
+      "text": "b. Class and Method Specifications",
+      "has_drawing": false
+    },
+    {
+      "block": 137,
+      "kind": "table",
+      "table": 12,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Component",
+          "Method",
+          "Inputs / outputs and internal processing"
+        ],
+        [
+          "ChatController",
+          "listRooms",
+          "Returns rooms containing user and not hidden by that user, ordered by lastMessageAt."
+        ],
+        [
+          "ChatController",
+          "getRoom",
+          "Verifies membership and states, calculates bilateral block state, and returns up to 100 messages."
+        ],
+        [
+          "ChatController",
+          "sendMessage",
+          "HTTP fallback: validates message, persists it, updates room, broadcasts, and notifies peer."
+        ],
+        [
+          "SocketHandler",
+          "join_room",
+          "Joins room only when the socket user is a participant and room is active."
+        ],
+        [
+          "SocketHandler",
+          "send_message",
+          "Realtime validation/persistence/broadcast plus notification creation."
+        ],
+        [
+          "SocketHandler",
+          "mark_read",
+          "Adds reader id to readBy for all room messages and emits message_read."
+        ],
+        [
+          "NotificationService",
+          "createAndEmitNotification",
+          "Persists Notification then emits notification:new to user:<id>."
+        ]
+      ]
+    },
+    {
+      "block": 138,
+      "kind": "paragraph",
+      "paragraph": 125,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 139,
+      "kind": "paragraph",
+      "paragraph": 126,
+      "style": "Heading 3",
+      "text": "c. Sequence Diagram(s)",
+      "has_drawing": false
+    },
+    {
+      "block": 140,
+      "kind": "paragraph",
+      "paragraph": 127,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 141,
+      "kind": "paragraph",
+      "paragraph": 128,
+      "style": "Normal",
+      "text": "Figure 12. Realtime private message, notification, and read-receipt flow",
+      "has_drawing": false
+    },
+    {
+      "block": 142,
+      "kind": "paragraph",
+      "paragraph": 129,
+      "style": "Heading 3",
+      "text": "d. Database Queries / Persistence Operations",
+      "has_drawing": false
+    },
+    {
+      "block": 143,
+      "kind": "paragraph",
+      "paragraph": 130,
+      "style": "Normal",
+      "text": "Representative operations used by the implementation are shown below. Mongoose translates these operations to MongoDB queries.",
+      "has_drawing": false
+    },
+    {
+      "block": 144,
+      "kind": "table",
+      "table": 13,
+      "style": "Normal Table",
+      "rows": [
+        [
+          "const room = await ChatRoom.findOne({ _id: roomId, users: userId });\nconst match = await Match.findById(room.match);\nconst message = await Message.create({ room: room._id, sender: userId, text, type, fileUrl, readBy: [userId] });\nawait Message.updateMany({ room: roomId }, { $addToSet: { readBy: userId } });"
+        ]
+      ]
+    },
+    {
+      "block": 145,
+      "kind": "paragraph",
+      "paragraph": 131,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 146,
+      "kind": "paragraph",
+      "paragraph": 132,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 147,
+      "kind": "paragraph",
+      "paragraph": 133,
+      "style": "Heading 2",
+      "text": "5. Groups and Group Chat",
+      "has_drawing": false
+    },
+    {
+      "block": 148,
+      "kind": "paragraph",
+      "paragraph": 134,
+      "style": "Normal",
+      "text": "Users can create purpose-oriented groups, add members by email, remove members or leave, dissolve a group, and exchange realtime or HTTP-fallback group messages. Owner, capacity, membership, and active-state rules are enforced in controllers/socket handlers.",
+      "has_drawing": false
+    },
+    {
+      "block": 149,
+      "kind": "paragraph",
+      "paragraph": 135,
+      "style": "Heading 3",
+      "text": "a. Class/Component Diagram",
+      "has_drawing": false
+    },
+    {
+      "block": 150,
+      "kind": "paragraph",
+      "paragraph": 136,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 151,
+      "kind": "paragraph",
+      "paragraph": 137,
+      "style": "Normal",
+      "text": "Figure 13. Group management and group-chat components",
+      "has_drawing": false
+    },
+    {
+      "block": 152,
+      "kind": "paragraph",
+      "paragraph": 138,
+      "style": "Heading 3",
+      "text": "b. Class and Method Specifications",
+      "has_drawing": false
+    },
+    {
+      "block": 153,
+      "kind": "table",
+      "table": 14,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Component",
+          "Method",
+          "Inputs / outputs and internal processing"
+        ],
+        [
+          "GroupController",
+          "createGroup",
+          "Creates group with requester as creator and first member; default capacity is six."
+        ],
+        [
+          "GroupController",
+          "getMyGroups",
+          "Lists active groups containing the requester and populates creator/members."
+        ],
+        [
+          "GroupController",
+          "addMember",
+          "Owner-only; validates capacity and active target user found by email."
+        ],
+        [
+          "GroupController",
+          "removeMember",
+          "Owner may remove others; member may leave; owner cannot leave without dissolving."
+        ],
+        [
+          "GroupController",
+          "dissolveGroup",
+          "Owner-only transition to dissolved."
+        ],
+        [
+          "GroupChatController",
+          "getGroupMessages",
+          "Verifies member and returns group history."
+        ],
+        [
+          "SocketHandler",
+          "send_group_message",
+          "Validates active membership, persists GroupMessage, broadcasts, and notifies peers."
+        ]
+      ]
+    },
+    {
+      "block": 154,
+      "kind": "paragraph",
+      "paragraph": 139,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 155,
+      "kind": "paragraph",
+      "paragraph": 140,
+      "style": "Heading 3",
+      "text": "c. Sequence Diagram(s)",
+      "has_drawing": false
+    },
+    {
+      "block": 156,
+      "kind": "paragraph",
+      "paragraph": 141,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 157,
+      "kind": "paragraph",
+      "paragraph": 142,
+      "style": "Normal",
+      "text": "Figure 14. Group creation, member addition, and realtime group messaging",
+      "has_drawing": false
+    },
+    {
+      "block": 158,
+      "kind": "paragraph",
+      "paragraph": 143,
+      "style": "Heading 3",
+      "text": "d. Database Queries / Persistence Operations",
+      "has_drawing": false
+    },
+    {
+      "block": 159,
+      "kind": "paragraph",
+      "paragraph": 144,
+      "style": "Normal",
+      "text": "Representative operations used by the implementation are shown below. Mongoose translates these operations to MongoDB queries.",
+      "has_drawing": false
+    },
+    {
+      "block": 160,
+      "kind": "table",
+      "table": 15,
+      "style": "Normal Table",
+      "rows": [
+        [
+          "const group = await Group.create({ name, creator: userId, members: [userId], purpose, maxMembers });\nconst target = await User.findOne({ email: normalizedEmail, status: \"active\" });\ngroup.members.push(target._id); await group.save();\nconst messages = await GroupMessage.find({ group: groupId }).sort({ createdAt: 1 });"
+        ]
+      ]
+    },
+    {
+      "block": 161,
+      "kind": "paragraph",
+      "paragraph": 145,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 162,
+      "kind": "paragraph",
+      "paragraph": 146,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 163,
+      "kind": "paragraph",
+      "paragraph": 147,
+      "style": "Heading 2",
+      "text": "6. Places, Partner Registration, and Vouchers",
+      "has_drawing": false
+    },
+    {
+      "block": 164,
+      "kind": "paragraph",
+      "paragraph": 148,
+      "style": "Normal",
+      "text": "Authenticated users browse active cafes and available vouchers. A prospective owner submits one pending partner-place application; admin approval activates the place and upgrades the owner role to partner. Partners manage owned place data and voucher lifecycle. Users save valid vouchers atomically against quota.",
+      "has_drawing": false
+    },
+    {
+      "block": 165,
+      "kind": "paragraph",
+      "paragraph": 149,
+      "style": "Heading 3",
+      "text": "a. Class/Component Diagram",
+      "has_drawing": false
+    },
+    {
+      "block": 166,
+      "kind": "paragraph",
+      "paragraph": 150,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 167,
+      "kind": "paragraph",
+      "paragraph": 151,
+      "style": "Normal",
+      "text": "Figure 15. Places, partner ownership, and voucher component relationships",
+      "has_drawing": false
+    },
+    {
+      "block": 168,
+      "kind": "paragraph",
+      "paragraph": 152,
+      "style": "Heading 3",
+      "text": "b. Class and Method Specifications",
+      "has_drawing": false
+    },
+    {
+      "block": 169,
+      "kind": "table",
+      "table": 16,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Component",
+          "Method",
+          "Inputs / outputs and internal processing"
+        ],
+        [
+          "PlacesController",
+          "listPlaces/getPlace",
+          "Returns only active place records."
+        ],
+        [
+          "PlacesController",
+          "registerPartnerPlace",
+          "Validates cafe form/hours and creates one pending partner place per applicant."
+        ],
+        [
+          "PlacesController",
+          "getPlaceVouchers",
+          "Returns active, unexpired, non-exhausted vouchers and savedByMe flag."
+        ],
+        [
+          "PlacesController",
+          "saveVoucher",
+          "Idempotent save; atomically adds user and increments usage only while valid."
+        ],
+        [
+          "PartnerController",
+          "getMyPlaces/updateMyPlace",
+          "Lists owned places and updates whitelisted fields after ownership check."
+        ],
+        [
+          "PartnerController",
+          "createVoucher",
+          "Requires partner ownership, active cafe, required values, and unique code within cafe."
+        ],
+        [
+          "PartnerController",
+          "toggleVoucherStatus/deleteVoucher",
+          "Owner-scoped voucher activation toggle or deletion."
+        ],
+        [
+          "AdminController",
+          "hidePlace",
+          "Transitions place status, upgrades partner role on approval, notifies owner, and audits."
+        ]
+      ]
+    },
+    {
+      "block": 170,
+      "kind": "paragraph",
+      "paragraph": 153,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 171,
+      "kind": "paragraph",
+      "paragraph": 154,
+      "style": "Heading 3",
+      "text": "c. Sequence Diagram(s)",
+      "has_drawing": false
+    },
+    {
+      "block": 172,
+      "kind": "paragraph",
+      "paragraph": 155,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 173,
+      "kind": "paragraph",
+      "paragraph": 156,
+      "style": "Normal",
+      "text": "Figure 16. Partner place approval, voucher creation, and user save flow",
+      "has_drawing": false
+    },
+    {
+      "block": 174,
+      "kind": "paragraph",
+      "paragraph": 157,
+      "style": "Heading 3",
+      "text": "d. Database Queries / Persistence Operations",
+      "has_drawing": false
+    },
+    {
+      "block": 175,
+      "kind": "paragraph",
+      "paragraph": 158,
+      "style": "Normal",
+      "text": "Representative operations used by the implementation are shown below. Mongoose translates these operations to MongoDB queries.",
+      "has_drawing": false
+    },
+    {
+      "block": 176,
+      "kind": "table",
+      "table": 17,
+      "style": "Normal Table",
+      "rows": [
+        [
+          "const place = await PlaceCache.create({ ...data, partnerId: userId, isPartnerPlace: true, status: \"pending\" });\nconst existing = await Voucher.findOne({ placeId, code: code.toUpperCase() });\nconst voucher = await Voucher.findOneAndUpdate(validVoucherFilter, { $addToSet: { savedBy: userId }, $inc: { currentUsageCount: 1 } }, { new: true });"
+        ]
+      ]
+    },
+    {
+      "block": 177,
+      "kind": "paragraph",
+      "paragraph": 159,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 178,
+      "kind": "paragraph",
+      "paragraph": 160,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 179,
+      "kind": "paragraph",
+      "paragraph": 161,
+      "style": "Heading 2",
+      "text": "7. Safety, Blocking, Reporting, and Moderation",
+      "has_drawing": false
+    },
+    {
+      "block": 180,
+      "kind": "paragraph",
+      "paragraph": 162,
+      "style": "Normal",
+      "text": "Safety operations validate report context, prioritize repeated independent reports, block communication across related matches/rooms, and restore communication only when neither party continues blocking. Admin moderation supports dismiss, warn, suspend, and ban with warning-count escalation and audit logging.",
+      "has_drawing": false
+    },
+    {
+      "block": 181,
+      "kind": "paragraph",
+      "paragraph": 163,
+      "style": "Heading 3",
+      "text": "a. Class/Component Diagram",
+      "has_drawing": false
+    },
+    {
+      "block": 182,
+      "kind": "paragraph",
+      "paragraph": 164,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 183,
+      "kind": "paragraph",
+      "paragraph": 165,
+      "style": "Normal",
+      "text": "Figure 17. Safety and moderation control/entity relationships",
+      "has_drawing": false
+    },
+    {
+      "block": 184,
+      "kind": "paragraph",
+      "paragraph": 166,
+      "style": "Heading 3",
+      "text": "b. Class and Method Specifications",
+      "has_drawing": false
+    },
+    {
+      "block": 185,
+      "kind": "table",
+      "table": 18,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Component",
+          "Method",
+          "Inputs / outputs and internal processing"
+        ],
+        [
+          "SafetyController",
+          "reportUser",
+          "Creates report with optional match/room/message/evidence and marks priority after three distinct reporters."
+        ],
+        [
+          "SafetyController",
+          "blockUser",
+          "Adds target to blockedUsers and sets all pair Matches/ChatRooms to blocked."
+        ],
+        [
+          "SafetyController",
+          "unblockUser",
+          "Removes block; restores chat_opened/active only if target does not still block requester."
+        ],
+        [
+          "AdminController",
+          "adminReportDetail",
+          "Loads report context and up to 200 room messages for investigation."
+        ],
+        [
+          "AdminController",
+          "updateReport",
+          "Applies one terminal action, updates account/report, emits notice, disconnects locked user."
+        ],
+        [
+          "AdminController",
+          "audit",
+          "Creates AdminAction with admin/action/targetType/targetId/reason."
+        ]
+      ]
+    },
+    {
+      "block": 186,
+      "kind": "paragraph",
+      "paragraph": 167,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 187,
+      "kind": "paragraph",
+      "paragraph": 168,
+      "style": "Heading 3",
+      "text": "c. Sequence Diagram(s)",
+      "has_drawing": false
+    },
+    {
+      "block": 188,
+      "kind": "paragraph",
+      "paragraph": 169,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 189,
+      "kind": "paragraph",
+      "paragraph": 170,
+      "style": "Normal",
+      "text": "Figure 18. Report submission and admin moderation decision",
+      "has_drawing": false
+    },
+    {
+      "block": 190,
+      "kind": "paragraph",
+      "paragraph": 171,
+      "style": "Heading 3",
+      "text": "d. Database Queries / Persistence Operations",
+      "has_drawing": false
+    },
+    {
+      "block": 191,
+      "kind": "paragraph",
+      "paragraph": 172,
+      "style": "Normal",
+      "text": "Representative operations used by the implementation are shown below. Mongoose translates these operations to MongoDB queries.",
+      "has_drawing": false
+    },
+    {
+      "block": 192,
+      "kind": "table",
+      "table": 19,
+      "style": "Normal Table",
+      "rows": [
+        [
+          "const report = await Report.create({ reporter, reportedUser, match, room, message, reason, evidenceUrls });\nconst reporters = await Report.distinct(\"reporter\", { reportedUser });\nawait User.findByIdAndUpdate(actor, { $addToSet: { blockedUsers: target } });\nawait Match.updateMany({ users: { $all: [actor, target] } }, { status: \"blocked\" });\nawait AdminAction.create({ admin, action, targetType, targetId, reason });"
+        ]
+      ]
+    },
+    {
+      "block": 193,
+      "kind": "paragraph",
+      "paragraph": 173,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 194,
+      "kind": "paragraph",
+      "paragraph": 174,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 195,
+      "kind": "paragraph",
+      "paragraph": 175,
+      "style": "Heading 2",
+      "text": "8. Administration and Operational Oversight",
+      "has_drawing": false
+    },
+    {
+      "block": 196,
+      "kind": "paragraph",
+      "paragraph": 176,
+      "style": "Normal",
+      "text": "Admin pages provide dashboard counts, user search/detail/update/status control, report queue/detail/resolution, match search, place review/update/delete/status control, and audit log listing. All admin routes require authentication and the admin role.",
+      "has_drawing": false
+    },
+    {
+      "block": 197,
+      "kind": "paragraph",
+      "paragraph": 177,
+      "style": "Heading 3",
+      "text": "a. Class/Component Diagram",
+      "has_drawing": false
+    },
+    {
+      "block": 198,
+      "kind": "paragraph",
+      "paragraph": 178,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 199,
+      "kind": "paragraph",
+      "paragraph": 179,
+      "style": "Normal",
+      "text": "Figure 19. Administration controller dependencies and audited targets",
+      "has_drawing": false
+    },
+    {
+      "block": 200,
+      "kind": "paragraph",
+      "paragraph": 180,
+      "style": "Heading 3",
+      "text": "b. Class and Method Specifications",
+      "has_drawing": false
+    },
+    {
+      "block": 201,
+      "kind": "table",
+      "table": 20,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Component",
+          "Method",
+          "Inputs / outputs and internal processing"
+        ],
+        [
+          "AdminController",
+          "dashboard",
+          "Parallel counts for users, new users, matches, confirmed/opened matches, new reports, and active places."
+        ],
+        [
+          "AdminController",
+          "adminUsers/adminUserDetail",
+          "Filters users and loads selected user's match/report history."
+        ],
+        [
+          "AdminController",
+          "createAdminUser/updateAdminUser",
+          "Admin-managed account creation and full editable profile/role/status update."
+        ],
+        [
+          "AdminController",
+          "updateUserStatus",
+          "Transitions active/suspended/banned and records audit reason."
+        ],
+        [
+          "AdminController",
+          "adminMatches",
+          "Filters by status or searches participant, cafe, object id, and status text."
+        ],
+        [
+          "AdminController",
+          "adminPlaces/upsertPlace/hidePlace/deletePlace",
+          "Review and lifecycle management of cafe records."
+        ],
+        [
+          "AdminController",
+          "adminActions",
+          "Returns latest 100 populated audit events."
+        ]
+      ]
+    },
+    {
+      "block": 202,
+      "kind": "paragraph",
+      "paragraph": 181,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 203,
+      "kind": "paragraph",
+      "paragraph": 182,
+      "style": "Heading 3",
+      "text": "c. Sequence Diagram(s)",
+      "has_drawing": false
+    },
+    {
+      "block": 204,
+      "kind": "paragraph",
+      "paragraph": 183,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": true
+    },
+    {
+      "block": 205,
+      "kind": "paragraph",
+      "paragraph": 184,
+      "style": "Normal",
+      "text": "Figure 20. Representative admin review and audited moderation flow",
+      "has_drawing": false
+    },
+    {
+      "block": 206,
+      "kind": "paragraph",
+      "paragraph": 185,
+      "style": "Heading 3",
+      "text": "d. Database Queries / Persistence Operations",
+      "has_drawing": false
+    },
+    {
+      "block": 207,
+      "kind": "paragraph",
+      "paragraph": 186,
+      "style": "Normal",
+      "text": "Representative operations used by the implementation are shown below. Mongoose translates these operations to MongoDB queries.",
+      "has_drawing": false
+    },
+    {
+      "block": 208,
+      "kind": "table",
+      "table": 21,
+      "style": "Normal Table",
+      "rows": [
+        [
+          "const [users, matches, reports, places] = await Promise.all([User.countDocuments(), Match.countDocuments(), Report.countDocuments({ status: \"new\" }), PlaceCache.countDocuments({ status: \"active\" })]);\nconst result = await User.findByIdAndUpdate(userId, statusUpdate, { new: true });\nconst actions = await AdminAction.find().populate(\"admin\", \"email displayName\").sort({ createdAt: -1 }).limit(100);"
+        ]
+      ]
+    },
+    {
+      "block": 209,
+      "kind": "paragraph",
+      "paragraph": 187,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 210,
+      "kind": "paragraph",
+      "paragraph": 188,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 211,
+      "kind": "paragraph",
+      "paragraph": 189,
+      "style": "Heading 1",
+      "text": "III. Cross-Cutting Design",
+      "has_drawing": false
+    },
+    {
+      "block": 212,
+      "kind": "paragraph",
+      "paragraph": 190,
+      "style": "Heading 2",
+      "text": "1. Security and Authorization",
+      "has_drawing": false
+    },
+    {
+      "block": 213,
+      "kind": "table",
+      "table": 22,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Concern",
+          "Current design"
+        ],
+        [
+          "Authentication",
+          "Short-lived JWT access token; refresh token hash persisted and HTTP-only refresh cookie supported."
+        ],
+        [
+          "Authorization",
+          "requireAuth on protected routers; requireAdmin and requirePartner on privileged areas; ownership/member checks inside controllers."
+        ],
+        [
+          "Password/OTP",
+          "bcrypt password and OTP hashes; expiring/consumable email OTP; attempt limit; admin always requires 2FA."
+        ],
+        [
+          "Input validation",
+          "Zod request validation; Mongoose enum/range constraints; upload type/size checks."
+        ],
+        [
+          "HTTP hardening",
+          "Helmet, CORS with configured client origin, 2 MB JSON limit, cookie parser, and 500 requests per 15-minute rate limit."
+        ],
+        [
+          "Account enforcement",
+          "Suspended/banned/inactive users cannot log in; moderated sockets are disconnected."
+        ],
+        [
+          "Privacy",
+          "Password and refresh hashes excluded from normal/admin projections; report context restricted to authorized admin routes."
+        ]
+      ]
+    },
+    {
+      "block": 214,
+      "kind": "paragraph",
+      "paragraph": 191,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 215,
+      "kind": "paragraph",
+      "paragraph": 192,
+      "style": "Heading 2",
+      "text": "2. Realtime Design",
+      "has_drawing": false
+    },
+    {
+      "block": 216,
+      "kind": "table",
+      "table": 23,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Event",
+          "Direction",
+          "Responsibility"
+        ],
+        [
+          "join_room",
+          "Client -> Server",
+          "Verify private-room membership and active state, then join room id."
+        ],
+        [
+          "send_message",
+          "Client -> Server",
+          "Persist and broadcast private message; notify other participant."
+        ],
+        [
+          "new_message",
+          "Server -> Room",
+          "Deliver populated private message."
+        ],
+        [
+          "typing_start/stop",
+          "Bidirectional",
+          "Broadcast transient private typing state."
+        ],
+        [
+          "mark_read/message_read",
+          "Bidirectional",
+          "Persist readBy and inform peer."
+        ],
+        [
+          "join_group",
+          "Client -> Server",
+          "Verify active group membership and join group:<id>."
+        ],
+        [
+          "send_group_message",
+          "Client -> Server",
+          "Persist/broadcast group message and notify other members."
+        ],
+        [
+          "new_group_message",
+          "Server -> Group",
+          "Deliver populated group message."
+        ],
+        [
+          "group_typing_start/stop",
+          "Bidirectional",
+          "Broadcast group typing state."
+        ],
+        [
+          "mark_group_read",
+          "Client -> Server",
+          "Persist group readBy and emit receipt."
+        ],
+        [
+          "notification:new",
+          "Server -> User",
+          "Push persisted notification to user:<id>."
+        ],
+        [
+          "match:updated",
+          "Server -> Users",
+          "Push cafe/match/chat lifecycle change."
+        ]
+      ]
+    },
+    {
+      "block": 217,
+      "kind": "paragraph",
+      "paragraph": 193,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 218,
+      "kind": "paragraph",
+      "paragraph": 194,
+      "style": "Heading 2",
+      "text": "3. State Models",
+      "has_drawing": false
+    },
+    {
+      "block": 219,
+      "kind": "table",
+      "table": 24,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Aggregate",
+          "Transitions",
+          "Notes"
+        ],
+        [
+          "Match",
+          "matched -> cafe_proposed -> chat_opened; any -> expired/blocked/cancelled",
+          "Mutual like currently creates chat_opened directly."
+        ],
+        [
+          "CafeProposal",
+          "active -> accepted/replaced/expired/rejected",
+          "Only one active proposal is intended per match."
+        ],
+        [
+          "ChatRoom",
+          "active <-> blocked; active -> archived",
+          "Cancel archives; bilateral unblock may reactivate."
+        ],
+        [
+          "Group",
+          "active -> dissolved",
+          "Dissolved groups reject joins/messages."
+        ],
+        [
+          "PlaceCache",
+          "pending -> active/hidden/rejected",
+          "Active partner place upgrades owner to partner."
+        ],
+        [
+          "Report",
+          "new -> reviewing -> resolved_valid/resolved_invalid/dismissed",
+          "Controller currently directly uses dismissed/resolved_valid for final actions."
+        ],
+        [
+          "User",
+          "active -> suspended/banned; suspended -> active after expiry",
+          "Warning policy can escalate automatically."
+        ]
+      ]
+    },
+    {
+      "block": 220,
+      "kind": "paragraph",
+      "paragraph": 195,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 221,
+      "kind": "paragraph",
+      "paragraph": 196,
+      "style": "Heading 2",
+      "text": "4. External Services and Failure Handling",
+      "has_drawing": false
+    },
+    {
+      "block": 222,
+      "kind": "table",
+      "table": 25,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Dependency",
+          "Use",
+          "Fallback / control"
+        ],
+        [
+          "OSRM",
+          "Travel-time matrix for compatibility scoring.",
+          "Failure is logged; distance score falls back to zero."
+        ],
+        [
+          "Google Places / cache",
+          "Cafe suggestions and metadata.",
+          "Cached or seeded fallback places keep the flow testable."
+        ],
+        [
+          "Nominatim",
+          "Manual district/city geocoding.",
+          "Non-2xx returns 502; results are filtered to Vietnam/city."
+        ],
+        [
+          "SMTP/email",
+          "OTP delivery.",
+          "Development may print OTP when configured; service errors propagate through centralized handler."
+        ],
+        [
+          "Local uploads",
+          "Chat files and report evidence.",
+          "20 MB chat limit; 5 MB image-only report evidence."
+        ]
+      ]
+    },
+    {
+      "block": 223,
+      "kind": "paragraph",
+      "paragraph": 197,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 224,
+      "kind": "paragraph",
+      "paragraph": 198,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 225,
+      "kind": "paragraph",
+      "paragraph": 199,
+      "style": "Heading 1",
+      "text": "Appendix A. REST API Inventory",
+      "has_drawing": false
+    },
+    {
+      "block": 226,
+      "kind": "paragraph",
+      "paragraph": 200,
+      "style": "Normal",
+      "text": "All routes below are prefixed with /api. Except for register/login/OTP/refresh, routes require an authenticated access token. Admin and partner groups apply additional role checks.",
+      "has_drawing": false
+    },
+    {
+      "block": 227,
+      "kind": "table",
+      "table": 26,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Area",
+          "Method",
+          "Path",
+          "Purpose"
+        ],
+        [
+          "Auth",
+          "POST",
+          "/auth/register",
+          "Create account and issue tokens."
+        ],
+        [
+          "Auth",
+          "POST",
+          "/auth/login",
+          "Password login; may require 2FA."
+        ],
+        [
+          "Auth",
+          "POST",
+          "/auth/send-otp",
+          "Send email OTP."
+        ],
+        [
+          "Auth",
+          "POST",
+          "/auth/verify-otp",
+          "Verify OTP and issue tokens."
+        ],
+        [
+          "Auth",
+          "POST",
+          "/auth/forgot-password/send-otp",
+          "Start reset."
+        ],
+        [
+          "Auth",
+          "POST",
+          "/auth/forgot-password/verify-otp",
+          "Return reset token."
+        ],
+        [
+          "Auth",
+          "POST",
+          "/auth/forgot-password/reset",
+          "Set new password."
+        ],
+        [
+          "Auth",
+          "POST",
+          "/auth/refresh",
+          "Rotate/refresh session."
+        ],
+        [
+          "Auth",
+          "GET/POST",
+          "/auth/me; /auth/logout",
+          "Current user; terminate session."
+        ],
+        [
+          "Users",
+          "GET/PATCH",
+          "/users/profile",
+          "Read/update profile."
+        ],
+        [
+          "Users",
+          "PUT/PATCH",
+          "/users/photos; /users/password",
+          "Photos and password."
+        ],
+        [
+          "Users",
+          "DELETE",
+          "/users/profile",
+          "Delete/deactivate account."
+        ],
+        [
+          "Users",
+          "POST",
+          "/users/onboarding",
+          "Complete profile/survey/location."
+        ],
+        [
+          "Users",
+          "POST/PATCH",
+          "/users/location/geocode; /users/location",
+          "Geocode/update location."
+        ],
+        [
+          "Users",
+          "POST",
+          "/users/avatar; /users/photo",
+          "Upload images."
+        ],
+        [
+          "Discovery",
+          "GET",
+          "/discovery; /discovery/incoming-likes",
+          "Feed and pending incoming likes."
+        ],
+        [
+          "Discovery",
+          "POST",
+          "/discovery/like; /discovery/pass",
+          "Persist swipe and possibly match."
+        ],
+        [
+          "Matches",
+          "GET",
+          "/matches; /matches/:id",
+          "List/detail."
+        ],
+        [
+          "Matches",
+          "GET",
+          "/matches/:id/place-suggestions",
+          "Suggested cafes."
+        ],
+        [
+          "Matches",
+          "POST",
+          "/matches/:id/select-place",
+          "Create/replace proposal."
+        ],
+        [
+          "Matches",
+          "POST",
+          "/matches/:id/confirm-place",
+          "Accept proposal."
+        ],
+        [
+          "Matches",
+          "POST",
+          "/matches/:id/reject-place; /cancel",
+          "Reject cafe or cancel match."
+        ],
+        [
+          "Chat",
+          "GET",
+          "/chat; /chat/:roomId",
+          "Room list/detail/history."
+        ],
+        [
+          "Chat",
+          "POST/DELETE",
+          "/chat/:roomId/messages; /chat/:roomId",
+          "Send via HTTP; hide conversation."
+        ],
+        [
+          "Notifications",
+          "GET/PATCH",
+          "/notifications; /read-all; /:id/read",
+          "List and mark read."
+        ],
+        [
+          "Groups",
+          "GET/POST",
+          "/groups",
+          "List/create groups."
+        ],
+        [
+          "Groups",
+          "GET",
+          "/groups/:id; /groups/:id/messages",
+          "Group detail/history."
+        ],
+        [
+          "Groups",
+          "POST/DELETE",
+          "/groups/:id/members; /members/:userId",
+          "Add/remove/leave."
+        ],
+        [
+          "Groups",
+          "POST",
+          "/groups/:id/dissolve; /groups/:id/messages",
+          "Dissolve/send fallback."
+        ],
+        [
+          "Places",
+          "GET",
+          "/places; /places/:id; /places/:id/vouchers",
+          "Browse active places/vouchers."
+        ],
+        [
+          "Places",
+          "POST",
+          "/places/partner-register",
+          "Submit partner cafe."
+        ],
+        [
+          "Places",
+          "GET",
+          "/places/my-partner-registration; /saved-vouchers",
+          "Application/saved vouchers."
+        ],
+        [
+          "Places",
+          "POST/PATCH",
+          "/places/:placeId/vouchers/:voucherId/save",
+          "Save voucher."
+        ],
+        [
+          "Partner",
+          "GET/PATCH",
+          "/partner/places; /places/:placeId",
+          "Owned cafes."
+        ],
+        [
+          "Partner",
+          "GET/POST",
+          "/partner/places/:placeId/vouchers",
+          "List/create voucher."
+        ],
+        [
+          "Partner",
+          "PATCH/DELETE",
+          "/partner/vouchers/:id/toggle; /:id",
+          "Toggle/delete voucher."
+        ],
+        [
+          "Safety",
+          "POST",
+          "/safety/report; /block; /unblock",
+          "Report and bilateral safety controls."
+        ],
+        [
+          "Upload",
+          "POST",
+          "/upload/chat-file; /report-evidence",
+          "File/evidence uploads."
+        ],
+        [
+          "Admin",
+          "GET",
+          "/admin/dashboard; /analytics; /settings",
+          "Metrics and settings view."
+        ],
+        [
+          "Admin",
+          "GET/POST/PUT/PATCH",
+          "/admin/users[/:id][/status]",
+          "User administration."
+        ],
+        [
+          "Admin",
+          "GET/PATCH",
+          "/admin/reports[/:id]",
+          "Report review/resolution."
+        ],
+        [
+          "Admin",
+          "GET",
+          "/admin/matches",
+          "Match oversight."
+        ],
+        [
+          "Admin",
+          "GET/PUT/PATCH/DELETE",
+          "/admin/places[/:id][/status]",
+          "Place review/maintenance."
+        ],
+        [
+          "Admin",
+          "GET",
+          "/admin/actions",
+          "Audit log."
+        ]
+      ]
+    },
+    {
+      "block": 228,
+      "kind": "paragraph",
+      "paragraph": 201,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 229,
+      "kind": "paragraph",
+      "paragraph": 202,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 230,
+      "kind": "paragraph",
+      "paragraph": 203,
+      "style": "Heading 1",
+      "text": "Appendix B. Configuration and Deployment",
+      "has_drawing": false
+    },
+    {
+      "block": 231,
+      "kind": "paragraph",
+      "paragraph": 204,
+      "style": "Heading 2",
+      "text": "1. Runtime Stack",
+      "has_drawing": false
+    },
+    {
+      "block": 232,
+      "kind": "paragraph",
+      "paragraph": 205,
+      "style": "Normal",
+      "text": "Frontend: React, TypeScript, Vite, React Router, Zustand, Axios, Tailwind CSS, Socket.IO Client.",
+      "has_drawing": false
+    },
+    {
+      "block": 233,
+      "kind": "paragraph",
+      "paragraph": 206,
+      "style": "Normal",
+      "text": "Backend: Node.js, Express, TypeScript, Mongoose, JWT, bcryptjs, Zod, Socket.IO, Multer, Nodemailer.",
+      "has_drawing": false
+    },
+    {
+      "block": 234,
+      "kind": "paragraph",
+      "paragraph": 207,
+      "style": "Normal",
+      "text": "Database: MongoDB with geospatial and TTL indexes.",
+      "has_drawing": false
+    },
+    {
+      "block": 235,
+      "kind": "paragraph",
+      "paragraph": 208,
+      "style": "Normal",
+      "text": "Development entry points: frontend http://localhost:5173 and backend http://localhost:5000.",
+      "has_drawing": false
+    },
+    {
+      "block": 236,
+      "kind": "paragraph",
+      "paragraph": 209,
+      "style": "Heading 2",
+      "text": "2. Required Configuration Categories",
+      "has_drawing": false
+    },
+    {
+      "block": 237,
+      "kind": "table",
+      "table": 27,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Category",
+          "Configuration responsibility"
+        ],
+        [
+          "Database",
+          "MongoDB connection URI."
+        ],
+        [
+          "Authentication",
+          "JWT access/refresh secrets and token lifetimes; cookie secure flag."
+        ],
+        [
+          "Client",
+          "Allowed client origin / frontend URL."
+        ],
+        [
+          "Email",
+          "SMTP host, port, credentials, sender and development OTP logging option."
+        ],
+        [
+          "Places",
+          "Google Maps/Places API key or cached/seeded fallback."
+        ],
+        [
+          "Distance",
+          "OSRM endpoint and scoring thresholds/weights/candidate limit."
+        ],
+        [
+          "Uploads",
+          "Writable uploads directory and public /uploads route."
+        ]
+      ]
+    },
+    {
+      "block": 238,
+      "kind": "paragraph",
+      "paragraph": 210,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 239,
+      "kind": "paragraph",
+      "paragraph": 211,
+      "style": "Heading 2",
+      "text": "3. Build and Run",
+      "has_drawing": false
+    },
+    {
+      "block": 240,
+      "kind": "paragraph",
+      "paragraph": 212,
+      "style": "Normal",
+      "text": "Provide backend and frontend environment files.",
+      "has_drawing": false
+    },
+    {
+      "block": 241,
+      "kind": "paragraph",
+      "paragraph": 213,
+      "style": "Normal",
+      "text": "Install backend dependencies and start MongoDB or configure MongoDB Atlas.",
+      "has_drawing": false
+    },
+    {
+      "block": 242,
+      "kind": "paragraph",
+      "paragraph": 214,
+      "style": "Normal",
+      "text": "Run the backend development process.",
+      "has_drawing": false
+    },
+    {
+      "block": 243,
+      "kind": "paragraph",
+      "paragraph": 215,
+      "style": "Normal",
+      "text": "Install frontend dependencies and run the Vite client.",
+      "has_drawing": false
+    },
+    {
+      "block": 244,
+      "kind": "paragraph",
+      "paragraph": 216,
+      "style": "Normal",
+      "text": "Verify /health, authentication, protected REST routes, and Socket.IO connectivity.",
+      "has_drawing": false
+    },
+    {
+      "block": 245,
+      "kind": "paragraph",
+      "paragraph": 217,
+      "style": "Normal",
+      "text": " ",
+      "has_drawing": false
+    },
+    {
+      "block": 246,
+      "kind": "paragraph",
+      "paragraph": 218,
+      "style": "Heading 1",
+      "text": "Appendix C. Known Implementation Discrepancies and Risks",
+      "has_drawing": false
+    },
+    {
+      "block": 247,
+      "kind": "table",
+      "table": 28,
+      "style": "Table Grid",
+      "rows": [
+        [
+          "Severity",
+          "Issue",
+          "Design impact"
+        ],
+        [
+          "High",
+          "Cafe gate bypass",
+          "Mutual like creates Match(status=chat_opened) and active ChatRoom immediately, contrary to the README and admin setting cafeGateRequired=true."
+        ],
+        [
+          "High",
+          "State regression on cafe selection",
+          "Selecting a cafe after mutual like changes chat_opened back to cafe_proposed, temporarily locking an existing chat."
+        ],
+        [
+          "Medium",
+          "Registration verification",
+          "Registration sets emailVerified=true without OTP; OTP is only used for 2FA/login and password reset."
+        ],
+        [
+          "Medium",
+          "Match participant cardinality",
+          "Match.users is an unrestricted array; schema does not enforce exactly two users."
+        ],
+        [
+          "Medium",
+          "Tag consistency",
+          "Tag has its own catalogue collection, but PlaceCache stores tag names as strings and does not reference Tag ids."
+        ],
+        [
+          "Medium",
+          "Unblock restoration",
+          "Unblock restores all blocked pair matches to chat_opened, even if their prior state was not an open chat."
+        ],
+        [
+          "Low",
+          "Dual OTP models",
+          "Both Otp and EmailOtp exist; active auth service primarily uses EmailOtp."
+        ],
+        [
+          "Low",
+          "Local file storage",
+          "Uploads are stored on the application host and require persistent/shared storage for scaled deployment."
+        ]
+      ]
+    },
+    {
+      "block": 248,
+      "kind": "paragraph",
+      "paragraph": 219,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    },
+    {
+      "block": 249,
+      "kind": "table",
+      "table": 29,
+      "style": "Normal Table",
+      "rows": [
+        [
+          "Recommended decision: Either enforce cafe confirmation before creating ChatRoom, or formally remove the cafe-gated requirement and stop moving chat_opened matches back to cafe_proposed. The current hybrid state should not be treated as a stable business rule."
+        ]
+      ]
+    },
+    {
+      "block": 250,
+      "kind": "paragraph",
+      "paragraph": 220,
+      "style": "Normal",
+      "text": "",
+      "has_drawing": false
+    }
+  ]
+}

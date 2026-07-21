@@ -33,7 +33,6 @@ const userSchema = new Schema({
     email: { type: String, unique: true, required: true, lowercase: true, trim: true },
     emailVerified: { type: Boolean, default: false },
     passwordHash: String,
-    twoFactorEnabled: { type: Boolean, default: false },
     role: { type: String, enum: ["user", "admin", "partner"], default: "user" },
     status: { type: String, enum: ["active", "suspended", "banned"], default: "active" },
     warningCount: { type: Number, default: 0, min: 0 },

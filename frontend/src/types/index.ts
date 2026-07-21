@@ -16,7 +16,6 @@ export type User = {
   major?: string;
   profilePhotos?: string[];
   onboardingCompleted: boolean;
-  twoFactorEnabled?: boolean;
   onboarding?: Record<string, any>;
   preferences?: Record<string, any>;
   location?: { coordinates: [number, number]; addressLabel?: string; source?: "gps" | "manual" };

@@ -92,14 +92,6 @@ export function AdminDashboardPage() {
           );
         })}
       </div>
-      <section className="mt-5 rounded-lg bg-white p-5 shadow-sm">
-        <h2 className="font-black">Luồng admin theo PRD</h2>
-        <div className="mt-3 grid gap-3 text-sm font-medium text-slate-600 md:grid-cols-3">
-          <p>1. Theo dõi KPI demo và report mới.</p>
-          <p>2. Quản lý user: xem hồ sơ, suspend hoặc ban có lý do.</p>
-          <p>3. Quản lý quán và audit log để bảo đảm dữ liệu sạch.</p>
-        </div>
-      </section>
     </AdminPageShell>
   );
 }

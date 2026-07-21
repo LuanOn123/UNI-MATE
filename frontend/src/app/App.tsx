@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AdminAuditPage, AdminDashboardPage, AdminMatchesPage, AdminPlacesPage, AdminReportsPage, AdminUserDetailPage, AdminUsersPage } from "../features/admin/AdminPage";
 import { AuthPage } from "../features/auth/AuthPage";
 import { ForgotPasswordPage } from "../features/auth/ForgotPasswordPage";
-import { OtpPage } from "../features/auth/OtpPage";
 import { ChatListPage } from "../features/chat/ChatListPage";
 import { ChatRoomPage } from "../features/chat/ChatRoomPage";
 import { DiscoveryPage } from "../features/discovery/DiscoveryPage";
@@ -42,7 +41,6 @@ export default function App() {
       <Route path="/" element={<HomeRoute />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/auth/otp" element={<OtpPage />} />
       <Route path="/partner/auth" element={<Navigate to="/app/partner-register" replace />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/onboarding" element={<OnboardingPage />} />

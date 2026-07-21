@@ -56,12 +56,8 @@ export function AuthPage() {
         navigate(nextUserPath(created));
         return;
       }
-      const result = await login(data.email, data.password);
-      if (result.requiresTwoFactor) {
-        navigate("/auth/otp");
-        return;
-      }
-      if (result.user) navigate(result.user.role === "admin" ? "/admin/dashboard" : nextUserPath(result.user));
+      const loggedInUser = await login(data.email, data.password);
+      navigate(loggedInUser.role === "admin" ? "/admin/dashboard" : nextUserPath(loggedInUser));
     } catch (e: any) {
       setError(e.response?.data?.message ?? "Không thể xác thực tài khoản");
     }
@@ -88,7 +84,7 @@ export function AuthPage() {
         </div>
         <h2 className="text-2xl font-black">{mode === "login" ? "Chào mừng quay lại" : "Tạo tài khoản UNI-MATE"}</h2>
         <p className="mt-2 text-sm text-coffee/70">
-          Dùng email và mật khẩu. OTP chỉ xuất hiện khi tài khoản bật 2FA hoặc là admin.
+          Mọi tài khoản đều đăng nhập trực tiếp bằng email và mật khẩu.
         </p>
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
           <Input placeholder="you@school.edu.vn" autoComplete="email" {...register("email")} />

@@ -30,7 +30,6 @@ function publicUser(user) {
         avatarUrl: user.avatarUrl,
         profilePhotos: user.profilePhotos ?? [],
         onboardingCompleted: user.onboardingCompleted,
-        twoFactorEnabled: user.twoFactorEnabled,
         onboarding: user.onboarding,
         location: user.location
     };
@@ -94,40 +93,6 @@ export async function loginWithPassword(emailInput, password) {
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok)
         throw serviceError("Invalid email or password", 401);
-    const requiresTwoFactor = user.role === "admin" || user.twoFactorEnabled;
-    if (requiresTwoFactor) {
-        await sendEmailOtp(email);
-        return { requiresTwoFactor: true, email };
-    }
-    user.lastLoginAt = new Date();
-    user.lastSeenAt = new Date();
-    const tokens = await issueTokens(user);
-    return { requiresTwoFactor: false, user: publicUser(user), ...tokens };
-}
-export async function verifyEmailOtp(emailInput, otpInput) {
-    const email = emailSchema.parse(emailInput);
-    const code = otpSchema.parse(otpInput);
-    const otp = await EmailOtp.findOne({ email, consumed: false, expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
-    if (!otp)
-        throw serviceError("OTP does not exist or has expired", 400);
-    if (otp.attempts >= env.OTP_MAX_ATTEMPTS)
-        throw serviceError("Too many invalid OTP attempts", 429);
-    const ok = await bcrypt.compare(code, otp.otpHash);
-    if (!ok) {
-        otp.attempts += 1;
-        await otp.save();
-        throw serviceError("Invalid OTP", 400);
-    }
-    otp.consumed = true;
-    await otp.save();
-    const user = await User.findOne({ email });
-    if (!user)
-        throw serviceError("User not found", 404);
-    await restoreExpiredSuspension(user);
-    if (user.status === "banned" || user.status === "suspended" || user.isActive === false) {
-        throw serviceError("Account is locked", 403);
-    }
-    user.emailVerified = true;
     user.lastLoginAt = new Date();
     user.lastSeenAt = new Date();
     const tokens = await issueTokens(user);
@@ -217,5 +182,3 @@ export async function refreshToken(token) {
 export async function logout(userId) {
     await User.findByIdAndUpdate(userId, { $unset: { refreshTokenHash: 1 } });
 }
-export const sendOtp = sendEmailOtp;
-export const verifyOtp = verifyEmailOtp;
